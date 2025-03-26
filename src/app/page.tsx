@@ -1,11 +1,28 @@
-import Image from "next/image";
+'use client'
+
+/* import Image from "next/image"; */
 import styles from "./page.module.css";
+import { Button } from "@mui/material";
+import { useState } from "react";
+import ScraperDialog from "./ScraperDialog";
 
 export default function Home() {
+  
+
+  const [ eventsOpen, setEventsOpen ] = useState(false);
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <Image
+      <Button onClick={() => setEventsOpen(true)}>scrap events list</Button>
+
+      <ScraperDialog
+      open={eventsOpen}
+      onClose={() => setEventsOpen(false)}
+      />
+
+
+ {/*        <Image
           className={styles.logo}
           src="/next.svg"
           alt="Next.js logo"
@@ -44,9 +61,9 @@ export default function Home() {
           >
             Read our docs
           </a>
-        </div>
+        </div> */}
       </main>
-      <footer className={styles.footer}>
+ {/*      <footer className={styles.footer}>
         <a
           href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
           target="_blank"
@@ -89,7 +106,7 @@ export default function Home() {
           />
           Go to nextjs.org →
         </a>
-      </footer>
+      </footer> */}
     </div>
   );
 }
