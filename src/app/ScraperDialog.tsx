@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, Accordion, AccordionSummary, AccordionDetails, Button, Typography, Box } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import fetchEvents, { WebEvents, getItemsFromPage } from './webScraper';
+import fetchEvents, { WebEvents, getItemsFromPage } from '../server/webScraper';
 
 interface ScraperDialogProps {
   open: boolean;

@@ -21,6 +21,7 @@
     "@mui/styled-engine-sc": "^6.4.6",
     "axios": "^1.8.4",
     "cheerio": "^1.0.0",
+    "lodash": "^4.17.21",
     "next": "15.2.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
