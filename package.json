@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "update:items": "git submodule update --remote && node ./scripts/items.mjs",
-    "update:images": "git submodule update --remote && node ./scripts/images.mjs"
+    "update:images": "git submodule update --remote && node ./scripts/images.mjs",
+    "redis:start": "redis-server --daemonize yes --save \"\" --appendonly no",
+    "redis:stop": "redis-cli shutdown",
+    "redis:cli": "redis-cli",
+    "start:all": "concurrently \"yarn redis:start\" \"yarn dev\""
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
@@ -19,12 +23,15 @@
     "@mui/material": "^6.4.8",
     "@mui/material-nextjs": "^6.4.3",
     "@mui/styled-engine-sc": "^6.4.6",
+    "@types/redis": "^4.0.11",
+    "@vercel/kv": "^3.0.0",
     "axios": "^1.8.4",
     "cheerio": "^1.0.0",
     "lodash": "^4.17.21",
     "next": "15.2.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "redis": "^4.7.0",
     "styled-components": "^6.1.16"
   },
   "devDependencies": {
@@ -33,6 +40,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.1.2",
     "eslint": "^9",
     "eslint-config-next": "15.2.3",
     "typescript": "^5"

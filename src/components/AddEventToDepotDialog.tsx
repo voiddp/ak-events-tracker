@@ -8,10 +8,11 @@ interface Props {
     onSubmit: (depotUpdate: [string, number][], materialsLeft: Record<string, number> | false) => void;
     eventMaterials: Record<string, number>;
     eventFarms: string[];
+    mode: "tracker" | "web";
 }
 
 const AddEventToDepotDialog = (props: Props) => {
-    const { open, onClose, onSubmit, eventMaterials, eventFarms } = props;
+    const { open, onClose, onSubmit, eventMaterials, eventFarms, mode} = props;
 
     const [depotAddon, setDepotAddon] = useState<Record<string, number>>({});
     const [keepEvent, setKeepEvent] = useState<boolean>(false);

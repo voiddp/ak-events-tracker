@@ -901,6 +901,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 onSubmit={handlePutDepotAndDelete}
                 eventMaterials={handledEvent.materials}
                 eventFarms={handledEvent.farms}
+                mode="tracker"
             />
         </>
     );

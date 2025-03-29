@@ -4,7 +4,7 @@
 import styles from "./page.module.css";
 import { AppBar, Box, Button, Container, Paper, Toolbar, Typography } from "@mui/material";
 import { useCallback, useState } from "react";
-import ScraperDialog from "./ScraperDialog";
+import ScraperDialog from "../components/ScraperDialog";
 import { defaultSettings, LocalStorageSettings, EventsData } from "../types/localStorageSettings";
 import EventsTracker from "@/components/EventsTrackerDialog";
 import useSettings from "../hooks/useSettings";

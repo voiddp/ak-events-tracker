@@ -1,8 +1,10 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import * as cheerio from 'cheerio';
 import itemsJson from '../data/items.json';
 import { fetchHtml, fetchJson } from '../lib/axiosServer';
+import { LinearProgress } from '@mui/material';
+import { randomBytes } from 'crypto';
 
 type WebEvent = {
   date: Date;
@@ -47,6 +49,11 @@ const argNames = {
   curAniDate: `结束时间`
 };
 
+const dictionary = {
+  '复刻' : "Rerun",
+  "签到" : "Sign-in"
+}
+
 const getUrl = (pageTitle: string) => {
   return `https://prts.wiki/w/${encodeURIComponent(pageTitle)}`
 }
@@ -62,15 +69,19 @@ const getApiUrl = (pageTitle: string) => {
 };
 
 export const usePrtsWiki = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const sessionId = randomBytes(8).toString('hex')
+
+/*   const [isLoading, setIsLoading] = useState<boolean>(false);
+*/const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<Error | null>(null);
+  const [progress, setProgress] = useState<Record<string, number>>({});
 
   const fetchEvents = async (monthsAgoDate: Date): Promise<WebEvent[]> => {
-    setIsLoading(true);
     setError(null);
     try {
 
-      const html = await fetchHtml(getUrl(pageNames.events));
+      const html = await fetchHtml(getUrl(pageNames.events),sessionId);
       const $ = cheerio.load(html);
 
       const eventsArray: WebEvent[] = [];
@@ -101,16 +112,13 @@ export const usePrtsWiki = () => {
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       throw err;
-    } finally {
-      setIsLoading(false);
-    }
+    } 
   };
 
   const fetchArgumentList = async (pageTitle: string, templateName: string) => {
-    setIsLoading(true);
     setError(null);
     try {
-      const response = await fetchJson<MediaWikiApiResponse>(getApiUrl(pageTitle));
+      const response = await fetchJson<MediaWikiApiResponse>(getApiUrl(pageTitle),sessionId);
       const page = Object.values(response.query.pages)[0];
       const wikitext = page.revisions?.[0]?.slots?.main?.['*'] || '';
       if (!wikitext) return null;
@@ -131,21 +139,22 @@ export const usePrtsWiki = () => {
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       throw err;
-    } finally {
-      setIsLoading(false);
-    }
+    } 
   };
 
   const getEventList = async (monthsAgo: number) => {
+
+    setLoading(prev => ({ ...prev ?? {}, "LIST": true }))
+
     try {
       const today = new Date();
       const monthsAgoDate = new Date();
       monthsAgoDate.setMonth(today.getMonth() - monthsAgo);
-
+      setProgress(prev => ({ ...prev ?? {},"LIST": 25}));
       //get normal events
       const webEvents = await fetchEvents(monthsAgoDate);
 
-
+      setProgress(prev => ({ ...prev ?? {},"LIST": 50}));
       //get SSS last event
       const sssArgs = await fetchArgumentList(pageNames.operations, templates.sss);
 
@@ -163,7 +172,7 @@ export const usePrtsWiki = () => {
           webEvents.push(sssEvent);
         }
       }
-
+      setProgress(prev => ({ ...prev ?? {},"LIST": 75}));
       //get anihilation events      
       const aniArgs = await fetchArgumentList(pageNames.operations, templates.anihilations);
       if (aniArgs) {
@@ -173,56 +182,76 @@ export const usePrtsWiki = () => {
           .forEach(event => webEvents.push(event));
       }
 
-
-      return webEvents.filter(event => event.date >= monthsAgoDate && event.date <= today)
+      //apply dictionary
+      webEvents.forEach(event => {
+        Object.entries(dictionary).forEach(([key, value]) => {
+          if (event.title.includes(key)) {
+            event.title = event.title.replace(key, ` ${value} `).trim();
+          }
+        });
+      });
+      return webEvents.filter(event => event.date >= monthsAgoDate && event.date <= today);
 
     } catch (err) {
       console.error('Failed to load events:', err);
+    } finally {
+       setProgress(prev => ({ ...prev ?? {},"LIST": 100}));
+       setLoading(prev => {
+        const next = { ...prev };
+        delete next["LIST"];
+        return next;
+      });
     }
   }
 
   const getItemsFromPage = async (cnTitle: string, page_link: string): Promise<ItemResult | undefined> => {
     if (!page_link || !cnTitle) return;
 
-    setIsLoading(true);
+    setLoading(prev => ({ ...prev ?? {}, [cnTitle]: true }))
     setError(null);
-    try {
-      const html = await fetchHtml(page_link);
+    try {cnTitle
+      setProgress(prev => ({ ...prev ?? {},[cnTitle]: 90}));
+      const html = await fetchHtml(page_link,sessionId);
       const $ = cheerio.load(html);
 
       let result: Record<string, number> = {};
-      const farms = findFarms($);
+      const farms = findFarms($);      
       result = parseSignInEvent($, result);
       result = parseShopInEvent($, result);
       result = parseNumDivs($, result);
-      result = parseListDivs($, result);
-
+      result = parseListDivs($, result);     
       return { items: result, farms };
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       throw err;
     } finally {
-      setIsLoading(false);
+      setLoading(prev => {
+        const next = { ...prev };
+        delete next[cnTitle];
+        return next;
+      });
     }
   };
 
   // Loading component to be used by consumers
-  const LoadingSpinner = () => (
-    <div className="flex justify-center items-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+  const ProgressElement = (cnName:string) => {
+    console.log(`${cnName} : ${loading[cnName]} ${progress[cnName]} `)
+    return (
+    <div style={{width: "100%"}}>
+      <LinearProgress variant="determinate" value={progress[cnName] ?? 0} />
     </div>
-  );
+  )};
 
   return {
     getEventList,
     getItemsFromPage,
     error,
-    isLoading,
-    LoadingSpinner
+    loading,
+    ProgressElement
   };
 };
 
-// Helper functions moved inside the hook file since they're only used here
+// Helper functions
 const parseListDivs = ($: cheerio.CheerioAPI, result: Record<string, number>) => {
   $('ul').each((_, ul) => {
     $(ul)
@@ -276,6 +305,10 @@ const parseChineseNumber = (input: string): number | null => {
   return null;
 };
 
+const isTier3Material = (id: string) => {
+  return (Number(id) > 30000 && Number(id) < 32000 && itemsJson[id as keyof typeof itemsJson].tier === 3)
+};
+
 const findFarms = ($: cheerio.CheerioAPI): string[] => {
   const dropKeywords = ['固定掉落', '大概率', '小概率', '概率掉落'];
   const foundItems: string[] = [];
@@ -292,7 +325,7 @@ const findFarms = ($: cheerio.CheerioAPI): string[] => {
         if (!title) return;
 
         const matchedItem = Object.values(itemsJson).find(
-          (item) => item.tier === 3 && `cnName` in item && item.cnName === title
+          (item) => item.tier === 3 && `cnName` in item && item.cnName === title && isTier3Material(item.id)
         );
 
         if (matchedItem && !foundItems.includes(matchedItem.id)) {
@@ -347,12 +380,24 @@ const parseShopInEvent = ($: cheerio.CheerioAPI, result: Record<string, number>)
     tds.each((_, td) => {
       const text = $(td).text().trim();
 
+      if (itemId && amount !== 0) return;
+
       if (!itemId) {
-        itemId = Object.values(itemsJson).find(
-          (item) => `cnName` in item && text.includes(item.cnName)
-        )?.id;
-        const match = text.match(/(?:[x×*])(\d+)/);
-        if (match) multiplier = parseInt(match[1], 10);
+        const foundItem = Object.values(itemsJson).find(item => {
+          if (!('cnName' in item)) return false;
+          const nameRegex = new RegExp(
+            `^${escapeRegExp(item.cnName)}(?:\\s*[x×*]\\s*\\d+)?$`
+          );
+          return nameRegex.test(text)
+        }); 
+        if (foundItem) {
+          itemId = foundItem.id;
+          
+          const multiplierMatch = text.match(/[x×*]\s*(\d+)$/);
+          if (multiplierMatch) {
+            multiplier = parseInt(multiplierMatch[1], 10);
+          }
+        }
       } else if (amount === 0) {
         amount = parseChineseNumber(text) ?? 0;
         return false;
@@ -365,6 +410,10 @@ const parseShopInEvent = ($: cheerio.CheerioAPI, result: Record<string, number>)
   });
   return result;
 };
+
+function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 const parseSignInEvent = ($: cheerio.CheerioAPI, result: Record<string, number>) => {
   $('p').each((_, element) => {
