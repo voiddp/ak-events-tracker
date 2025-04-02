@@ -40,10 +40,6 @@ import ImportExportIcon from '@mui/icons-material/ImportExport';
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Close } from "@mui/icons-material";
-interface DataShareInfo {
-    format: string;
-    description: string;
-}
 import { debounce } from 'lodash';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import AddEventToDepotDialog from './AddEventToDepotDialog';
@@ -63,12 +59,11 @@ interface Props {
     onClose: () => void;
     eventsData: EventsData;
     onChange: (data: EventsData) => void;
-    openSummary: (state: boolean) => void;
-    putDepot: (items: [string, number][]) => void;
+    children?: React.ReactNode;
 }
 
-const EventsTrackerDialog = React.memo((props: Props) => {
-    const { open, onClose, eventsData, onChange, openSummary, putDepot } = props;
+const EventsTrackerMain = React.memo((props: Props) => {
+    const { open, onClose, eventsData, onChange, children } = props;
 
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -99,6 +94,11 @@ const EventsTrackerDialog = React.memo((props: Props) => {
         materials: emptyEvent.materials,
         farms: [] as string[]
     });
+
+    interface DataShareInfo {
+        format: string;
+        description: string;
+    }
 
     const SUPPORTED_IMPORT_EXPORT_TYPES: DataShareInfo[] = [
         {
@@ -133,7 +133,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
         if (open) {
             setRawEvents(eventsData ?? {});
         }
-    }, [open, eventsData])
+    }, [open])
 
     const handleToggleChange = (event: React.MouseEvent<HTMLElement>, nextTab: string) => {
         let toTab = nextTab;
@@ -170,8 +170,12 @@ const EventsTrackerDialog = React.memo((props: Props) => {
 
         cleanImportExport();
 
-        onClose();
+        /* onClose(); */
     }
+
+
+    //debounces handling
+
 
     //base function to debounce
     const handleEventNamesChange = () => {
@@ -211,6 +215,20 @@ const EventsTrackerDialog = React.memo((props: Props) => {
         debouncedEventNamesChange();
     }, [setNewEventNames, debouncedEventNamesChange]
     );
+
+    const ref2 = useRef(saveToSettings);
+
+    useEffect(() => {
+        ref2.current = saveToSettings;
+        debouncedSaveSettings();
+    }, [rawEvents])
+
+    const debouncedSaveSettings = useMemo(() => {
+        const func = () => {
+            ref2.current?.();
+        };
+        return debounce(func, 5000);
+    }, []);
 
     const handleQuantityChange = (eventName: string, materialId: string, quantity: number) => {
         setRawEvents((prev) => {
@@ -342,21 +360,19 @@ const EventsTrackerDialog = React.memo((props: Props) => {
         ) => {
 
             /*  if (addMaterials.length != 0) putDepot(addMaterials); */
-            if (handledEvent.name != null) {
-                if (!leftMaterials) {
-                    handleDeleteEvent(handledEvent.name);
-                } else {
-                    setRawEvents((prev) => {
-                        const _next = { ...prev };
-                        _next[handledEvent.name].materials = leftMaterials;
-                        return _next;
-                    });
-                }
+
+            if (!leftMaterials) {
+                handleDeleteEvent(handledEvent.name);
+            } else {
+                setRawEvents((prev) => {
+                    const _next = { ...prev };
+                    _next[handledEvent.name].materials = leftMaterials;
+                    return _next;
+                });
             }
             setHandledEvent({ index: -1, name: "", materials: {}, farms: [] });
 
         }, [handleDeleteEvent, setRawEvents, setHandledEvent, handledEvent.name]);
-
 
     const formatNumber = (num: number) => {
         return num < 1000
@@ -455,8 +471,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                         setAddEventToDepotDialogOpen(true);
                                     }} />
                             </Tooltip>
-                            <DeleteIcon
-                                fontSize="large"
+                            <DeleteIcon fontSize="large"
                                 sx={{
                                     transition: "opacity 0.1s",
                                     "&:focus, &:hover": {
@@ -661,23 +676,14 @@ const EventsTrackerDialog = React.memo((props: Props) => {
 
     return (
         <>
-            <Dialog
-                open={open}
-                onClose={handleClose}
-                TransitionComponent={Transition}
-                fullScreen={fullScreen}
-                keepMounted fullWidth maxWidth="md">
-                <DialogTitle
-                    sx={{
-                        display: "flex",
-                        paddingBottom: "12px",
-                    }}
-                >
+            <Box sx={{ width: "100%", padding: 2 }}>
+                {/* Top Section */}
+                <Stack direction="row" alignItems="center" spacing={2} mb={2}>
                     <ToggleButtonGroup
-                        orientation="horizontal"
                         value={tab}
                         exclusive
-                        onChange={handleToggleChange}
+                        onChange={(_, value) => value && setTab(value)}
+                        aria-label="toggle-tab"
                     >
                         <ToggleButton value="input" aria-label="input">
                             <InputIcon />
@@ -689,29 +695,44 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                             <QuestionMarkIcon />
                         </ToggleButton>
                     </ToggleButtonGroup>
-                    {(tab === "input") && (!fullScreen ? "Events Tracker" : "Events")}
-                    {(tab === "importExport") && "Import/Export"}
-                    {(tab === "help") && "Description"}
-                    <IconButton onClick={handleClose} sx={{ display: { sm: "none" }, gridArea: "close" }}>
-                        <Close />
-                    </IconButton>
-                </DialogTitle>
-                <DialogContent
-                    sx={{ height: { sm: '500px', xl: '700px' } }}
-                    ref={containerRef}>
-                    <Box sx={{ display: (tab === "input") ? "unset" : "none" }}>
-                        {renderedEvents}
-                        {/* Create new group */}
-                        <Stack direction="row" gap={2} ml={2} mt={2} justifyContent="flex-start">
-                            <TextField size="small" label="New Event Name" value={rawName} /* style={{ marginLeft: 'auto' }} */
-                                onChange={(e) => setRawName(e.target.value)} />
-                            <Button startIcon={<AddIcon />}
-                                variant="contained" color="primary"
-                                disabled={rawName.length === 0}
-                                onClick={() => addNewEvent(rawName.trim())}>New Event</Button>
-                        </Stack>
-                    </Box>
-                    <Box display={tab === 'importExport' ? "unset" : "none"}>
+                    <Typography>
+                        {(tab === "input") && (!fullScreen ? "Events Tracker" : "Events")}
+                        {(tab === "importExport") && "Import/Export"}
+                        {(tab === "help") && "Description"}
+                    </Typography>
+                    {/* <IconButton>
+              <CloseIcon />
+            </IconButton> */}
+                </Stack>
+
+                {/* Content Section */}
+                <Box sx={{ position: "relative", height: "75vh", /* { sm: "500px", xl: "700px" } ,*/ overflowY: "auto" }}>
+                    {/* Input Tab */}
+                    {tab === "input" && (
+                        <Box>
+                            {renderedEvents}
+                            <Stack direction="row" gap={2} ml={2} mt={2} justifyContent="flex-start">
+                                <TextField
+                                    size="small"
+                                    label="New Event Name"
+                                    value={rawName}
+                                    onChange={(e) => setRawName(e.target.value)}
+                                />
+                                <Button
+                                    startIcon={<AddIcon />}
+                                    variant="contained"
+                                    color="primary"
+                                    disabled={rawName.length === 0}
+                                    onClick={() => addNewEvent(rawName.trim())}
+                                >
+                                    New Event
+                                </Button>
+                            </Stack>
+                        </Box>
+                    )}
+
+                    {/* Import/Export Tab */}
+                    {tab === "importExport" && (
                         <Grid container spacing={2} mt={1} mb={2}>
                             <Grid size={{ xs: 12, md: 6 }}>
                                 <FormControl fullWidth>
@@ -834,32 +855,34 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                 ></TextField>
                             </Grid>
                         </Grid>
-                    </Box>
-                    <Box display={tab === 'help' ? "unset" : "none"}>
-                        {HELP_INFORMATION}
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{
-                    gap: 1,
-                    justifyContent: "space-between"
-                }} >
-                    <Button onClick={() => {
+                    )}
+
+                    {/* Help Tab */}
+                    {tab === "help" && <Box>{HELP_INFORMATION}</Box>}
+                </Box>
+
+                {/* Bottom Section */}
+                <Stack direction="row" justifyContent="space-between" gap={2} mt={2}>
+                    {/* <Button onClick={() => {
                         handleClose();
                         openSummary(true);
                     }}
                         variant="contained"
                         color="primary">
                         Open Summary
-                    </Button>
-                    <Button onClick={resetEventsList}
-                        startIcon={<DeleteIcon />}
+                    </Button> */}
+                    {children}
+                    <Button
                         variant="contained"
-                        disabled={tab === "input" ? false : true}
-                        color="primary">
+                        color="primary"
+                        startIcon={<DeleteIcon />}
+                        onClick={resetEventsList}
+                        disabled={tab !== "input"}
+                    >
                         Reset
                     </Button>
-                </DialogActions>
-            </Dialog>
+                </Stack>
+            </Box>
             <Snackbar
                 anchorOrigin={{
                     vertical: "bottom",
@@ -889,8 +912,8 @@ const EventsTrackerDialog = React.memo((props: Props) => {
             <AddEventToDepotDialog
                 open={addEventToDepotDialogOpen}
                 onClose={() => setAddEventToDepotDialogOpen(false)}
-                onSubmit={handleEventChange}
                 variant="tracker"
+                onSubmit={handleEventChange}
                 handledEvent={handledEvent}
                 eventsData={eventsData}
             />
@@ -898,5 +921,5 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     );
 });
 
-EventsTrackerDialog.displayName = "EventsTrackerDialog";
-export default EventsTrackerDialog;
+EventsTrackerMain.displayName = "EventsTrackerMain";
+export default EventsTrackerMain;

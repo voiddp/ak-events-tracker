@@ -4,11 +4,12 @@ import "./globals.css";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { Roboto } from 'next/font/google';
 import { ThemeProvider } from '@mui/material/styles';
-import theme from '../theme';
+import theme from "../theme";
 import React from "react";
 import { AppBar, Box, Container, IconButton, Toolbar, Typography } from "@mui/material";
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
+import styles from "./page.module.css";
 
 const roboto = Roboto({
   weight: ['300', '400', '500', '700'],
@@ -54,6 +55,7 @@ const Layout = React.memo((props: Props) => {
         <AppRouterCacheProvider>
           {/* <CacheProvider value={clientSideEmotionCache}> */}
             <ThemeProvider theme={theme}>
+            <Box className={styles.main} sx={{height:"100vh", display:"flex", flexDirection:"column"}}>
               <AppBar position="sticky" sx={{ gridArea: "header" }}>
                 <Toolbar variant="dense" sx={{ gap: 1 }}>
                   <Typography component="h1" variant="h5" noWrap sx={{ display: "inline", verticalAlign: "baseline" }}>
@@ -62,6 +64,7 @@ const Layout = React.memo((props: Props) => {
                 </Toolbar>
               </AppBar>
               {children}
+            </Box>
             </ThemeProvider>
           {/* </CacheProvider> */}
         </AppRouterCacheProvider>

@@ -1,21 +1,10 @@
+import { EventsData } from "./events";
+
 export interface LocalStorageSettings {
     version: string;
-    eventsIncomeData: EventsData;
-}
-
-export interface Event {
-    index: number;
-    materials: {
-        [key: string]: number;
-    };
-    farms?: string[];
-}
-
-export interface EventsData {
-    [key: string]: Event; 
+    eventsIncomeData?: EventsData;
 }
 
 export const defaultSettings: LocalStorageSettings = {
     version: "1",
-    eventsIncomeData: {}, 
 };

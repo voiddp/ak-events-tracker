@@ -1,18 +1,16 @@
 'use client'
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import * as cheerio from 'cheerio';
 import itemsJson from '../data/items.json';
 import { fetchHtml, fetchJson } from '../lib/axiosServer';
 import { LinearProgress } from '@mui/material';
 import { randomBytes } from 'crypto';
+import _ from 'lodash';
+import { WebEvent, WebEventsData, emptyEvent, emptyWebEvent } from '@/types/events';
+import useLocalStorage from './useLocalStorage';
 
-type WebEvent = {
-  date: Date;
-  title: string;
-  link: string;
-};
-
-type ItemResult = {
+type PageResult = {
+  title: string | null;
   items: Record<string, number>;
   farms: string[];
 };
@@ -39,6 +37,10 @@ const pageNames = {
 const templates = {
   anihilations: '剿灭作战',
   sss: '保全派驻/Ver2',
+  sideStory: '活动信息',
+  itemLeveReward: '关卡报酬',
+  itemIcon: '道具图标',
+
 };
 
 const argNames = {
@@ -50,8 +52,9 @@ const argNames = {
 };
 
 const dictionary = {
-  '复刻' : "Rerun",
-  "签到" : "Sign-in"
+  '复刻': 'Rerun',
+  'IN RETROSPECT':'Rerun',
+  '签到': 'Sign-in'
 }
 
 const getUrl = (pageTitle: string) => {
@@ -70,6 +73,7 @@ const getApiUrl = (pageTitle: string) => {
 
 export const usePrtsWiki = () => {
 
+  const [webEvents, setWebEvents] = useLocalStorage<WebEventsData>("prtsWikiData", {});
   const sessionId = randomBytes(8).toString('hex')
 
 /*   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -77,16 +81,20 @@ export const usePrtsWiki = () => {
   const [error, setError] = useState<Error | null>(null);
   const [progress, setProgress] = useState<Record<string, number>>({});
 
-  const fetchEvents = async (monthsAgoDate: Date): Promise<WebEvent[]> => {
+  const fetchEvents = useCallback(
+    async (monthsAgoDate: Date): Promise<WebEventsData> => {
     setError(null);
     try {
 
-      const html = await fetchHtml(getUrl(pageNames.events),sessionId);
+      const html = await fetchHtml(getUrl(pageNames.events), sessionId);
       const $ = cheerio.load(html);
 
-      const eventsArray: WebEvent[] = [];
+      const eventsResult: WebEventsData = webEvents ?? {};
+      console.log("start with", {...eventsResult});
 
       $('tr').each((_, element) => {
+        if ($(element).find('td').css('display') === 'none') return true;
+
         const dateText = $(element).find('td').first().text().trim();
         const titleElement = $(element).find('td').eq(1).find('a');
         const today = new Date();
@@ -98,27 +106,29 @@ export const usePrtsWiki = () => {
 
             const title = titleElement.text().trim();
             const link = titleElement.attr('href') || '';
-            eventsArray.push({
+            eventsResult[title] = {
+              ...eventsResult[title] ?? emptyWebEvent,
+              pageName: title,
               date: date,
-              title,
-              link: `https://prts.wiki${link}`
-            });
+              link: `https://prts.wiki${link}`,
+            }
           }
 
         }
       });
 
-      return eventsArray;
+      return eventsResult;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       throw err;
-    } 
-  };
+    }
+  }, [webEvents, sessionId]
+);
 
-  const fetchArgumentList = async (pageTitle: string, templateName: string) => {
+  const fetchArgumentList = async (pageName: string, templateName: string) => {
     setError(null);
     try {
-      const response = await fetchJson<MediaWikiApiResponse>(getApiUrl(pageTitle),sessionId);
+      const response = await fetchJson<MediaWikiApiResponse>(getApiUrl(pageName), sessionId);
       const page = Object.values(response.query.pages)[0];
       const wikitext = page.revisions?.[0]?.slots?.main?.['*'] || '';
       if (!wikitext) return null;
@@ -139,7 +149,7 @@ export const usePrtsWiki = () => {
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       throw err;
-    } 
+    }
   };
 
   const getEventList = async (monthsAgo: number) => {
@@ -150,11 +160,11 @@ export const usePrtsWiki = () => {
       const today = new Date();
       const monthsAgoDate = new Date();
       monthsAgoDate.setMonth(today.getMonth() - monthsAgo);
-      setProgress(prev => ({ ...prev ?? {},"LIST": 25}));
+      setProgress(prev => ({ ...prev ?? {}, "LIST": 25 }));
       //get normal events
       const webEvents = await fetchEvents(monthsAgoDate);
 
-      setProgress(prev => ({ ...prev ?? {},"LIST": 50}));
+      setProgress(prev => ({ ...prev ?? {}, "LIST": 50 }));
       //get SSS last event
       const sssArgs = await fetchArgumentList(pageNames.operations, templates.sss);
 
@@ -168,35 +178,45 @@ export const usePrtsWiki = () => {
         }
 
         if (date <= today && date > monthsAgoDate) {
-          const sssEvent: WebEvent = { title: `SSS: ${sssArgs[argNames.sssMission]}`, link, date }
-          webEvents.push(sssEvent);
+          const pageName = `${sssArgs[argNames.sssMission]}`;
+          const title = `SSS: ${sssArgs[argNames.sssMission]}`;
+          webEvents[pageName] = { ...(webEvents[pageName] ?? emptyWebEvent), pageName, title, link, date }
         }
       }
-      setProgress(prev => ({ ...prev ?? {},"LIST": 75}));
+      setProgress(prev => ({ ...prev ?? {}, "LIST": 75 }));
       //get anihilation events      
       const aniArgs = await fetchArgumentList(pageNames.operations, templates.anihilations);
       if (aniArgs) {
         const anniEventList = getAniEventsList(aniArgs);
 
-        anniEventList.filter(event => event.date >= monthsAgoDate && event.date <= today)
-          .forEach(event => webEvents.push(event));
+        anniEventList.filter(event => event.date && (event.date >= monthsAgoDate && event.date <= today))
+          .forEach(event => {
+            webEvents[event.pageName] = {
+              ...webEvents[event.pageName] ?? emptyWebEvent,
+              pageName: event.pageName,
+              title: event.title,
+              link: event.link,
+              date: event.date
+            }
+          });
       }
 
       //apply dictionary
-      webEvents.forEach(event => {
-        Object.entries(dictionary).forEach(([key, value]) => {
-          if (event.title.includes(key)) {
-            event.title = event.title.replace(key, ` ${value} `).trim();
-          }
-        });
+      Object.entries(webEvents ?? {}).forEach(([_, event]) => {
+        const afterDictionary = applyDictionary(event.pageName);
+        if (afterDictionary) event.title = afterDictionary;
       });
-      return webEvents.filter(event => event.date >= monthsAgoDate && event.date <= today);
+      return Object.entries(webEvents ?? {}).filter(([_, event]) => event.date && (event.date >= monthsAgoDate && event.date <= today))
+        .reduce((acc, [_, event]) => {
+          acc[event.pageName] = event;
+          return acc;
+        }, {} as WebEventsData);
 
     } catch (err) {
       console.error('Failed to load events:', err);
     } finally {
-       setProgress(prev => ({ ...prev ?? {},"LIST": 100}));
-       setLoading(prev => {
+      setProgress(prev => ({ ...prev ?? {}, "LIST": 100 }));
+      setLoading(prev => {
         const next = { ...prev };
         delete next["LIST"];
         return next;
@@ -204,47 +224,53 @@ export const usePrtsWiki = () => {
     }
   }
 
-  const getItemsFromPage = async (cnTitle: string, page_link: string): Promise<ItemResult | undefined> => {
-    if (!page_link || !cnTitle) return;
+  const getDataFromPage = async (pageName: string, page_link: string): Promise<PageResult | undefined> => {
+    if (!page_link || !pageName) return;
 
-    setLoading(prev => ({ ...prev ?? {}, [cnTitle]: true }))
+    setLoading(prev => ({ ...prev ?? {}, [pageName]: true }))
     setError(null);
-    try {cnTitle
-      setProgress(prev => ({ ...prev ?? {},[cnTitle]: 90}));
-      const html = await fetchHtml(page_link,sessionId);
+    try {
+      pageName
+      setProgress(prev => ({ ...prev ?? {}, [pageName]: 90 }));
+      const html = await fetchHtml(page_link, sessionId);
       const $ = cheerio.load(html);
 
       let result: Record<string, number> = {};
-      const farms = findFarms($);      
+      const title = findENTitle($);
+      const farms = findFarms($);
       result = parseSignInEvent($, result);
       result = parseShopInEvent($, result);
       result = parseNumDivs($, result);
-      result = parseListDivs($, result);     
-      return { items: result, farms };
+      result = parseListDivs($, result);
+      return { title, items: result, farms };
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       throw err;
     } finally {
       setLoading(prev => {
         const next = { ...prev };
-        delete next[cnTitle];
+        delete next[pageName];
         return next;
       });
     }
   };
 
+
   // Loading component to be used by consumers
-  const ProgressElement = (cnName:string) => {
-    console.log(`${cnName} : ${loading[cnName]} ${progress[cnName]} `)
+  const ProgressElement = (pageName: string) => {
+    console.log(`${pageName} : ${loading[pageName]} ${progress[pageName]} `)
     return (
-    <div style={{width: "100%"}}>
-      <LinearProgress variant="determinate" value={progress[cnName] ?? 0} />
-    </div>
-  )};
+      <div style={{ width: "100%" }}>
+        <LinearProgress variant="determinate" value={progress[pageName] ?? 0} />
+      </div>
+    )
+  };
 
   return {
+    webEvents,
+    setWebEvents,
     getEventList,
-    getItemsFromPage,
+    getDataFromPage,
     error,
     loading,
     ProgressElement
@@ -252,6 +278,28 @@ export const usePrtsWiki = () => {
 };
 
 // Helper functions
+const findENTitle = ($: cheerio.CheerioAPI): string | null => {
+  let result: string | null = null;
+
+  const unescaped = $.html().replace(/\\/g, '');
+  const match = unescaped.match(/class=['"]fnameheader[^>]*>([^<]+)</);
+  const title = match ? match[1].trim() : null;
+  if (title && isMostlyEnglish(title)) {
+    result = title;
+  }
+  const afterDictionary = applyDictionary(result);
+  return (afterDictionary ? afterDictionary : result);
+};
+
+function unescapeHtml(escaped: string) {
+  return escaped.replace(/\\(.)/g, '$1');
+}
+const isMostlyEnglish = (text: string): boolean => {
+  const enLetters = text.match(/[A-Za-z]/g)?.length || 0;
+  const totalLetters = text.replace(/\s+/g, '').length;
+  return totalLetters > 0 && enLetters / totalLetters >= 0.5;
+};
+
 const parseListDivs = ($: cheerio.CheerioAPI, result: Record<string, number>) => {
   $('ul').each((_, ul) => {
     $(ul)
@@ -389,10 +437,10 @@ const parseShopInEvent = ($: cheerio.CheerioAPI, result: Record<string, number>)
             `^${escapeRegExp(item.cnName)}(?:\\s*[x×*]\\s*\\d+)?$`
           );
           return nameRegex.test(text)
-        }); 
+        });
         if (foundItem) {
           itemId = foundItem.id;
-          
+
           const multiplierMatch = text.match(/[x×*]\s*(\d+)$/);
           if (multiplierMatch) {
             multiplier = parseInt(multiplierMatch[1], 10);
@@ -465,7 +513,9 @@ const getAniEventsList = (data: Record<string, string>): WebEvent[] => {
     const title = data[eventKey];
     if (title) {
       events.push({
+        ...emptyWebEvent,
         date: new Date(currentDate),
+        pageName: title,
         title: `Anihilation #${i}: ${title}`,
         link: getUrl(title)
       });
@@ -487,4 +537,16 @@ const subtractWeeks = (date: Date, weeks: number): Date => {
   const result = new Date(date);
   result.setDate(result.getDate() - (weeks * 7));
   return result;
+}
+
+const applyDictionary = (title: string | null): string | false => {
+  let _title: string | false = false;
+  if (!title) return _title;
+
+  Object.entries(dictionary).forEach(([key, value]) => {
+    if (title.includes(key)) {
+      _title = title.replace(key, ` ${value} `).trim();
+    }
+  });
+  return _title;
 }
