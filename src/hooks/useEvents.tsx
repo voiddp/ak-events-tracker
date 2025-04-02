@@ -149,53 +149,51 @@ function useEvents(): [
         materialsToDepot: [string, number][],
         materialsToEvent: Record<string, number> | false,
         farms: string[],
-        newEventName: string | false,
+        replaceName: string | false,
     ) => {
         //case of mats to add to depot and delete event if needed
+        const _eventsData = { ...eventsData };
+
+        //handle tracker to depot && update/remove event
         if (materialsToDepot.length > 0) {
             putDepot(materialsToDepot);
             if (!materialsToEvent && farms.length === 0) {
                 delete eventsData[eventName];
+            } else if (materialsToEvent && _eventsData[eventName]) {
+                _eventsData[eventName].materials = materialsToEvent;
             }
-        };
-
-        const _eventsData = { ...eventsData };
-        let _event: Event;
-        let _name: string;
-        //event exist <- tracker. Just set mats
-        if (_eventsData[eventName]) {
-            _event = { ..._eventsData[eventName] };
-            _name = eventName;
-
-            if (materialsToEvent) {
-                _event.materials = materialsToEvent;
-            }
-
-        } else { //event by name doesnt exist <- find by index ?? new and add mats
+        } else {
+            //handle builder - find event by index        
+            //find by index and use, or build new
             const { name, eventData } = getEventByIndex(selectedEventIndex);
-            _event = { ...eventData };
-            _name = name ? name : eventName;
+            const _name = name ? name : eventName;
+            const _event = { ...eventData };
 
+            //replace mats or add mats
             if (materialsToEvent) {
-                _event.materials = addItemsToEvent(_event.materials, materialsToEvent);
+                if (!replaceName) {
+                    _event.materials = addItemsToEvent(_event.materials, materialsToEvent);
+                } else {
+                    _event.materials = materialsToEvent;
+                }
+            };
+            //add/delete farms
+            if (replaceName) {
+                if (farms.length > 0) {
+                    _event.farms = [...farms];
+                } else {
+                    delete _event.farms;
+                }
             }
-
-        };
-
-        //add/delete farms
-        if (farms.length > 0) {
-            _event.farms = [...farms];
-        } else {
-            delete _event.farms;
+            console.log("set event", _name, replaceName, _event);
+            //handle name change if new name is set.
+            if (!replaceName) {
+                _eventsData[_name] = _event;
+            } else {
+                _eventsData[replaceName] = _event;
+                delete _eventsData[_name];
+            };
         }
-        console.log("set event", _name, newEventName, _event);
-        //handle name change if new name is set.
-        if (newEventName === false) {
-            _eventsData[_name] = _event;
-        } else {
-            _eventsData[newEventName] = _event;
-            delete _eventsData[_name];
-        };
 
         const _reindexedData = reindexSortedEvents(
             Object.entries(_eventsData).sort(
@@ -263,55 +261,55 @@ function useEvents(): [
             
         };
      */
-/* 
-    const getEventSelector = useCallback(
-        (variant: "summary" | "builder", disabled: boolean): { selectedEvent: Event; SelectorComponent: React.JSX.Element } => {
-            const label = `Select ${variant === "summary" ? "future" : "modified"} Event`;
-            const { baseSize, numberCSS } = getItemBaseStyling(variant);
-            console.log(baseSize);
-            return {
-                selectedEvent,
-                SelectorComponent:
-                    (<FormControl sx={{ flexGrow: 1 }}>
-                        <InputLabel>{label}</InputLabel>
-                        <Select
-                            disabled={disabled}
-                            value={eventsList.length === 0 ? -1 : (selectedEvent?.index ?? -1)}
-                            onChange={(e) => onSelectorChange(Number(e.target.value), variant)}
-                            onOpen={() => {
-                                setSelectFinished(false)
-                            }}
-                            label={label}
-                            fullWidth
-                        >
-                            <MenuItem value={-1} key={-1} className="no-underline">{`${variant === "builder" ? "Add new" : "without"} Event`}</MenuItem>
-                            <Divider component="li" />
-                            {eventsList
-                                .map(([name, event]) => (
-                                    <MenuItem value={event.index} key={event.index} className="no-underline">
-                                        <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch">
-                                            {`${event.index}: ${name}`} {!isSelectFinished ? (
-                                                <Stack direction="row">
-                                                    {(event.farms ?? []).map((id) => [id, 0] as [string, number])
-                                                        .concat(Object.entries(event.materials)
-                                                            .sort(([itemIdA], [itemIdB]) => customItemsSort(itemIdA, itemIdB)))
-                                                        .slice(0, fullScreen ? 4 : 10)
-                                                        .map(([id, quantity], idx) => (
-                                                            <ItemBase key={`${id}${quantity === 0 && "-farm"}`} itemId={id} size={baseSize * 0.5}>
-                                                                <Typography {...numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
-                                                            </ItemBase>
-                                                        ))}
-                                                    {"..."}
-                                                </Stack>) : null}
-                                        </Stack>
-                                    </MenuItem>
-                                ))}
-                        </Select>
-                    </FormControl>)
-            };
-        },
-        [customItemsSort, eventsList, formatNumber, fullScreen, getItemBaseStyling, isSelectFinished, onSelectorChange, selectedEvent]
-    ); */
+    /* 
+        const getEventSelector = useCallback(
+            (variant: "summary" | "builder", disabled: boolean): { selectedEvent: Event; SelectorComponent: React.JSX.Element } => {
+                const label = `Select ${variant === "summary" ? "future" : "modified"} Event`;
+                const { baseSize, numberCSS } = getItemBaseStyling(variant);
+                console.log(baseSize);
+                return {
+                    selectedEvent,
+                    SelectorComponent:
+                        (<FormControl sx={{ flexGrow: 1 }}>
+                            <InputLabel>{label}</InputLabel>
+                            <Select
+                                disabled={disabled}
+                                value={eventsList.length === 0 ? -1 : (selectedEvent?.index ?? -1)}
+                                onChange={(e) => onSelectorChange(Number(e.target.value), variant)}
+                                onOpen={() => {
+                                    setSelectFinished(false)
+                                }}
+                                label={label}
+                                fullWidth
+                            >
+                                <MenuItem value={-1} key={-1} className="no-underline">{`${variant === "builder" ? "Add new" : "without"} Event`}</MenuItem>
+                                <Divider component="li" />
+                                {eventsList
+                                    .map(([name, event]) => (
+                                        <MenuItem value={event.index} key={event.index} className="no-underline">
+                                            <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch">
+                                                {`${event.index}: ${name}`} {!isSelectFinished ? (
+                                                    <Stack direction="row">
+                                                        {(event.farms ?? []).map((id) => [id, 0] as [string, number])
+                                                            .concat(Object.entries(event.materials)
+                                                                .sort(([itemIdA], [itemIdB]) => customItemsSort(itemIdA, itemIdB)))
+                                                            .slice(0, fullScreen ? 4 : 10)
+                                                            .map(([id, quantity], idx) => (
+                                                                <ItemBase key={`${id}${quantity === 0 && "-farm"}`} itemId={id} size={baseSize * 0.5}>
+                                                                    <Typography {...numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
+                                                                </ItemBase>
+                                                            ))}
+                                                        {"..."}
+                                                    </Stack>) : null}
+                                            </Stack>
+                                        </MenuItem>
+                                    ))}
+                            </Select>
+                        </FormControl>)
+                };
+            },
+            [customItemsSort, eventsList, formatNumber, fullScreen, getItemBaseStyling, isSelectFinished, onSelectorChange, selectedEvent]
+        ); */
 
     return [_eventsData, setEvents, submitEvent]
 

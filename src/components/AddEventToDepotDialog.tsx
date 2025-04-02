@@ -1,8 +1,9 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField } from "@mui/material";
+import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Stack, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import ItemBase from "./ItemBase";
 import { Event, EventsData, emptyEvent } from "@/types/events";
 import EventsSelector from "./EventsSelector";
+import { formatNumber } from "../hooks/ItemUtils"
 
 type NamedEvent = Event & {
     name: string;
@@ -33,6 +34,8 @@ const AddEventToDepotDialog = (props: Props) => {
     const [rawFarms, setRawFarms] = useState<string[]>([]);
     const [rawName, setRawName] = useState<string>('');
     const [isNumbersMatch, setisNumbersMatch] = useState<boolean>(true);
+    const [replace, setReplace] = useState(false);
+    const [focused, setFocused] = useState<string | false>(false);
 
     useEffect(() => {
         if (!open) return;
@@ -41,6 +44,15 @@ const AddEventToDepotDialog = (props: Props) => {
         setRawName(handledEvent.name ?? "")
         setisNumbersMatch(true);
     }, [open, handledEvent]);
+
+    useEffect(() => {
+        if (!open) return;
+        if (selectedEvent && selectedEvent.index != -1)
+            setReplace(true);
+        else 
+            setReplace(false);
+    }, [open, selectedEvent]
+    )
 
     const handleInputChange = (id: string, value: number) => {
         setRawMaterials((prev) => {
@@ -62,7 +74,7 @@ const AddEventToDepotDialog = (props: Props) => {
     };
 
     const handleSubmit = () => {
-        const _newName = isNameChanged ? rawName : false;
+        const _newName = replace ? rawName : false;
 
         const materialsToDepot = variant === "builder"
             ? []
@@ -85,20 +97,19 @@ const AddEventToDepotDialog = (props: Props) => {
     };
 
     const isSubmitDisabled = Object.values(rawMaterials).every((value) => value === 0);
-    const isNameChanged = rawName != handledEvent.name && rawName != '';
 
     const getTitle = (
         variant: "tracker" | "builder",
         selectedEvent: NamedEvent | undefined,
-        isNameChanged: boolean,
+        replace: boolean,
         isNumbersMatch: boolean,
         rawFarms: string[]
     ): string => {
         if (variant === "builder") {
-            const baseTitle = (selectedEvent?.index ?? -1) === -1
-                ? "New/Update event in Tracker"
-                : "Add to Event in Tracker";
-            const optional = isNameChanged ? "rename & replace" : null;
+            const baseTitle = "Event in Tracker";
+            const optional = (selectedEvent?.index ?? -1) === -1
+            ? "add/update"
+            : replace ? "replace" : "add to";
             return [baseTitle, optional].filter(Boolean).join(" (") + (optional ? ")" : "");
         }
 
@@ -111,23 +122,33 @@ const AddEventToDepotDialog = (props: Props) => {
         return ""; // Fallback in case of unexpected variant
     };
 
-    const handleSelectorChange = (namedEvent: any) =>{
-
-    }
-
     return (
         <Dialog open={open} onClose={handleDialogClose}>
             <DialogTitle>
-                <Stack direction="column">
-                    {getTitle(variant, selectedEvent, isNameChanged, isNumbersMatch, rawFarms)}
-                    <TextField
-                        value={rawName}
-                        disabled={(variant != "builder")}
-                        onChange={(e) => setRawName(e.target.value)}
-                        onFocus={(e) => e.target.select()}
-                        size="small"
-                        type="text"
-                    />
+                <Stack direction="column" width="100%">
+                    {getTitle(variant, selectedEvent, replace, isNumbersMatch, rawFarms)}
+                    <Stack direction="row" alignItems="stretch">
+                        <TextField
+                            value={rawName}
+                            disabled={(variant != "builder")}
+                            onChange={(e) => {
+                                setRawName(e.target.value);
+                                if (rawName != handledEvent.name && rawName != '') {
+                                    setReplace(true);
+                                } else {
+                                    setReplace(false);
+                                }
+                            }}
+                            onFocus={(e) => e.target.select()}
+                            size="small"
+                            fullWidth
+                            type="text"
+                        />
+                        <Checkbox
+                            disabled={selectedEvent?.index === -1 || variant != "builder"}
+                            checked={replace}
+                            onChange={() => setReplace(!replace)} />
+                    </Stack>
                 </Stack>
             </DialogTitle>
             <DialogContent sx={{
@@ -141,10 +162,15 @@ const AddEventToDepotDialog = (props: Props) => {
                             <Stack key={id} direction="row">
                                 <ItemBase key={`${id}-item`} itemId={id} size={40 * 0.7} sx={{ zIndex: 2 }} />
                                 <TextField
-                                    value={quantity != 0 ? quantity : ""}
+                                    value={quantity != 0
+                                        ? (focused != id ? formatNumber(quantity) : quantity)
+                                        : ""}
                                     key={`${id}-input`}
                                     onChange={(e) => handleInputChange(id, Number(e.target.value))}
-                                    onFocus={(e) => e.target.select()}
+                                    onFocus={(e) => {
+                                        e.target.select()
+                                        setFocused(id);
+                                    }}
                                     size="small"
                                     sx={{ ml: -2.5, zIndex: 1 }}
                                     type="number"
@@ -153,7 +179,7 @@ const AddEventToDepotDialog = (props: Props) => {
                                             type: "text",
                                             sx: {
                                                 textAlign: "right",
-                                                width: "3.5ch",
+                                                width: (quantity > 100000 ? "7ch" :"3.5ch"),
                                                 flexGrow: 1,
                                                 color: "primary",
                                                 fontWeight: "bolder",
@@ -167,13 +193,13 @@ const AddEventToDepotDialog = (props: Props) => {
                 )}
             </DialogContent>
             <DialogActions sx={{ gap: 1 }}>
-                {(variant === "builder") 
-                && <EventsSelector
-                     variant='builder'
-                     eventsData={eventsData}
-                     selectedEvent={selectedEvent ?? emptyEvent}
-                     onChange={onSelectorChange}
-                />
+                {(variant === "builder")
+                    && <EventsSelector
+                        variant='builder'
+                        eventsData={eventsData}
+                        selectedEvent={selectedEvent ?? emptyEvent}
+                        onChange={onSelectorChange}
+                    />
                 }
                 <Button disabled={isSubmitDisabled} onClick={handleSubmit} variant="contained">
                     Submit

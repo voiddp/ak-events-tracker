@@ -541,7 +541,7 @@ const subtractWeeks = (date: Date, weeks: number): Date => {
 
 const applyDictionary = (title: string | null): string | false => {
   let _title: string | false = false;
-  if (!title) return _title;
+  if (!title?.trim()) return _title;
 
   Object.entries(dictionary).forEach(([key, value]) => {
     if (title.includes(key)) {

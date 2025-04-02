@@ -76,8 +76,10 @@ const ScraperDialog = React.memo((props: Props) => {
       setRawWebEvents((prev) => {
         const _next = { ...prev };
         const _webEvent = { ..._next[pageName] };
-        _webEvent.title = (title ?? ""),
-          _webEvent.materials = items;
+        _webEvent.materials = items;
+        if (title) {
+          _webEvent.title = title;
+        }         
         if (farms && farms.length > 0) {
           _webEvent.farms = farms;
         }
