@@ -21,7 +21,7 @@ export default function Home() {
 
   const [eventsData, setEvents, submitEvent] = useEvents();
   ///
-  const handleAddItemsToDepot = (items: [string, number][]) => {console.log("putDepot simulation: ",items)};
+  const handleAddItemsToDepot = (items: [string, number][]) => {/* console.log("putDepot simulation: ",items) */};
   
   return (
     //<Box flex={1} overflow="auto"/* sx={{pt: 1, pb: 0, minHeight: "80vh", gridTemplateRows: "1fr", gap: 1}} */>

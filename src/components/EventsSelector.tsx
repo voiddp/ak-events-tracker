@@ -60,7 +60,7 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
         <Select
             disabled={disabled}
             value={eventsList.length === 0 ? -1 : (selectedEvent?.index ?? -1)}
-            onChange={(e) => handleChange(Number(e.target.value) || -1)}
+            onChange={(e) => handleChange(Number(e.target.value))}
             onOpen={() => {
                 setIsSelectFinished(false)
             }}

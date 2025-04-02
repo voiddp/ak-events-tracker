@@ -90,7 +90,7 @@ export const usePrtsWiki = () => {
       const $ = cheerio.load(html);
 
       const eventsResult: WebEventsData = webEvents ?? {};
-      console.log("start with", {...eventsResult});
+      /* console.log("start with", {...eventsResult}); */
 
       $('tr').each((_, element) => {
         if ($(element).find('td').css('display') === 'none') return true;
@@ -258,7 +258,7 @@ export const usePrtsWiki = () => {
 
   // Loading component to be used by consumers
   const ProgressElement = (pageName: string) => {
-    console.log(`${pageName} : ${loading[pageName]} ${progress[pageName]} `)
+    /* console.log(`${pageName} : ${loading[pageName]} ${progress[pageName]} `) */
     return (
       <div style={{ width: "100%" }}>
         <LinearProgress variant="determinate" value={progress[pageName] ?? 0} />
