@@ -34,7 +34,7 @@ class AxiosServer {
 
   public async fetchData<T>(url: string, sessionId: string): Promise<T> {
     const userAgent = {
-      headers: { 'User-Agent': `AKEventsTracker (in-built ${RATE_LIMIT_MS / 1000}s delay, voiddp@gmail.com)` }
+      headers: { 'User-Agent': `AKEventsTracker (in-built ${RATE_LIMIT_MS / 1000}s delay)` }
     };
 
     try {
@@ -47,7 +47,7 @@ class AxiosServer {
           .lIndex(QUEUE_KEY, 0)
           .lLen(QUEUE_KEY)
           .exec();
-        console.log(`[${new Date().toISOString()}] [${sessionId}] First in query? ${firstInQueue === sessionId}`);
+        /* console.log(`[${new Date().toISOString()}] [${sessionId}] First in query? ${firstInQueue === sessionId}`); */
         if (firstInQueue === sessionId) {
           break;
         }
@@ -78,7 +78,7 @@ class AxiosServer {
       throw error;
     } finally {
       // Cleanup queue
-      console.log(`[${new Date().toISOString()}] [${sessionId}] remove from query...`);
+      /* console.log(`[${new Date().toISOString()}] [${sessionId}] remove from query...`); */
       await redis.lRem(QUEUE_KEY, 0, sessionId);
     }
   }

@@ -37,7 +37,7 @@ function useEvents(): [
     );
 
     const setEvents = useCallback((newEventsData: EventsData) => {
-        console.log("puting events into storage", newEventsData);
+        /* console.log("puting events into storage", newEventsData); */
         _setEvents(newEventsData);
 
         //If setEvent happened, and old storage exists, remove old storage
@@ -185,7 +185,7 @@ function useEvents(): [
                     delete _event.farms;
                 }
             }
-            console.log("set event", _name, replaceName, _event);
+            /* console.log("set event", _name, replaceName, _event); */
             //handle name change if new name is set.
             if (!replaceName) {
                 _eventsData[_name] = _event;

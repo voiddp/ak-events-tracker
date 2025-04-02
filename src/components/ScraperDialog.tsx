@@ -69,10 +69,10 @@ const ScraperDialog = React.memo((props: Props) => {
     try {
       const result = await getDataFromPage(pageName, link);
       if (!result) return;
-      console.log(result);
+      /* console.log(result); */
 
       const { title, items, farms } = result;
-      console.log(title, items);
+      /* console.log(title, items); */
       setRawWebEvents((prev) => {
         const _next = { ...prev };
         const _webEvent = { ..._next[pageName] };
@@ -111,7 +111,7 @@ const ScraperDialog = React.memo((props: Props) => {
   }), [itemBaseSize]);
 
   const handleSelectorChange = (event: NamedEvent) => {
-    console.log(event);
+    /* console.log(event); */
     setSelectedEvent(event);
   };
 

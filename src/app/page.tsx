@@ -38,11 +38,11 @@ export default function Home() {
               setEventsOpen(true);
               setTrackerOpen(false)
             }}>
-            scrap events list</Button>
-          <Button variant="contained"
+            Search CN events</Button>
+          {/* <Button variant="contained"
           color="primary" onClick={() => {
             setEventsKroosterOpen(true);
-          }}>Dialog component for Krooster</Button>
+          }}>Krooster Component</Button> */}
 
         </EventsTracker>
         <EventsTrackerDialog

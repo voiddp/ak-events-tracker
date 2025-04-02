@@ -91,7 +91,7 @@ const AddEventToDepotDialog = (props: Props) => {
             Object.fromEntries(
                 Object.entries(rawMaterials ?? {})
                     .filter(([_, quantity]) => quantity > 0));
-        console.log(handledEvent.name, selectedEvent?.index ?? -1, materialsToDepot, materialsToEvent, rawFarms, _newName);
+        /* console.log(handledEvent.name, selectedEvent?.index ?? -1, materialsToDepot, materialsToEvent, rawFarms, _newName); */
         onSubmit(handledEvent.name, selectedEvent?.index ?? -1, materialsToDepot, materialsToEvent, rawFarms, _newName);
         handleDialogClose();
     };
