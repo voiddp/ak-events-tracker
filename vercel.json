@@ -1,11 +1,21 @@
 {
-    "checks": {
-      "timeout": 1800,
-      "maxRetries": 3,
-      "interval": 300
-    },
-    "github": {
-      "silent": true,
-      "autoAlias": false
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
     }
-  }
+  ],
+  "github": {
+    "silent": true,
+    "autoAlias": false
+  },
+  "routes": [
+    {
+      "handle": "error",
+      "src": "/.*",
+      "status": 404,
+      "dest": "/404.html"
+    }
+  ]
+}
