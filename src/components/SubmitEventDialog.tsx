@@ -1,9 +1,9 @@
 import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Stack, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import ItemBase from "./ItemBase";
-import { Event, EventsData, emptyEvent } from "@/types/events";
+import { Event, EventsData, emptyEvent, SubmitEventProps } from "@/types/events";
 import EventsSelector from "./EventsSelector";
-import { formatNumber } from "../hooks/ItemUtils"
+import { formatNumber, getWidthFromValue, standardItemsSort } from "../utils/ItemUtils"
+import ItemEditBox from "./ItemEditBox";
 
 type NamedEvent = Event & {
     name: string;
@@ -13,21 +13,14 @@ interface Props {
     open: boolean;
     onClose: () => void;
     variant: "tracker" | "builder";
-    onSubmit: (
-        eventName: string,
-        selectedEventIndex: number,
-        materialsToDepot: [string, number][],
-        materialsToEvent: Record<string, number> | false,
-        farms: string[],
-        newEventName: string | false,
-    ) => void;
+    onSubmit: (submit: SubmitEventProps) => void;
     eventsData: EventsData;
     handledEvent: NamedEvent;
     selectedEvent?: NamedEvent;
     onSelectorChange?: (namedEvent: NamedEvent) => void
 }
 
-const AddEventToDepotDialog = (props: Props) => {
+const SubmitEventDialog = (props: Props) => {
     const { open, onClose, variant, onSubmit, eventsData, handledEvent, selectedEvent, onSelectorChange } = props;
 
     const [rawMaterials, setRawMaterials] = useState<Record<string, number>>({});
@@ -43,13 +36,14 @@ const AddEventToDepotDialog = (props: Props) => {
         setRawFarms(handledEvent?.farms ?? []);
         setRawName(handledEvent.name ?? "")
         setisNumbersMatch(true);
+        setFocused(false);
     }, [open, handledEvent]);
 
     useEffect(() => {
         if (!open) return;
         if (selectedEvent && selectedEvent.index != -1)
             setReplace(true);
-        else 
+        else
             setReplace(false);
     }, [open, selectedEvent]
     )
@@ -92,7 +86,13 @@ const AddEventToDepotDialog = (props: Props) => {
                 Object.entries(rawMaterials ?? {})
                     .filter(([_, quantity]) => quantity > 0));
         /* console.log(handledEvent.name, selectedEvent?.index ?? -1, materialsToDepot, materialsToEvent, rawFarms, _newName); */
-        onSubmit(handledEvent.name, selectedEvent?.index ?? -1, materialsToDepot, materialsToEvent, rawFarms, _newName);
+        onSubmit({
+            eventName: handledEvent.name, 
+            selectedEventIndex: selectedEvent?.index ?? -1, 
+            materialsToDepot, 
+            materialsToEvent, 
+            farms: rawFarms, 
+            replaceName:_newName});
         handleDialogClose();
     };
 
@@ -108,8 +108,8 @@ const AddEventToDepotDialog = (props: Props) => {
         if (variant === "builder") {
             const baseTitle = "Event in Tracker";
             const optional = (selectedEvent?.index ?? -1) === -1
-            ? "add/update"
-            : replace ? "replace" : "add to";
+                ? "add/update"
+                : replace ? "replace" : "add to";
             return [baseTitle, optional].filter(Boolean).join(" (") + (optional ? ")" : "");
         }
 
@@ -157,39 +157,25 @@ const AddEventToDepotDialog = (props: Props) => {
                 flexWrap: "wrap"
             }}>
                 {Object.keys(rawMaterials).length > 0 && (
-                    <>
-                        {Object.entries(rawMaterials).map(([id, quantity]) => (
-                            <Stack key={id} direction="row">
-                                <ItemBase key={`${id}-item`} itemId={id} size={40 * 0.7} sx={{ zIndex: 2 }} />
-                                <TextField
-                                    value={quantity != 0
-                                        ? (focused != id ? formatNumber(quantity) : quantity)
-                                        : ""}
-                                    key={`${id}-input`}
-                                    onChange={(e) => handleInputChange(id, Number(e.target.value))}
-                                    onFocus={(e) => {
-                                        e.target.select()
-                                        setFocused(id);
-                                    }}
-                                    size="small"
-                                    sx={{ ml: -2.5, zIndex: 1 }}
-                                    type="number"
-                                    slotProps={{
-                                        htmlInput: {
-                                            type: "text",
-                                            sx: {
-                                                textAlign: "right",
-                                                width: (quantity > 100000 ? "7ch" :"3.5ch"),
-                                                flexGrow: 1,
-                                                color: "primary",
-                                                fontWeight: "bolder",
-                                            },
-                                        },
-                                    }}
-                                />
-                            </Stack>
+                    <Stack direction="row" gap={0.7} flexWrap="wrap">
+                        {Object.entries(rawMaterials)
+                        .sort(([a],[b]) => standardItemsSort(a,b))
+                        .map(([id, quantity]) => (
+                            <ItemEditBox
+                                key={`${id}-itemEdit`}
+                                itemId={id}
+                                value={quantity !== 0 ? (focused !== id ? formatNumber(quantity) : quantity) : ""}
+                                width={getWidthFromValue(quantity !== 0 ? (focused !== id ? formatNumber(quantity) : quantity) : "")}
+                                onFocus={() => {
+                                    setFocused(id);
+                                }}
+                                onChange={(value) => handleInputChange(id, value)}
+                                onIconClick={(id) => {
+                                    setFocused(id)
+                                }}
+                            />
                         ))}
-                    </>
+                    </Stack>
                 )}
             </DialogContent>
             <DialogActions sx={{ gap: 1 }}>
@@ -210,4 +196,4 @@ const AddEventToDepotDialog = (props: Props) => {
     );
 };
 
-export default AddEventToDepotDialog;
+export default SubmitEventDialog;

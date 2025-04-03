@@ -40,13 +40,14 @@ import ImportExportIcon from '@mui/icons-material/ImportExport';
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Close } from "@mui/icons-material";
+import { SubmitEventProps, emptyNamedEvent, reindexEvents, } from '../types/events';
 interface DataShareInfo {
     format: string;
     description: string;
 }
 import { debounce } from 'lodash';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
-import AddEventToDepotDialog from './AddEventToDepotDialog';
+import AddEventToDepotDialog from './SubmitEventDialog';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 
 const Transition = React.forwardRef(function Transition(
@@ -64,11 +65,11 @@ interface Props {
     eventsData: EventsData;
     onChange: (data: EventsData) => void;
     openSummary: (state: boolean) => void;
-    putDepot: (items: [string, number][]) => void;
+    submitEvent: (submit: SubmitEventProps) => void;
 }
 
 const EventsTrackerDialog = React.memo((props: Props) => {
-    const { open, onClose, eventsData, onChange, openSummary, putDepot } = props;
+    const { open, onClose, eventsData, onChange, openSummary, submitEvent } = props;
 
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -332,30 +333,23 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     }, []
     );
 
-    const handleEventChange = useCallback(
-        (eventName: string,
-            selectedIndex: number,
-            addMaterials: [string, number][],
-            leftMaterials: Record<string, number> | false,
-            farms: string[],
-            newEventName: string | boolean,
-        ) => {
-
-            /*  if (addMaterials.length != 0) putDepot(addMaterials); */
-            if (handledEvent.name != null) {
-                if (!leftMaterials) {
-                    handleDeleteEvent(handledEvent.name);
-                } else {
-                    setRawEvents((prev) => {
-                        const _next = { ...prev };
-                        _next[handledEvent.name].materials = leftMaterials;
-                        return _next;
-                    });
-                }
+    const handleSubmitEvent = useCallback((props: SubmitEventProps) => {
+        if (handledEvent.name != null) {
+            const { materialsToEvent } = props;
+            if (!materialsToEvent) {
+                handleDeleteEvent(handledEvent.name);
+            } else {
+                setRawEvents((prev) => {
+                    const _next = { ...prev };
+                    _next[handledEvent.name].materials = materialsToEvent;
+                    return _next;
+                });
             }
-            setHandledEvent({ index: -1, name: "", materials: {}, farms: [] });
+        }
+        setHandledEvent({ ...emptyNamedEvent, farms: [] });
+        submitEvent(props);
 
-        }, [handleDeleteEvent, setRawEvents, setHandledEvent, handledEvent.name]);
+    }, [submitEvent, handleDeleteEvent, setRawEvents, setHandledEvent, handledEvent.name]);
 
 
     const formatNumber = (num: number) => {
@@ -889,7 +883,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
             <AddEventToDepotDialog
                 open={addEventToDepotDialogOpen}
                 onClose={() => setAddEventToDepotDialogOpen(false)}
-                onSubmit={handleEventChange}
+                onSubmit={handleSubmitEvent}
                 variant="tracker"
                 handledEvent={handledEvent}
                 eventsData={eventsData}

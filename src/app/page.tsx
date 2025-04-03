@@ -7,8 +7,8 @@ import { useCallback, useState } from "react";
 import ScraperDialog from "../components/ScraperDialog";
 import EventsTracker from "@/components/EventsTrackerMain";
 import EventsTrackerDialog from "@/components/EventsTrackerDialog";
-import useSettings from "../hooks/useSettings";
-import useEvents from "../hooks/useEvents";
+import useSettings from "../utils/hooks/useSettings";
+import useEvents from "../utils/hooks/useEvents";
 
 export default function Home() {
 
@@ -32,6 +32,7 @@ export default function Home() {
           onClose={() => setTrackerOpen(false)}
           eventsData={eventsData}
           onChange={setEvents}
+          submitEvent={submitEvent}
         >
           <Button variant="contained"
             color="primary" onClick={() => {
@@ -39,10 +40,10 @@ export default function Home() {
               setTrackerOpen(false)
             }}>
             Search CN events</Button>
-          {/* <Button variant="contained"
+          <Button variant="contained"
           color="primary" onClick={() => {
             setEventsKroosterOpen(true);
-          }}>Krooster Component</Button> */}
+          }}>Krooster Component Check...</Button>
 
         </EventsTracker>
         <EventsTrackerDialog
@@ -53,7 +54,7 @@ export default function Home() {
           setEventsKroosterOpen(false);
         }}
         openSummary={setSummaryOpen}
-        putDepot={handleAddItemsToDepot}
+        submitEvent={submitEvent}
         />
         <ScraperDialog
           open={eventsOpen}

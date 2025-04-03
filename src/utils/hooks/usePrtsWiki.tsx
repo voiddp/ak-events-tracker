@@ -1,8 +1,8 @@
 'use client'
 import { useCallback, useState } from 'react';
 import * as cheerio from 'cheerio';
-import itemsJson from '../data/items.json';
-import { fetchHtml, fetchJson } from '../lib/axiosServer';
+import itemsJson from '../../data/items.json';
+import { fetchHtml, fetchJson } from '../../lib/axiosServer';
 import { LinearProgress } from '@mui/material';
 import { randomBytes } from 'crypto';
 import _ from 'lodash';

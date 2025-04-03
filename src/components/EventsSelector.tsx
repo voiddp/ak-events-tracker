@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import ItemBase from "./ItemBase";
 import { Event, NamedEvent, EventsData, emptyEvent } from "../types/events"
-import { getItemBaseStyling, customItemsSort, formatNumber } from "../hooks/ItemUtils";
+import { getItemBaseStyling, customItemsSort, formatNumber } from "../utils/ItemUtils";
 
 interface EventsSelectorProps {
     variant: 'summary' | 'builder';

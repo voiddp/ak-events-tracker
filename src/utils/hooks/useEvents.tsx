@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import useSettings from './useSettings'
-import { Event, EventsData } from "../types/events";
+import { Event, EventsData, SubmitEventProps, reindexEvents } from "../../types/events";
 import { Divider, FormControl, InputLabel, MenuItem, Select, Stack, Typography, useMediaQuery, useTheme } from "@mui/material";
 import ItemBase from "@/components/ItemBase";
-import { isTier3Material, getItemBaseStyling, customItemsSort, formatNumber } from "./ItemUtils";
+import { isTier3Material, getItemBaseStyling, customItemsSort, formatNumber } from "../ItemUtils";
 import useLocalStorage from "./useLocalStorage";
 
 export type eventSelectorProps = {
@@ -14,14 +14,7 @@ export type eventSelectorProps = {
 function useEvents(): [
     EventsData,
     (newEventsData: EventsData) => void,
-    (
-        eventName: string,
-        selectedEventIndex: number,
-        materialsToDepot: [string, number][],
-        materialsToEvent: Record<string, number> | false,
-        farms: string[],
-        newEventName: string | false,
-    ) => void,
+    (submit: SubmitEventProps) => void,
     /* (variant: "summary" | "builder", disabled: boolean) => { selectedEvent: Event; SelectorComponent: React.JSX.Element } ,*/
 ] {
     const [eventsData, _setEvents] = useLocalStorage<EventsData>("eventsTracker", {});
@@ -143,14 +136,8 @@ function useEvents(): [
         return _items;
     };
 
-    const submitEvent = useCallback((
-        eventName: string,
-        selectedEventIndex: number,
-        materialsToDepot: [string, number][],
-        materialsToEvent: Record<string, number> | false,
-        farms: string[],
-        replaceName: string | false,
-    ) => {
+    const submitEvent = useCallback((props: SubmitEventProps) => {
+        const { eventName, selectedEventIndex, materialsToDepot, materialsToEvent, farms, replaceName } = props;
         //case of mats to add to depot and delete event if needed
         const _eventsData = { ...eventsData };
 
@@ -195,33 +182,13 @@ function useEvents(): [
             };
         }
 
-        const _reindexedData = reindexSortedEvents(
-            Object.entries(_eventsData).sort(
-                ([, a], [, b]) => a.index - b.index
-            )
-        );
+        _setEvents(reindexEvents(_eventsData));
 
-        _setEvents(_reindexedData);
     }, [eventsData, _setEvents, getEventByIndex]);
 
     const putDepot = (update: [string, number][]) => {
 
     };
-
-    const reindexSortedEvents = (eventsArray: [string, Event][]) => {
-
-        return eventsArray.reduce((acc, [name, data], idx) => {
-            if (data.farms) {
-                if (data.farms.length === 0) {
-                    delete data.farms;
-                } else if (data.farms.length > 3) {
-                    data.farms.splice(3);
-                }
-            }
-            acc[name] = { ...data, index: idx };
-            return acc;
-        }, {} as EventsData);
-    }
 
     const onSelectorChange = useCallback((index: number, variant: string) => {
         setSelectFinished(true);

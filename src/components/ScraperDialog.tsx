@@ -1,27 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, Accordion, AccordionSummary, AccordionDetails, Button, Typography, Box, DialogActions, Stack, IconButton, TextField, Link, Tooltip } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { WebEventsData, Event, EventsData, NamedEvent, WebEvent } from '../types/events'
-import { usePrtsWiki } from '../hooks/usePrtsWiki';
+import { WebEventsData, Event, EventsData, NamedEvent, WebEvent, SubmitEventProps } from '../types/events'
+import { usePrtsWiki } from '../utils/hooks/usePrtsWiki';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import ItemBase from '@/components/ItemBase';
 import itemsJson from '../data/items.json';
-import AddEventToDepotDialog from '@/components/AddEventToDepotDialog';
+import AddEventToDepotDialog from '@/components/SubmitEventDialog';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
-import { eventSelectorProps } from '@/hooks/useEvents';
+import {getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isTier3Material } from '@/utils/ItemUtils'
+
 
 interface Props {
   open: boolean;
   onClose: () => void;
   eventsData: EventsData;
-  submitEvent: (
-    eventName: string,
-    selectedEventIndex: number,
-    materialsToDepot: [string, number][],
-    materialsToEvent: Record<string, number> | false,
-    farms: string[],
-    newEventName: string | false,
-  ) => void;
+  submitEvent: (submit: SubmitEventProps) => void;
 }
 
 const ScraperDialog = React.memo((props: Props) => {
@@ -29,7 +23,6 @@ const ScraperDialog = React.memo((props: Props) => {
   const { webEvents, setWebEvents, error, loading, getEventList, getDataFromPage, ProgressElement } = usePrtsWiki();
 
   const [rawWebEvents, setRawWebEvents] = useState<WebEventsData>({});
-  const [hasFetched, setHasFetched] = useState(false);
   const [monthsAgo, setMonthsAGo] = useState(6);
 
   const [addEventToDepotDialogOpen, setAddEventToDepotDialogOpen] = useState<boolean>(false);
@@ -59,7 +52,6 @@ const ScraperDialog = React.memo((props: Props) => {
       if (!data) return;
 
       setRawWebEvents(data);
-      setHasFetched(true);
     } catch (err) {
       console.error('Failed to load events:', err);
     }
@@ -90,25 +82,6 @@ const ScraperDialog = React.memo((props: Props) => {
       console.error('Failed to load materials:', err);
     }
   }
-
-  const itemBaseSize = useMemo(() => (40 * 0.7), []);
-
-  const numberCSS = useMemo(() => ({
-    component: "span",
-    sx: {
-      display: "inline-block",
-      py: 0.25,
-      px: 0.5,
-      lineHeight: 1,
-      mr: `${itemBaseSize / 16}px`,
-      mb: `${itemBaseSize / 16}px`,
-      alignSelf: "end",
-      justifySelf: "end",
-      backgroundColor: "background.paper",
-      zIndex: 1,
-      fontSize: `${itemBaseSize / 24 + 8}px`,
-    },
-  }), [itemBaseSize]);
 
   const handleSelectorChange = (event: NamedEvent) => {
     /* console.log(event); */
@@ -193,7 +166,7 @@ const ScraperDialog = React.memo((props: Props) => {
                           {rawWebEvents[item.pageName].farms && (
                             <Box>
                               Tier 3 Farms: {(rawWebEvents[item.pageName].farms ?? []).map((id) => (
-                                <ItemBase key={`${id}-farms`} itemId={id} size={itemBaseSize} />
+                                <ItemBase key={`${id}-farms`} itemId={id} size={getItemBaseStyling('builder').baseSize} />
                               ))}
                             </Box>
                           )}
@@ -202,8 +175,8 @@ const ScraperDialog = React.memo((props: Props) => {
                               {Object.entries(rawWebEvents[item.pageName].materials)
                                 .sort(([idA], [idB]) => itemsJson[idA as keyof typeof itemsJson].sortId - itemsJson[idB as keyof typeof itemsJson].sortId)
                                 .map(([id, quantity], idx) => (
-                                  <ItemBase key={`${id}`} itemId={id} size={itemBaseSize}>
-                                    <Typography {...numberCSS}>{quantity}</Typography>
+                                  <ItemBase key={`${id}`} itemId={id} size={getItemBaseStyling('builder').baseSize}>
+                                    <Typography {...getItemBaseStyling('builder').numberCSS}>{quantity}</Typography>
                                   </ItemBase>
                                 ))}
                             </>

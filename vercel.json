@@ -1,0 +1,11 @@
+{
+    "checks": {
+      "timeout": 1800,
+      "maxRetries": 3,
+      "interval": 300
+    },
+    "github": {
+      "silent": true,
+      "autoAlias": false
+    }
+  }

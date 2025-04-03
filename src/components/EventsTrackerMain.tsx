@@ -42,8 +42,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { Close } from "@mui/icons-material";
 import { debounce } from 'lodash';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
-import AddEventToDepotDialog from './AddEventToDepotDialog';
+import SubmitEventDialog from './SubmitEventDialog';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import {getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isTier3Material } from '@/utils/ItemUtils'
+import { SubmitEventProps, emptyNamedEvent, reindexEvents, } from '../types/events';
+import ItemEditBox from './ItemEditBox';
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
@@ -59,11 +62,12 @@ interface Props {
     onClose: () => void;
     eventsData: EventsData;
     onChange: (data: EventsData) => void;
+    submitEvent: (submit: SubmitEventProps) => void,
     children?: React.ReactNode;
 }
 
 const EventsTrackerMain = React.memo((props: Props) => {
-    const { open, onClose, eventsData, onChange, children } = props;
+    const { open, onClose, eventsData, onChange, submitEvent, children } = props;
 
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -175,8 +179,6 @@ const EventsTrackerMain = React.memo((props: Props) => {
 
 
     //debounces handling
-
-
     //base function to debounce
     const handleEventNamesChange = () => {
 
@@ -244,10 +246,6 @@ const EventsTrackerMain = React.memo((props: Props) => {
         });
     };
 
-    const isTier3Material = (id: string) => {
-        return (Number(id) > 30000 && Number(id) < 32000 && itemsJson[id as keyof typeof itemsJson].tier === 3)
-    }
-
     const handleIconClick = useCallback((eventName: string, id: string) => {
 
         if (!isTier3Material(id)) return;
@@ -275,39 +273,6 @@ const EventsTrackerMain = React.memo((props: Props) => {
     }, []
     );
 
-    const itemBaseSize = useMemo(() => (40 * 0.7), []);
-
-    const numberCSS = useMemo(() => ({
-        component: "span",
-        sx: {
-            display: "inline-block",
-            py: 0.25,
-            px: 0.5,
-            lineHeight: 1,
-            mr: `${itemBaseSize / 16}px`,
-            mb: `${itemBaseSize / 16}px`,
-            alignSelf: "end",
-            justifySelf: "end",
-            backgroundColor: "background.paper",
-            zIndex: 1,
-            fontSize: `${itemBaseSize / 24 + 8}px`,
-        },
-    }), [itemBaseSize]);
-
-    const reindexSortedEvents = (eventsArray: [string, Event][]) => {
-        return eventsArray.reduce((acc, [name, data], idx) => {
-            if (data.farms) {
-                if (data.farms.length === 0) {
-                    delete data.farms;
-                } else if (data.farms.length > 3) {
-                    data.farms.splice(3);
-                }
-            }
-            acc[name] = { ...data, index: idx };
-            return acc;
-        }, {} as EventsData);
-    }
-
     const handleDragEnd = useCallback((result: DropResult) => {
         const { source, destination } = result;
         if (!destination) return;
@@ -319,9 +284,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
         const [movedElement] = events.splice(source.index, 1);
         events.splice(destination.index, 0, movedElement);
 
-        const reindexedData = reindexSortedEvents(events);
-
-        setRawEvents(reindexedData);
+        setRawEvents(reindexEvents(events));
     }, [rawEvents]
     );
 
@@ -344,43 +307,26 @@ const EventsTrackerMain = React.memo((props: Props) => {
         setRawEvents((prev) => {
             const _next = { ...prev };
             delete _next[name];
-            return reindexSortedEvents(
-                Object.entries(_next).sort(([, a], [, b]) => a.index - b.index))
+            return reindexEvents(_next)
         });
     }, []
     );
 
-    const handleEventChange = useCallback(
-        (eventName: string,
-            selectedIndex: number,
-            addMaterials: [string, number][],
-            leftMaterials: Record<string, number> | false,
-            farms: string[],
-            newEventName: string | boolean,
-        ) => {
-
-            /*  if (addMaterials.length != 0) putDepot(addMaterials); */
-
-            if (!leftMaterials) {
+    const handleSubmitEvent = useCallback((props: SubmitEventProps) => {        
+            const {materialsToEvent} = props;
+            if (!materialsToEvent) {
                 handleDeleteEvent(handledEvent.name);
             } else {
                 setRawEvents((prev) => {
                     const _next = { ...prev };
-                    _next[handledEvent.name].materials = leftMaterials;
+                    _next[handledEvent.name].materials = materialsToEvent;
                     return _next;
                 });
             }
-            setHandledEvent({ index: -1, name: "", materials: {}, farms: [] });
+            setHandledEvent( {...emptyNamedEvent, farms: []});
+            submitEvent(props);
 
-        }, [handleDeleteEvent, setRawEvents, setHandledEvent, handledEvent.name]);
-
-    const formatNumber = (num: number) => {
-        return num < 1000
-            ? num
-            : num < 1000000
-                ? `${num % 1000 === 0 ? `${num / 1000}` : (num / 1000).toFixed(1)}K`
-                : `${num % 1000000 === 0 ? `${num / 1000000}` : (num / 1000000).toFixed(2)}M`;
-    };
+        }, [submitEvent, handleDeleteEvent, setRawEvents, setHandledEvent, handledEvent.name]);
 
     const defaultMaterialsSet = useMemo(() =>
         Object.keys(itemsJson)
@@ -388,11 +334,11 @@ const EventsTrackerMain = React.memo((props: Props) => {
             .filter((item) =>
                 ["EXP", "Dualchip"].every((keyword) => !item.name.includes(keyword)))
             .map((item) => item.id)
-            .sort((idA, idB) => itemsJson[idA as keyof typeof itemsJson].sortId - itemsJson[idB as keyof typeof itemsJson].sortId)
+            .sort((idA, idB) => standardItemsSort(idA,idB))
         , []
     );
 
-    const memoizedDetails = useMemo(() => {
+/*     const memoizedDetails = useMemo(() => {
         return defaultMaterialsSet.map((id) => (
             <Stack key={`${id}`} direction="row" alignItems="center">
                 <Stack direction="row" key={`${id}-box`} sx={{
@@ -404,7 +350,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
                         },
                     }),
                 }} >
-                    <ItemBase key={`${id}-item`} itemId={id} size={itemBaseSize * 1.2} />
+                    <ItemBase key={`${id}-item`} itemId={id} size={getItemBaseStyling("tracker").baseSize * 1.2} />
                 </Stack>
                 <TextField
                     key={`${id}-input`}
@@ -415,11 +361,24 @@ const EventsTrackerMain = React.memo((props: Props) => {
                 />
             </Stack>
         ));
-    }, [defaultMaterialsSet, itemBaseSize]);
+    }, [defaultMaterialsSet]); */
+
+    const memoizedDetails = useMemo(() => {
+        return defaultMaterialsSet.map((id) => (
+          <ItemEditBox
+            key={id}
+            itemId={id}
+            size={getItemBaseStyling("tracker").baseSize * 1.2}
+            clickable={isTier3Material(id)}
+          />
+        ));
+      }, [defaultMaterialsSet]);
 
     const handleAccordionChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
         setExpandedAccordtition(isExpanded ? panel : false);
     };
+
+    const [focusedId, setFocusedId] = useState<{id: string, name: string} | null>(null);
 
     const renderEvent = useCallback((name: string, index: number) => {
         const _eventData = rawEvents[name] ? { ...rawEvents[name] } : undefined;
@@ -438,7 +397,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
                                 <TextField size="small" value={newEventNames[name] ?? name}
                                     sx={{
                                         mr: 2,
-                                        width: { md: `${Math.max(10, (name.length) + 2)}ch`, xs: '100%' }
+                                        width: { md: getWidthFromValue(newEventNames[name] ?? name,'20ch'), xs: '100%' }
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -448,8 +407,8 @@ const EventsTrackerMain = React.memo((props: Props) => {
                                     .concat(Object.entries(_eventData.materials ?? {})
                                         .sort(([idA], [idB]) => itemsJson[idA as keyof typeof itemsJson].sortId - itemsJson[idB as keyof typeof itemsJson].sortId))
                                     .map(([id, quantity], idx) => (
-                                        <ItemBase key={`${id}${quantity === 0 && "-farm"}`} itemId={id} size={itemBaseSize}>
-                                            <Typography {...numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
+                                        <ItemBase key={`${id}${quantity === 0 && "-farm"}`} itemId={id} size={getItemBaseStyling("tracker").baseSize}>
+                                            <Typography {...getItemBaseStyling("tracker").numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
                                         </ItemBase>
                                     ))}
                             </Stack>
@@ -486,9 +445,42 @@ const EventsTrackerMain = React.memo((props: Props) => {
                     <AccordionDetails style={{ display: 'flex', gap: 8 }}>
                         <Stack direction="row" style={{ width: '100%', flexWrap: 'wrap', gap: 8 }}>
                             {memoizedDetails.map((element) => {/*cloning existing elements for speed*/
-                                const id = element.key?.toString().split('-')[0];
+                                /* const id = element.key?.toString().split('-')[0]; */
+                                const id = element.props.itemId;
                                 if (!id) return null;
+                                const isFocused = focusedId?.id === id && focusedId?.name === name;
+                                const _value = _eventData.materials[id]
+                                    ? (!isFocused ? formatNumber(_eventData.materials[id]) : _eventData.materials[id])
+                                    : "";
+                                const _width = getWidthFromValue(_value, '3ch');
                                 return React.cloneElement(element, {
+                                    value: _value,
+                                    width: _width,
+                                    isFocused: isFocused,
+                                    onChange: (value: number) => handleQuantityChange(name, id, value),
+                                    highlighted: _eventData.farms?.includes(id),
+                                    onIconClick: () => handleIconClick(name, id),
+                                    onFocus: () => setFocusedId({id, name}),
+                                  });
+                               /*  const id = element.props.itemId;
+                                const focusId = {[id as string]:name}
+                                if (!id) return null;
+                                const isFocused = focused && focused[id] === name;
+                                const _value = _eventData.materials[id] 
+                                ? (!isFocused ? formatNumber(_eventData.materials[id]) : _eventData.materials[id])
+                                : "";
+                                const _width = getWidthFromValue(_value,'1.5ch')
+                                console.log(_width,_value);
+                                return React.cloneElement(element, {
+                                    value: _value,
+                                    width: _width,
+                                    onChange: (value: number) => handleQuantityChange(name, id, value),
+                                    highlighted: _eventData.farms?.includes(id),
+                                    onIconClick: () => handleIconClick(name, id),
+                                    onFocus: () => setFocused((_) => focusId),
+                                  }); */
+
+                                /* return React.cloneElement(element, {
                                     children: React.Children.map(element.props.children, (child) => {
                                         if (React.isValidElement(child)) {
                                             if (child.type === Stack) {
@@ -524,14 +516,15 @@ const EventsTrackerMain = React.memo((props: Props) => {
                                         }
                                         return child;
                                     }),
-                                });
+                                }
+                                 ); */
                             })}
                         </Stack>
                     </AccordionDetails>
                 )}
             </Accordion>
         )
-    }, [rawEvents, newEventNames, expandedAccordtition, itemBaseSize, memoizedDetails, numberCSS,
+    }, [rawEvents, newEventNames, expandedAccordtition, memoizedDetails, focusedId, setFocusedId,
         handleDeleteEvent, handleIconClick, handleEventNameChange]
     )
     const renderedEvents = useMemo(() => {
@@ -652,7 +645,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
                 });
             };
             //remove trash data not from itemsJson
-            const reindexedData = reindexSortedEvents(
+            const reindexedData = reindexEvents(
                 Object.entries(newData)
                     .filter(([, eData]) => {
                         //no mats event can exist
@@ -909,11 +902,11 @@ const EventsTrackerMain = React.memo((props: Props) => {
                     {importMessage}
                 </Alert>
             </Snackbar>
-            <AddEventToDepotDialog
+            <SubmitEventDialog
                 open={addEventToDepotDialogOpen}
                 onClose={() => setAddEventToDepotDialogOpen(false)}
                 variant="tracker"
-                onSubmit={handleEventChange}
+                onSubmit={handleSubmitEvent}
                 handledEvent={handledEvent}
                 eventsData={eventsData}
             />
