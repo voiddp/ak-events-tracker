@@ -7,15 +7,6 @@
     }
   ],
   "github": {
-    "silent": true,
-    "autoAlias": false
-  },
-  "routes": [
-    {
-      "handle": "error",
-      "src": "/.*",
-      "status": 404,
-      "dest": "/404.html"
-    }
-  ]
+    "silent": true
+  }
 }
