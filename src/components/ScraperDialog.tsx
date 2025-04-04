@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, Accordion, AccordionSummary, AccordionDetails, Button, Typography, Box, DialogActions, Stack, IconButton, TextField, Link, Tooltip } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, Accordion, AccordionSummary, AccordionDetails, Button, Typography, Box, DialogActions, Stack, IconButton, TextField, Link, Tooltip, useTheme, useMediaQuery } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { WebEventsData, Event, EventsData, NamedEvent, WebEvent, SubmitEventProps } from '../types/events'
 import { usePrtsWiki } from '../utils/hooks/usePrtsWiki';
@@ -8,7 +8,8 @@ import ItemBase from '@/components/ItemBase';
 import itemsJson from '../data/items.json';
 import AddEventToDepotDialog from '@/components/SubmitEventDialog';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
-import {getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isTier3Material } from '@/utils/ItemUtils'
+import { getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isTier3Material } from '@/utils/ItemUtils'
+import { Close, Fullscreen } from "@mui/icons-material";
 
 
 interface Props {
@@ -21,6 +22,9 @@ interface Props {
 const ScraperDialog = React.memo((props: Props) => {
   const { open, onClose, eventsData, submitEvent } = props;
   const { webEvents, setWebEvents, error, loading, getEventList, getDataFromPage, ProgressElement } = usePrtsWiki();
+
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [rawWebEvents, setRawWebEvents] = useState<WebEventsData>({});
   const [monthsAgo, setMonthsAGo] = useState(6);
@@ -37,7 +41,7 @@ const ScraperDialog = React.memo((props: Props) => {
   useEffect(() => {
     if (!open) return;
     setRawWebEvents(webEvents ?? {});
-  }, [open,webEvents]
+  }, [open, webEvents]
   );
 
   const handleClose = () => {
@@ -71,7 +75,7 @@ const ScraperDialog = React.memo((props: Props) => {
         _webEvent.materials = items;
         if (title) {
           _webEvent.title = title;
-        }         
+        }
         if (farms && farms.length > 0) {
           _webEvent.farms = farms;
         }
@@ -101,16 +105,22 @@ const ScraperDialog = React.memo((props: Props) => {
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md"
+      fullScreen={fullScreen}
+      sx={{ overflow: 'visible' }}>
         {loading["LIST"] && ProgressElement("LIST")}
-        <DialogTitle>CN events from prts</DialogTitle>
+        <DialogTitle>CN events from prts
+          <IconButton onClick={handleClose} sx={{ display: { sm: "none" }, gridArea: "close" }}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
           {Object.keys(rawWebEvents ?? {}).length > 0 &&
             Object.entries(rawWebEvents)
               .sort(([, a], [, b]) => {
                 if (!a.date) return 1;
                 if (!b.date) return -1;
-                return new Date(b.date).getTime()  - new Date(a.date).getTime();
+                return new Date(b.date).getTime() - new Date(a.date).getTime();
               })
               .map(([, item], index) => (
                 <Box key={index} position="relative" sx={{ mt: 1 }}>
@@ -176,7 +186,7 @@ const ScraperDialog = React.memo((props: Props) => {
                                 .sort(([idA], [idB]) => itemsJson[idA as keyof typeof itemsJson].sortId - itemsJson[idB as keyof typeof itemsJson].sortId)
                                 .map(([id, quantity], idx) => (
                                   <ItemBase key={`${id}`} itemId={id} size={getItemBaseStyling('builder').baseSize}>
-                                    <Typography {...getItemBaseStyling('builder').numberCSS}>{quantity}</Typography>
+                                    <Typography {...getItemBaseStyling('builder').numberCSS}>{formatNumber(quantity)}</Typography>
                                   </ItemBase>
                                 ))}
                             </>

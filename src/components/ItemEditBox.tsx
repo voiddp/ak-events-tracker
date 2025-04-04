@@ -26,7 +26,7 @@ const ItemEditBox = React.memo(({
     isFocused = false,
     onFocus,
     size = 40 * 0.7,
-    width = "3.5ch",
+    width = "4ch",
     highlighted = false,
     textFieldProps = {},
     stackProps = {}
@@ -34,8 +34,6 @@ const ItemEditBox = React.memo(({
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         onChange?.(Number(e.target.value));
     };
-
-    console.log(`Rendering ${itemId}`);
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
         e.target.select();

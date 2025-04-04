@@ -41,7 +41,7 @@ const SubmitEventDialog = (props: Props) => {
 
     useEffect(() => {
         if (!open) return;
-        if (selectedEvent && selectedEvent.index != -1)
+        if (selectedEvent && selectedEvent.index !== -1)
             setReplace(true);
         else
             setReplace(false);
@@ -130,10 +130,10 @@ const SubmitEventDialog = (props: Props) => {
                     <Stack direction="row" alignItems="stretch">
                         <TextField
                             value={rawName}
-                            disabled={(variant != "builder")}
+                            disabled={(variant !== "builder")}
                             onChange={(e) => {
                                 setRawName(e.target.value);
-                                if (rawName != handledEvent.name && rawName != '') {
+                                if (rawName !== handledEvent.name && rawName !== '') {
                                     setReplace(true);
                                 } else {
                                     setReplace(false);
@@ -145,7 +145,7 @@ const SubmitEventDialog = (props: Props) => {
                             type="text"
                         />
                         <Checkbox
-                            disabled={selectedEvent?.index === -1 || variant != "builder"}
+                            disabled={selectedEvent?.index === -1 || variant !== "builder"}
                             checked={replace}
                             onChange={() => setReplace(!replace)} />
                     </Stack>

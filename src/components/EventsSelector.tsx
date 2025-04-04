@@ -11,7 +11,7 @@ import {
     useMediaQuery
 } from '@mui/material';
 import ItemBase from "./ItemBase";
-import { Event, NamedEvent, EventsData, emptyEvent } from "../types/events"
+import { Event, NamedEvent, EventsData, emptyEvent, emptyNamedEvent } from "../types/events"
 import { getItemBaseStyling, customItemsSort, formatNumber } from "../utils/ItemUtils";
 
 interface EventsSelectorProps {
@@ -32,23 +32,24 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
     } = props;
 
     const label = `Select ${variant === 'summary' ? 'future' : 'modified'} Event`;
-    const { baseSize, numberCSS } = getItemBaseStyling(variant);
     const [isSelectFinished, setIsSelectFinished] = useState(false);
 
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+    const { baseSize, numberCSS } = getItemBaseStyling('selector', fullScreen);
+
 
     const eventsList = useMemo(() => Object.entries(eventsData ?? {})
         .sort(([, a], [, b]) => a.index - b.index), [eventsData]);
 
     const handleChange  = (eventIndex: number) => {
-        if (!onChange) return;
+        setIsSelectFinished(true);
         if (eventIndex === -1) {
-            onChange({ name: "", ...emptyEvent });
+            onChange?.({ ...emptyNamedEvent });
             return;
         }
         const foundEntry = Object.entries(eventsData).find(([, event]) => event.index === eventIndex);
-        onChange( {
+        onChange?.( {
             name: foundEntry ? foundEntry[0] : "",
             ...(foundEntry ? foundEntry[1] : emptyEvent),
         });
@@ -80,7 +81,7 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
                                             .sort(([itemIdA], [itemIdB]) => customItemsSort(itemIdA, itemIdB)))
                                         .slice(0, fullScreen ? 4 : 10)
                                         .map(([id, quantity], idx) => (
-                                            <ItemBase key={`${id}${quantity === 0 && "-farm"}`} itemId={id} size={baseSize * 0.5}>
+                                            <ItemBase key={`${id}${quantity === 0 && "-farm"}`} itemId={id} size={baseSize}>
                                                 <Typography {...numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
                                             </ItemBase>
                                         ))}

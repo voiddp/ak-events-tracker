@@ -376,6 +376,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
 
     const handleAccordionChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
         setExpandedAccordtition(isExpanded ? panel : false);
+        setFocusedId(null);
     };
 
     const [focusedId, setFocusedId] = useState<{id: string, name: string} | null>(null);
@@ -452,7 +453,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
                                 const _value = _eventData.materials[id]
                                     ? (!isFocused ? formatNumber(_eventData.materials[id]) : _eventData.materials[id])
                                     : "";
-                                const _width = getWidthFromValue(_value, '3ch');
+                                const _width = getWidthFromValue(_value, '4ch');
                                 return React.cloneElement(element, {
                                     value: _value,
                                     width: _width,

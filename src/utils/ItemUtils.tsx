@@ -1,6 +1,6 @@
 import itemsJson from '../data/items.json';
 
-export const getItemBaseStyling = (variant: "tracker" | "summary" | "builder" | number, smaller: boolean = false) => {
+export const getItemBaseStyling = (variant: "tracker" | "summary" | "builder" | "selector" | number, smaller: boolean = false) => {
 
     let size: number;
     let adjust: number;
@@ -12,8 +12,13 @@ export const getItemBaseStyling = (variant: "tracker" | "summary" | "builder" | 
         };
             break;
         case "builder": {
-            size = !smaller ? 56 : 48;
-            adjust = 8;
+            size = !smaller ? 40: 32;
+            adjust = 12;
+        }
+            break;
+        case "selector": {
+            size = !smaller ? 32 : 28;
+            adjust = 10;
         }
             break;
         default: {
@@ -91,25 +96,32 @@ export const formatNumber = (num: number) => {
 };
 
 
-export const getWidthFromValue = (value: string | number, defaultSizeInCh: string = "2ch"): string => {
-    const strValue = String(value).trim();
+export const getWidthFromValue = (value: string | number, defaultSizeInCh: string = "4ch"): string => {
 
-    if (!strValue) return defaultSizeInCh;
+    let numberDigits: number;
+    let effectiveLengh = 0;
+
+    if (!isNaN(Number(value))) {
+        const numValue = Math.abs(Number(value));
+        numberDigits = numValue === 0 ? 1 : Math.floor(Math.log10(numValue)) + 1;
+        effectiveLengh = numberDigits;
+    } else {
+        const strValue = String(value).trim();
+        if (!strValue) return defaultSizeInCh;   
+        
+        for (const char of strValue) {
+            effectiveLengh += char === char.toUpperCase() && char !== char.toLowerCase()
+            ? 1.55
+            : /\d/.test(char)
+              ? 1.4
+              : 1.15
+        }
+    }    
+    
     let startSize: number = 2.5;
     if (defaultSizeInCh.includes('ch'))
         startSize = Number(defaultSizeInCh.replace('ch', '').trim());
 
-    // Calculate effective length (ignore formatting characters)
-    const cleanValue = strValue;/* .replace(/[.,]/g, ''); */
-    let effectiveLength: number = cleanValue.length;
-
-    let result: string;
-    // Special handling for pure numbers
-    if (!isNaN(Number(cleanValue))) {
-        const numValue = Math.abs(Number(cleanValue));
-        effectiveLength = numValue === 0 ? 1 : Math.floor(Math.log10(numValue)) + 1;
-    }
-    if (startSize / effectiveLength > 1) return defaultSizeInCh;
-    else
-        return `${2.5 + (effectiveLength - 1 )}ch`; // Start at 2.5ch for 1 char
+    if (startSize - effectiveLengh > 0) return defaultSizeInCh;
+    else return `${2 + (effectiveLengh - 1 )}ch`; // Start at 2.5ch for 1 char
 };
