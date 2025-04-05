@@ -1,12 +1,12 @@
 'use client'
 import { useCallback, useState } from 'react';
 import * as cheerio from 'cheerio';
-import itemsJson from '../../data/items.json';
-import { fetchHtml, fetchJson } from '../../lib/axiosServer';
+import itemsJson from '@/data/items.json';
+import { getItemByCnName } from '@/utils/ItemUtils';
+import { fetchHtml, fetchJson } from '@/lib/axiosServer';
 import { LinearProgress } from '@mui/material';
 import { randomBytes } from 'crypto';
-import _ from 'lodash';
-import { WebEvent, WebEventsData, emptyEvent, emptyWebEvent } from '@/types/events';
+import { WebEvent, WebEventsData, emptyWebEvent } from '@/types/events';
 import useLocalStorage from './useLocalStorage';
 
 type PageResult = {
@@ -53,7 +53,7 @@ const argNames = {
 
 const dictionary = {
   '复刻': 'Rerun',
-  'IN RETROSPECT':'Rerun',
+  'IN RETROSPECT': 'Rerun',
   '签到': 'Sign-in'
 }
 
@@ -76,54 +76,52 @@ export const usePrtsWiki = () => {
   const [webEvents, setWebEvents] = useLocalStorage<WebEventsData>("prtsWikiData", {});
   const sessionId = randomBytes(8).toString('hex')
 
-/*   const [isLoading, setIsLoading] = useState<boolean>(false);
-*/const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<Error | null>(null);
   const [progress, setProgress] = useState<Record<string, number>>({});
 
   const fetchEvents = useCallback(
     async (monthsAgoDate: Date): Promise<WebEventsData> => {
-    setError(null);
-    try {
+      setError(null);
+      try {
 
-      const html = await fetchHtml(getUrl(pageNames.events), sessionId);
-      const $ = cheerio.load(html);
+        const html = await fetchHtml(getUrl(pageNames.events), sessionId);
+        const $ = cheerio.load(html);
 
-      const eventsResult: WebEventsData = webEvents ?? {};
-      /* console.log("start with", {...eventsResult}); */
+        const eventsResult: WebEventsData = webEvents ?? {};
 
-      $('tr').each((_, element) => {
-        if ($(element).find('td').css('display') === 'none') return true;
+        $('tr').each((_, element) => {
+          if ($(element).find('td').css('display') === 'none') return true;
 
-        const dateText = $(element).find('td').first().text().trim();
-        const titleElement = $(element).find('td').eq(1).find('a');
-        const today = new Date();
+          const dateText = $(element).find('td').first().text().trim();
+          const titleElement = $(element).find('td').eq(1).find('a');
+          const today = new Date();
 
-        if ((isDateTextValid(dateText)) && titleElement.length) {
-          const date = new Date(dateText);
+          if ((isDateTextValid(dateText)) && titleElement.length) {
+            const date = new Date(dateText);
 
-          if (date >= monthsAgoDate && date <= today) {
+            if (date >= monthsAgoDate && date <= today) {
 
-            const title = titleElement.text().trim();
-            const link = titleElement.attr('href') || '';
-            eventsResult[title] = {
-              ...eventsResult[title] ?? emptyWebEvent,
-              pageName: title,
-              date: date,
-              link: `https://prts.wiki${link}`,
+              const title = titleElement.text().trim();
+              const link = titleElement.attr('href') || '';
+              eventsResult[title] = {
+                ...eventsResult[title] ?? emptyWebEvent,
+                pageName: title,
+                date: date,
+                link: `https://prts.wiki${link}`,
+              }
             }
+
           }
+        });
 
-        }
-      });
-
-      return eventsResult;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      throw err;
-    }
-  }, [webEvents, sessionId]
-);
+        return eventsResult;
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Unknown error'));
+        throw err;
+      }
+    }, [webEvents, sessionId]
+  );
 
   const fetchArgumentList = async (pageName: string, templateName: string) => {
     setError(null);
@@ -179,8 +177,8 @@ export const usePrtsWiki = () => {
 
         if (date <= today && date > monthsAgoDate) {
           const pageName = `${sssArgs[argNames.sssMission]}`;
-          const title = `SSS: ${sssArgs[argNames.sssMission]}`;
-          webEvents[pageName] = { ...(webEvents[pageName] ?? emptyWebEvent), pageName, title, link, date }
+          const name = `SSS: ${sssArgs[argNames.sssMission]}`;
+          webEvents[pageName] = { ...(webEvents[pageName] ?? emptyWebEvent), pageName, name, link, date }
         }
       }
       setProgress(prev => ({ ...prev ?? {}, "LIST": 75 }));
@@ -194,7 +192,7 @@ export const usePrtsWiki = () => {
             webEvents[event.pageName] = {
               ...webEvents[event.pageName] ?? emptyWebEvent,
               pageName: event.pageName,
-              title: event.title,
+              name: event.name,
               link: event.link,
               date: event.date
             }
@@ -204,7 +202,7 @@ export const usePrtsWiki = () => {
       //apply dictionary
       Object.entries(webEvents ?? {}).forEach(([_, event]) => {
         const afterDictionary = applyDictionary(event.pageName);
-        if (afterDictionary) event.title = afterDictionary;
+        if (afterDictionary) event.name = afterDictionary;
       });
       return Object.entries(webEvents ?? {}).filter(([_, event]) => event.date && (event.date >= monthsAgoDate && event.date <= today))
         .reduce((acc, [_, event]) => {
@@ -310,9 +308,7 @@ const parseListDivs = ($: cheerio.CheerioAPI, result: Record<string, number>) =>
         const numText = $li.find('div[class*="-num"]').text().trim();
 
         if (name && numText) {
-          const matchedItem = Object.values(itemsJson).find(
-            (item) => 'cnName' in item && item.cnName === name
-          );
+          const matchedItem = getItemByCnName(name);
 
           if (matchedItem) {
             const id = matchedItem.id;
@@ -353,10 +349,6 @@ const parseChineseNumber = (input: string): number | null => {
   return null;
 };
 
-const isTier3Material = (id: string) => {
-  return (Number(id) > 30000 && Number(id) < 32000 && itemsJson[id as keyof typeof itemsJson].tier === 3)
-};
-
 const findFarms = ($: cheerio.CheerioAPI): string[] => {
   const dropKeywords = ['固定掉落', '大概率', '小概率', '概率掉落'];
   const foundItems: string[] = [];
@@ -372,9 +364,7 @@ const findFarms = ($: cheerio.CheerioAPI): string[] => {
         const title = $(link).attr('title')?.trim();
         if (!title) return;
 
-        const matchedItem = Object.values(itemsJson).find(
-          (item) => item.tier === 3 && `cnName` in item && item.cnName === title && isTier3Material(item.id)
-        );
+        const matchedItem = getItemByCnName(title,3,true);
 
         if (matchedItem && !foundItems.includes(matchedItem.id)) {
           foundItems.push(matchedItem.id);
@@ -396,9 +386,7 @@ const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, number>) => 
       const title = $div.find('a').attr('title');
 
       if (title) {
-        const matchedItem = Object.values(itemsJson).find(
-          (item) => 'cnName' in item && item.cnName === title
-        );
+        const matchedItem = getItemByCnName(title);
 
         if (matchedItem) {
           const id = matchedItem.id;
@@ -516,7 +504,7 @@ const getAniEventsList = (data: Record<string, string>): WebEvent[] => {
         ...emptyWebEvent,
         date: new Date(currentDate),
         pageName: title,
-        title: `Anihilation #${i}: ${title}`,
+        name: `Anihilation #${i}: ${title}`,
         link: getUrl(title)
       });
 

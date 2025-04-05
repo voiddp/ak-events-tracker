@@ -25,7 +25,7 @@ const ItemEditBox = React.memo(({
     onIconClick,
     isFocused = false,
     onFocus,
-    size = 40 * 0.7,
+    size,
     width = "4ch",
     highlighted = false,
     textFieldProps = {},
@@ -110,12 +110,12 @@ const ItemEditBox = React.memo(({
 }, (prevProps, nextProps) => {
     // Only re-render if these specific props change
     return (
-      prevProps.value === nextProps.value &&
-      prevProps.width === nextProps.width &&
-      prevProps.isFocused === nextProps.isFocused &&
-      prevProps.highlighted === nextProps.highlighted
+        prevProps.value === nextProps.value &&
+        prevProps.width === nextProps.width &&
+        prevProps.isFocused === nextProps.isFocused &&
+        prevProps.highlighted === nextProps.highlighted
     );
-  });
+});
 ItemEditBox.displayName = "ItemEditBox";
 
 export default ItemEditBox;

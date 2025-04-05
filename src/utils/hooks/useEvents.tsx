@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import useSettings from './useSettings'
-import { Event, EventsData, SubmitEventProps, reindexEvents } from "../../types/events";
-import { Divider, FormControl, InputLabel, MenuItem, Select, Stack, Typography, useMediaQuery, useTheme } from "@mui/material";
-import ItemBase from "@/components/ItemBase";
-import { isTier3Material, getItemBaseStyling, customItemsSort, formatNumber } from "../ItemUtils";
-import useLocalStorage from "./useLocalStorage";
+import { useCallback, useMemo } from "react";
+import useSettings from '@/utils/hooks/useSettings'
+import { Event, EventsData, NamedEvent, SubmitEventProps, reindexEvents } from "@/types/events";
+import { AK_CALENDAR, AK_DAILY, AK_WEEKLY } from "@/utils/ItemUtils";
+import useLocalStorage from "@/utils/hooks/useLocalStorage";
 
 export type eventSelectorProps = {
     variant: "summary" | "builder";
@@ -14,8 +12,8 @@ export type eventSelectorProps = {
 function useEvents(): [
     EventsData,
     (newEventsData: EventsData) => void,
-    (submit: SubmitEventProps) => void,
-    /* (variant: "summary" | "builder", disabled: boolean) => { selectedEvent: Event; SelectorComponent: React.JSX.Element } ,*/
+    (submit: SubmitEventProps) => false | [string, number][],
+    (months?: number) => EventsData
 ] {
     const [eventsData, _setEvents] = useLocalStorage<EventsData>("eventsTracker", {});
     const [settings, setSettings] = useSettings();
@@ -30,15 +28,13 @@ function useEvents(): [
     );
 
     const setEvents = useCallback((newEventsData: EventsData) => {
-        /* console.log("puting events into storage", newEventsData); */
         _setEvents(newEventsData);
 
-        //If setEvent happened, and old storage exists, remove old storage
+        //migrate: If setEvent happened, and old storage exists, remove old storage
         if (Object.keys(newEventsData ?? {}).length > 0)
             removeOldStorage();
 
     }, [_setEvents, removeOldStorage]);
-
 
     //return events based on where storage was
     const _eventsData = useMemo(() => {
@@ -49,63 +45,6 @@ function useEvents(): [
         };
         return {};
     }, [eventsData, settings.eventsIncomeData]);
-
-    /*      useEffect(() => {
-            if (
-              !hasMigrated && 
-              settings.eventsIncomeData && 
-              Object.keys(settings.eventsIncomeData ?? {}).length > 0 &&
-              Object.keys(eventsData ?? {}).length === 0 // Only migrate if eventsData is empty
-            ) {
-              console.log("Migrating old events:", settings.eventsIncomeData);
-              setEvents(settings.eventsIncomeData);
-              setHasMigrated(true);
-          
-              // Optional: Clear old data from settings
-              //setSettings(prev => ({ ...prev, eventsIncomeData: undefined }));
-            }
-          }, [settings.eventsIncomeData, eventsData, hasMigrated, setEvents, setSettings]); */
-
-    /*     const [settings, setSettings] = useSettings();
-        const { formatNumber, customItemsSort, getItemBaseStyling } = useItemUtils();
-    
-        const setEvents = (newEventsData: EventsData) => {
-            const _eventData = { ...newEventsData };
-    
-            setSettings((s) => ({ ...s, eventsIncomeData: _eventData }));
-        }
-        const eventsData = useMemo(() => settings.eventsIncomeData ?? {},[settings.eventsIncomeData]);
-        const _eventsData = useMemo(() => eventsData ?? {},[eventsData]); */
-
-    //+eventSelector vars
-    const theme = useTheme();
-    const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
-
-    const [isSelectFinished, setSelectFinished] = useState(false);
-    const emptyEvent: Event = useMemo(() => ({ index: -1, materials: {} }), []);
-    const [selectedEvent, setSelectedEvent] = useState(emptyEvent);
-    //-
-
-
-    const eventsList = useMemo(() => Object.entries(eventsData ?? {})
-        .sort(([, a], [, b]) => a.index - b.index), [eventsData]);
-
-    /*     const handleEventMaterials = (itemsAdded: [string, number][], itemsLeft: Record<string, number> | false, putFn) => {
-    
-             if (depotUpdate.length != 0) putDepot(depotUpdate);
-    
-            if (!itemsLeft) {
-                handleDeleteEvent(handledEvent.name);
-            } else {
-                setRawEvents((prev) => {
-                    const _next = { ...prev };
-                    _next[handledEvent.name].materials = materialsLeft;
-                    return _next;
-                });
-            }
-            setHandledEvent({ name: "", materials: {}, farms: [] });
-    
-        }; */
 
     const getEventByIndex = useCallback((index: number) => {
         if (index === -1) {
@@ -136,14 +75,15 @@ function useEvents(): [
         return _items;
     };
 
-    const submitEvent = useCallback((props: SubmitEventProps) => {
+    const submitEvent = useCallback((props: SubmitEventProps): false | [string, number][] => {
         const { eventName, selectedEventIndex, materialsToDepot, materialsToEvent, farms, replaceName } = props;
-        //case of mats to add to depot and delete event if needed
         const _eventsData = { ...eventsData };
+
+        let result: [string, number][] | false = false;
 
         //handle tracker to depot && update/remove event
         if (materialsToDepot.length > 0) {
-            putDepot(materialsToDepot);
+            result = materialsToDepot;
             if (!materialsToEvent && farms.length === 0) {
                 delete eventsData[eventName];
             } else if (materialsToEvent && _eventsData[eventName]) {
@@ -172,7 +112,6 @@ function useEvents(): [
                     delete _event.farms;
                 }
             }
-            /* console.log("set event", _name, replaceName, _event); */
             //handle name change if new name is set.
             if (!replaceName) {
                 _eventsData[_name] = _event;
@@ -181,104 +120,68 @@ function useEvents(): [
                 delete _eventsData[_name];
             };
         }
-
         _setEvents(reindexEvents(_eventsData));
-
+        return result;
     }, [eventsData, _setEvents, getEventByIndex]);
 
-    const putDepot = (update: [string, number][]) => {
+    const createMonthEvent = (month: number, year: number): NamedEvent => {
 
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const firstDayNum = new Date(year, month - 1, 1).getDay();
+        const lastDayNum = new Date(year, month - 1, daysInMonth).getDay();
+
+        const firstDay = (firstDayNum + 6) % 7;
+        const lastDay = (lastDayNum + 6) % 7;
+
+        const materials: Record<string, number> = {};
+
+        //AK_CALENDAR
+        for (const [dayStr, items] of Object.entries(AK_CALENDAR)) {
+            const day = parseInt(dayStr);
+            if (day <= daysInMonth) {
+                for (const [id, amount] of Object.entries(items)) {
+                    materials[id] = (materials[id] || 0) + amount;
+                }
+            }
+        }
+        //AK_DAILY
+        for (const [id, amount] of Object.entries(AK_DAILY)) {
+            materials[id] = (materials[id] || 0) + amount * daysInMonth;
+        }
+
+        //AK_WEEKLY
+        let fullWeeks = Math.floor(daysInMonth / 7);
+        if (firstDay <= 3) fullWeeks++;
+        if (lastDay >= 3) fullWeeks++;
+
+        for (const [id, amount] of Object.entries(AK_WEEKLY)) {
+            materials[id] = (materials[id] || 0) + amount * fullWeeks;
+        }
+
+        const monthName = new Date(year, month - 1).toLocaleString('en-US', { month: 'long' });
+        return {
+            name: `${monthName} ${year}`,
+            index: month,
+            materials
+        }
     };
 
-    const onSelectorChange = useCallback((index: number, variant: string) => {
-        setSelectFinished(true);
+    const getNextMonthsData = (months: number = 6): EventsData => {
+        const nextMonthsData: EventsData = {};
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth() + 1;
+        const currentYear = currentDate.getFullYear();
 
-        if (index === -1) {
-            setSelectedEvent(emptyEvent);
-        } else {
-            const _event = Object.entries(eventsData).find(([, eventData]) => eventData.index === index)?.[1] ?? emptyEvent;
-            setSelectedEvent(_event);
-        };
-
-        /*  if (balanceType === "event" && !_event.farms) {
-              setApplyBalance(false);
-              setBalanceType(null);
-          }; */
-    }, [emptyEvent, eventsData]
-    )
-
-    type handlerProps = {
-        itemsAdded: [string, number][],
-        itemsLeft: Record<string, number> | false,
-        eventName: string;
-        eventsStorage?: EventsData,
-        handlerFn?: (props: any) => void,
+        for (let i = 1; i <= months; i++) {
+            const month = (currentMonth + i) % 12 || 12;
+            const year = currentYear + Math.floor((currentMonth + i) / 12);
+            const monthEvent = createMonthEvent(month, year);
+            nextMonthsData[monthEvent.name] = monthEvent;
+        }
+        return nextMonthsData;
     }
 
-    /*     const handleEventsModification = (props: handlerProps) => {
-            const {itemsAdded, itemsLeft, eventName, eventsStorage, handlerFn} = props;
-    
-            if (handlerFn && eventsStorage) {
-                handlerFn(itemsAdded, itemsLeft, eventName, eventsStorage);
-            }
-    
-            const storage = eventsStorage ? {...eventsStorage} : {...eventsData};
-            
-            if (itemsLeft)
-            
-        };
-     */
-    /* 
-        const getEventSelector = useCallback(
-            (variant: "summary" | "builder", disabled: boolean): { selectedEvent: Event; SelectorComponent: React.JSX.Element } => {
-                const label = `Select ${variant === "summary" ? "future" : "modified"} Event`;
-                const { baseSize, numberCSS } = getItemBaseStyling(variant);
-                console.log(baseSize);
-                return {
-                    selectedEvent,
-                    SelectorComponent:
-                        (<FormControl sx={{ flexGrow: 1 }}>
-                            <InputLabel>{label}</InputLabel>
-                            <Select
-                                disabled={disabled}
-                                value={eventsList.length === 0 ? -1 : (selectedEvent?.index ?? -1)}
-                                onChange={(e) => onSelectorChange(Number(e.target.value), variant)}
-                                onOpen={() => {
-                                    setSelectFinished(false)
-                                }}
-                                label={label}
-                                fullWidth
-                            >
-                                <MenuItem value={-1} key={-1} className="no-underline">{`${variant === "builder" ? "Add new" : "without"} Event`}</MenuItem>
-                                <Divider component="li" />
-                                {eventsList
-                                    .map(([name, event]) => (
-                                        <MenuItem value={event.index} key={event.index} className="no-underline">
-                                            <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch">
-                                                {`${event.index}: ${name}`} {!isSelectFinished ? (
-                                                    <Stack direction="row">
-                                                        {(event.farms ?? []).map((id) => [id, 0] as [string, number])
-                                                            .concat(Object.entries(event.materials)
-                                                                .sort(([itemIdA], [itemIdB]) => customItemsSort(itemIdA, itemIdB)))
-                                                            .slice(0, fullScreen ? 4 : 10)
-                                                            .map(([id, quantity], idx) => (
-                                                                <ItemBase key={`${id}${quantity === 0 && "-farm"}`} itemId={id} size={baseSize * 0.5}>
-                                                                    <Typography {...numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
-                                                                </ItemBase>
-                                                            ))}
-                                                        {"..."}
-                                                    </Stack>) : null}
-                                            </Stack>
-                                        </MenuItem>
-                                    ))}
-                            </Select>
-                        </FormControl>)
-                };
-            },
-            [customItemsSort, eventsList, formatNumber, fullScreen, getItemBaseStyling, isSelectFinished, onSelectorChange, selectedEvent]
-        ); */
-
-    return [_eventsData, setEvents, submitEvent]
+    return [_eventsData, setEvents, submitEvent, getNextMonthsData]
 
 }
 

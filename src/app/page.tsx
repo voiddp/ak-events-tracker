@@ -1,18 +1,15 @@
 'use client'
 
 /* import Image from "next/image"; */
-import styles from "./page.module.css";
-import { AppBar, Box, Button, Container, Paper, Toolbar, Typography } from "@mui/material";
+import { Box, Button, Paper } from "@mui/material";
 import { useCallback, useState } from "react";
 import ScraperDialog from "../components/ScraperDialog";
 import EventsTracker from "@/components/EventsTrackerMain";
 import EventsTrackerDialog from "@/components/EventsTrackerDialog";
-import useSettings from "../utils/hooks/useSettings";
 import useEvents from "../utils/hooks/useEvents";
+import { SubmitEventProps } from "@/types/events";
 
 export default function Home() {
-
-  const [settings, setSettings] = useSettings();
 
   const [eventsOpen, setEventsOpen] = useState(false);
   const [eventsKroosterOpen, setEventsKroosterOpen] = useState(false);
@@ -21,18 +18,32 @@ export default function Home() {
 
   const [eventsData, setEvents, submitEvent] = useEvents();
   ///
-  const handleAddItemsToDepot = (items: [string, number][]) => {/* console.log("putDepot simulation: ",items) */};
-  
+
+  const [forceUpdate, setForceUpdate] = useState(false);
+  const handleAddItemsToDepot = (items: [string, number][]) => {
+    console.log("adding to depot:", items);
+  };
+  const handleSubmitEvent = useCallback((submit: SubmitEventProps) => {
+    const depotAddon = submitEvent(submit);
+    if (depotAddon) {
+      handleAddItemsToDepot(depotAddon);
+    }
+    setForceUpdate(true);
+  }, [submitEvent]
+  );
+
   return (
     //<Box flex={1} overflow="auto"/* sx={{pt: 1, pb: 0, minHeight: "80vh", gridTemplateRows: "1fr", gap: 1}} */>
     <Box sx={{ flex: 1, overflow: "auto" }}>
       <Paper elevation={2} sx={{ maxWidth: "1200px", ml: "auto", mr: "auto" }}> {/* sx={{flex:1, overflow:"auto"}} */}
         <EventsTracker
+          forceUpdate={forceUpdate}
+          forceUpdateCallback={setForceUpdate}
           open={trackerOpen}
           onClose={() => setTrackerOpen(false)}
           eventsData={eventsData}
           onChange={setEvents}
-          submitEvent={submitEvent}
+          submitEvent={handleSubmitEvent}
         >
           <Button variant="contained"
             color="primary" onClick={() => {
@@ -41,20 +52,20 @@ export default function Home() {
             }}>
             Search CN events</Button>
           <Button variant="contained"
-          color="primary" onClick={() => {
-            setEventsKroosterOpen(true);
-          }}>Krooster Component Check...</Button>
+            color="primary" onClick={() => {
+              setEventsKroosterOpen(true);
+            }}>Krooster Component Check...</Button>
 
         </EventsTracker>
         <EventsTrackerDialog
-        eventsData={eventsData}
-        open={eventsKroosterOpen}
-        onChange={setEvents}
-        onClose={() => {
-          setEventsKroosterOpen(false);
-        }}
-        openSummary={setSummaryOpen}
-        submitEvent={submitEvent}
+          eventsData={eventsData}
+          open={eventsKroosterOpen}
+          onChange={setEvents}
+          onClose={() => {
+            setEventsKroosterOpen(false);
+          }}
+          openSummary={setSummaryOpen}
+          submitEvent={handleSubmitEvent}
         />
         <ScraperDialog
           open={eventsOpen}

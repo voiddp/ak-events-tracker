@@ -34,21 +34,23 @@ import itemsJson from '../data/items.json';
 import ItemBase from './ItemBase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { TransitionProps } from '@mui/material/transitions';
-import { emptyEvent, Event, EventsData } from "../types/events";
+import { emptyEvent, EventsData } from "../types/events";
 import InputIcon from '@mui/icons-material/Input';
 import ImportExportIcon from '@mui/icons-material/ImportExport';
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Close } from "@mui/icons-material";
-import { SubmitEventProps, emptyNamedEvent, reindexEvents, } from '../types/events';
 interface DataShareInfo {
     format: string;
     description: string;
 }
 import { debounce } from 'lodash';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
-import AddEventToDepotDialog from './SubmitEventDialog';
+import SubmitEventDialog from './SubmitEventDialog';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isMaterial, getDefaultEventMaterials } from '@/utils/ItemUtils'
+import { SubmitEventProps, emptyNamedEvent, reindexEvents, } from '../types/events';
+import ItemEditBox from './ItemEditBox';
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
@@ -76,7 +78,6 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     const [tab, setTab] = useState('input');
     const containerRef = useRef<HTMLElement>(null);
 
-    const defaultEvent: Event = { index: 99, materials: {} };
     const [rawEvents, setRawEvents] = useState<EventsData>({});
     const [rawName, setRawName] = useState<string>('');
     const [newEventNames, setNewEventNames] = useState<Record<string, string>>({});
@@ -92,14 +93,10 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     const [importMessage, setImportMessage] = useState("");
 
     const [expandedAccordtition, setExpandedAccordtition] = useState<string | false>(false);
+    const [focusedId, setFocusedId] = useState<{ id: string, name: string } | null>(null);
 
     const [addEventToDepotDialogOpen, setAddEventToDepotDialogOpen] = useState<boolean>(false);
-    const [handledEvent, setHandledEvent] = useState({
-        name: "" as string,
-        index: emptyEvent.index,
-        materials: emptyEvent.materials,
-        farms: [] as string[]
-    });
+    const [handledEvent, setHandledEvent] = useState(emptyNamedEvent);
 
     const SUPPORTED_IMPORT_EXPORT_TYPES: DataShareInfo[] = [
         {
@@ -111,8 +108,6 @@ const EventsTrackerDialog = React.memo((props: Props) => {
             description: `JSON example: { "eventName": { "index": orderNumber, "materials": { "id1": quantity, "id2": quantity }, "farms": ["id1", "id2"] } }`,
         },
     ];
-
-    const MAX_SAFE_INTEGER = 2147483647;
 
     const HELP_INFORMATION =
         <>
@@ -156,21 +151,11 @@ const EventsTrackerDialog = React.memo((props: Props) => {
         setRawEvents({});
     }
 
-    const saveToSettings = () => {
-        onChange(rawEvents);
-    }
-
     const handleClose = () => {
         setTab('input');
         onChange(rawEvents);
 
-        setRawEvents(eventsData ?? {});
-        setRawName("");
-
-        setExpandedAccordtition(false);
-
         cleanImportExport();
-
         onClose();
     }
 
@@ -227,13 +212,8 @@ const EventsTrackerDialog = React.memo((props: Props) => {
         });
     };
 
-    const isTier3Material = (id: string) => {
-        return (Number(id) > 30000 && Number(id) < 32000 && itemsJson[id as keyof typeof itemsJson].tier === 3)
-    }
-
     const handleIconClick = useCallback((eventName: string, id: string) => {
-
-        if (!isTier3Material(id)) return;
+        if (!isMaterial(id,3)) return;
 
         setRawEvents((prev) => {
             const _next = { ...prev };
@@ -254,42 +234,8 @@ const EventsTrackerDialog = React.memo((props: Props) => {
             _next[eventName] = _event;
             return _next
         })
-
     }, []
     );
-
-    const itemBaseSize = useMemo(() => (40 * 0.7), []);
-
-    const numberCSS = useMemo(() => ({
-        component: "span",
-        sx: {
-            display: "inline-block",
-            py: 0.25,
-            px: 0.5,
-            lineHeight: 1,
-            mr: `${itemBaseSize / 16}px`,
-            mb: `${itemBaseSize / 16}px`,
-            alignSelf: "end",
-            justifySelf: "end",
-            backgroundColor: "background.paper",
-            zIndex: 1,
-            fontSize: `${itemBaseSize / 24 + 8}px`,
-        },
-    }), [itemBaseSize]);
-
-    const reindexSortedEvents = (eventsArray: [string, Event][]) => {
-        return eventsArray.reduce((acc, [name, data], idx) => {
-            if (data.farms) {
-                if (data.farms.length === 0) {
-                    delete data.farms;
-                } else if (data.farms.length > 3) {
-                    data.farms.splice(3);
-                }
-            }
-            acc[name] = { ...data, index: idx };
-            return acc;
-        }, {} as EventsData);
-    }
 
     const handleDragEnd = useCallback((result: DropResult) => {
         const { source, destination } = result;
@@ -302,9 +248,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
         const [movedElement] = events.splice(source.index, 1);
         events.splice(destination.index, 0, movedElement);
 
-        const reindexedData = reindexSortedEvents(events);
-
-        setRawEvents(reindexedData);
+        setRawEvents(reindexEvents(events));
     }, [rawEvents]
     );
 
@@ -314,89 +258,58 @@ const EventsTrackerDialog = React.memo((props: Props) => {
 
         setRawEvents((prev) => {
             const _next = { ...prev ?? {} };
-            const _newEvent = { ...defaultEvent };
+            const _newEvent = { ...emptyEvent };
             _newEvent.index = Object.keys(_next).length
             _next[_name] = _newEvent;
             return _next;
         }
         );
         setRawName('');
-    }
+    };
 
     const handleDeleteEvent = useCallback((name: string) => {
         setRawEvents((prev) => {
             const _next = { ...prev };
             delete _next[name];
-            return reindexSortedEvents(
-                Object.entries(_next).sort(([, a], [, b]) => a.index - b.index))
+            return reindexEvents(_next)
         });
     }, []
     );
 
     const handleSubmitEvent = useCallback((props: SubmitEventProps) => {
-        if (handledEvent.name != null) {
-            const { materialsToEvent } = props;
-            if (!materialsToEvent) {
-                handleDeleteEvent(handledEvent.name);
-            } else {
-                setRawEvents((prev) => {
-                    const _next = { ...prev };
-                    _next[handledEvent.name].materials = materialsToEvent;
-                    return _next;
-                });
-            }
+        const { materialsToEvent } = props;
+        if (!materialsToEvent) {
+            handleDeleteEvent(handledEvent.name);
+        } else {
+            setRawEvents((prev) => {
+                const _next = { ...prev };
+                _next[handledEvent.name].materials = materialsToEvent;
+                return _next;
+            });
         }
-        setHandledEvent({ ...emptyNamedEvent, farms: [] });
+        setHandledEvent({ ...emptyNamedEvent });
         submitEvent(props);
-
     }, [submitEvent, handleDeleteEvent, setRawEvents, setHandledEvent, handledEvent.name]);
 
-
-    const formatNumber = (num: number) => {
-        return num < 1000
-            ? num
-            : num < 1000000
-                ? `${num % 1000 === 0 ? `${num / 1000}` : (num / 1000).toFixed(1)}K`
-                : `${num % 1000000 === 0 ? `${num / 1000000}` : (num / 1000000).toFixed(2)}M`;
-    };
-
-    const defaultMaterialsSet = useMemo(() =>
-        Object.keys(itemsJson)
-            .map((id) => itemsJson[id as keyof typeof itemsJson])
-            .filter((item) =>
-                ["EXP", "Dualchip"].every((keyword) => !item.name.includes(keyword)))
-            .map((item) => item.id)
-            .sort((idA, idB) => itemsJson[idA as keyof typeof itemsJson].sortId - itemsJson[idB as keyof typeof itemsJson].sortId)
-        , []
+    const defaultEventMaterials = useMemo(() =>
+        getDefaultEventMaterials(itemsJson),
+        []
     );
 
     const memoizedDetails = useMemo(() => {
-        return defaultMaterialsSet.map((id) => (
-            <Stack key={`${id}`} direction="row" alignItems="center">
-                <Stack direction="row" key={`${id}-box`} sx={{
-                    zIndex: 2, borderRadius: "6px",
-                    ...(isTier3Material(id) && {
-                        transition: "opacity 0.1s",
-                        "&:focus, &:hover": {
-                            opacity: 0.5,
-                        },
-                    }),
-                }} >
-                    <ItemBase key={`${id}-item`} itemId={id} size={itemBaseSize * 1.2} />
-                </Stack>
-                <TextField
-                    key={`${id}-input`}
-                    onFocus={(e) => e.target.select()}
-                    size="small"
-                    sx={{ ml: -2.5, zIndex: 1 }}
-                    type="number"
-                />
-            </Stack>
+        return defaultEventMaterials.map((id) => (
+            <ItemEditBox
+                key={id}
+                itemId={id}
+                size={getItemBaseStyling("tracker").itemBaseSize}
+                clickable={isMaterial(id,3)}
+            />
         ));
-    }, [defaultMaterialsSet, itemBaseSize]);
+    }, [defaultEventMaterials]);
 
     const handleAccordionChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
         setExpandedAccordtition(isExpanded ? panel : false);
+        setFocusedId(null);
     };
 
     const renderEvent = useCallback((name: string, index: number) => {
@@ -416,7 +329,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                 <TextField size="small" value={newEventNames[name] ?? name}
                                     sx={{
                                         mr: 2,
-                                        width: { md: `${Math.max(10, (name.length) + 2)}ch`, xs: '100%' }
+                                        width: { md: getWidthFromValue(newEventNames[name] ?? name, '20ch'), xs: '100%' }
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -424,10 +337,10 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                     onChange={(e) => handleEventNameChange(name, e.target.value)} />
                                 {(_eventData.farms ?? []).map((id) => [id, 0] as [string, number])
                                     .concat(Object.entries(_eventData.materials ?? {})
-                                        .sort(([idA], [idB]) => itemsJson[idA as keyof typeof itemsJson].sortId - itemsJson[idB as keyof typeof itemsJson].sortId))
+                                        .sort(([idA], [idB]) => standardItemsSort(idA, idB)))
                                     .map(([id, quantity], idx) => (
-                                        <ItemBase key={`${id}${quantity === 0 && "-farm"}`} itemId={id} size={itemBaseSize}>
-                                            <Typography {...numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
+                                        <ItemBase key={`${id}${quantity === 0 && "-farm"}`} itemId={id} size={getItemBaseStyling("tracker").itemBaseSize}>
+                                            <Typography {...getItemBaseStyling("tracker").numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
                                         </ItemBase>
                                     ))}
                             </Stack>
@@ -465,44 +378,21 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                     <AccordionDetails style={{ display: 'flex', gap: 8 }}>
                         <Stack direction="row" style={{ width: '100%', flexWrap: 'wrap', gap: 8 }}>
                             {memoizedDetails.map((element) => {/*cloning existing elements for speed*/
-                                const id = element.key?.toString().split('-')[0];
+                                const id = element.props.itemId;
                                 if (!id) return null;
+                                const isFocused = focusedId?.id === id && focusedId?.name === name;
+                                const _value = _eventData.materials[id]
+                                    ? (!isFocused ? formatNumber(_eventData.materials[id]) : _eventData.materials[id])
+                                    : "";
+                                const _width = getWidthFromValue(_value, '4ch');
                                 return React.cloneElement(element, {
-                                    children: React.Children.map(element.props.children, (child) => {
-                                        if (React.isValidElement(child)) {
-                                            if (child.type === Stack) {
-                                                return React.cloneElement(child as React.ReactElement<any>, {
-                                                    onClick: (e: React.MouseEvent<HTMLDivElement>) => {
-                                                        e.stopPropagation();
-                                                        handleIconClick(name, id);
-                                                    },
-                                                    backgroundColor: _eventData.farms?.includes(id) ? "primary.main" : ""
-                                                    ,
-                                                });
-                                            }
-                                            if (child.type === TextField) {
-                                                return React.cloneElement(child as React.ReactElement<any>, {
-                                                    value: _eventData.materials[id] ?? "",
-                                                    onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                                                        handleQuantityChange(name, id!, Number(e.target.value)),
-                                                    slotProps: {
-                                                        htmlInput: {
-                                                            type: "text",
-                                                            sx: {
-                                                                textAlign: "right",
-                                                                width: "3.5ch",
-                                                                flexGrow: 1,
-                                                                color: "primary",
-                                                                fontWeight: "bolder",
-                                                            },
-                                                        },
-                                                    },
-                                                });
-                                            }
-                                            return child;
-                                        }
-                                        return child;
-                                    }),
+                                    value: _value,
+                                    width: _width,
+                                    isFocused: isFocused,
+                                    onChange: (value: number) => handleQuantityChange(name, id, value),
+                                    highlighted: _eventData.farms?.includes(id),
+                                    onIconClick: () => handleIconClick(name, id),
+                                    onFocus: () => setFocusedId({ id, name }),
                                 });
                             })}
                         </Stack>
@@ -510,7 +400,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 )}
             </Accordion>
         )
-    }, [rawEvents, newEventNames, expandedAccordtition, itemBaseSize, memoizedDetails, numberCSS,
+    }, [rawEvents, newEventNames, expandedAccordtition, memoizedDetails, focusedId, setFocusedId,
         handleDeleteEvent, handleIconClick, handleEventNameChange]
     )
     const renderedEvents = useMemo(() => {
@@ -604,7 +494,6 @@ const EventsTrackerDialog = React.memo((props: Props) => {
         setImportFormat(selectedFormat);
     };
 
-
     const copyToClipboard = () => {
         navigator.clipboard.writeText(exportData).then();
         setCopiedSuccessfully(true);
@@ -631,7 +520,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 });
             };
             //remove trash data not from itemsJson
-            const reindexedData = reindexSortedEvents(
+            const reindexedData = reindexEvents(
                 Object.entries(newData)
                     .filter(([, eData]) => {
                         //no mats event can exist
@@ -672,6 +561,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                         value={tab}
                         exclusive
                         onChange={handleToggleChange}
+                        aria-label="toggle-tab"
                     >
                         <ToggleButton value="input" aria-label="input">
                             <InputIcon />
@@ -695,7 +585,6 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                     ref={containerRef}>
                     <Box sx={{ display: (tab === "input") ? "unset" : "none" }}>
                         {renderedEvents}
-                        {/* Create new group */}
                         <Stack direction="row" gap={2} ml={2} mt={2} justifyContent="flex-start">
                             <TextField size="small" label="New Event Name" value={rawName} /* style={{ marginLeft: 'auto' }} */
                                 onChange={(e) => setRawName(e.target.value)} />
@@ -880,7 +769,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                     {importMessage}
                 </Alert>
             </Snackbar>
-            <AddEventToDepotDialog
+            <SubmitEventDialog
                 open={addEventToDepotDialogOpen}
                 onClose={() => setAddEventToDepotDialogOpen(false)}
                 onSubmit={handleSubmitEvent}

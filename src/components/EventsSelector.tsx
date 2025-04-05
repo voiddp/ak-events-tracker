@@ -15,7 +15,7 @@ import { Event, NamedEvent, EventsData, emptyEvent, emptyNamedEvent } from "../t
 import { getItemBaseStyling, customItemsSort, formatNumber } from "../utils/ItemUtils";
 
 interface EventsSelectorProps {
-    variant: 'summary' | 'builder';
+    variant: 'summary' | 'builder' | 'months';
     disabled?: boolean;
     eventsData: EventsData;
     selectedEvent?: Event | null;
@@ -31,25 +31,43 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
         onChange,
     } = props;
 
-    const label = `Select ${variant === 'summary' ? 'future' : 'modified'} Event`;
+    let label: string;
+    let emptyOption: string;
+
+    switch (variant) {
+        case 'builder': {
+            label = "Select event to modify";
+            emptyOption = "Add new event";
+            break;
+        }
+        case 'months': {
+            label = "Select month";
+            emptyOption = "no month selected";
+            break;
+        }
+        case 'summary': {
+            label = "Select future event";
+            emptyOption = "without event";
+            break;
+        }
+    };
+
     const [isSelectFinished, setIsSelectFinished] = useState(false);
 
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
-    const { baseSize, numberCSS } = getItemBaseStyling('selector', fullScreen);
-
-
+    const { itemBaseSize, numberCSS } = getItemBaseStyling('selector', fullScreen);
     const eventsList = useMemo(() => Object.entries(eventsData ?? {})
         .sort(([, a], [, b]) => a.index - b.index), [eventsData]);
 
-    const handleChange  = (eventIndex: number) => {
+    const handleChange = (eventIndex: number) => {
         setIsSelectFinished(true);
         if (eventIndex === -1) {
             onChange?.({ ...emptyNamedEvent });
             return;
         }
         const foundEntry = Object.entries(eventsData).find(([, event]) => event.index === eventIndex);
-        onChange?.( {
+        onChange?.({
             name: foundEntry ? foundEntry[0] : "",
             ...(foundEntry ? foundEntry[1] : emptyEvent),
         });
@@ -68,24 +86,24 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
             label={label}
             fullWidth
         >
-            <MenuItem value={-1} key={-1} className="no-underline">{`${variant === "builder" ? "Add new" : "without"} Event`}</MenuItem>
+            <MenuItem value={-1} key={-1} className="no-underline">{emptyOption}</MenuItem>
             <Divider component="li" />
             {eventsList
                 .map(([name, event]) => (
                     <MenuItem value={event.index} key={event.index} className="no-underline">
                         <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch">
-                            {`${event.index}: ${name}`} {!isSelectFinished ? (
+                            {`${event.index}: ${name} `} {!isSelectFinished ? (
                                 <Stack direction="row">
                                     {(event.farms ?? []).map((id) => [id, 0] as [string, number])
                                         .concat(Object.entries(event.materials)
                                             .sort(([itemIdA], [itemIdB]) => customItemsSort(itemIdA, itemIdB)))
-                                        .slice(0, fullScreen ? 4 : 10)
+                                        .slice(0, fullScreen ? 4 : 9)
                                         .map(([id, quantity], idx) => (
-                                            <ItemBase key={`${id}${quantity === 0 && "-farm"}`} itemId={id} size={baseSize}>
+                                            <ItemBase key={`${id}${quantity === 0 && "-farm"} `} itemId={id} size={itemBaseSize}>
                                                 <Typography {...numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
                                             </ItemBase>
                                         ))}
-                                    {"..."}
+                                    <small>{"..."}</small>
                                 </Stack>) : null}
                         </Stack>
                     </MenuItem>

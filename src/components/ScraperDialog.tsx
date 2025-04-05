@@ -1,15 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, Accordion, AccordionSummary, AccordionDetails, Button, Typography, Box, DialogActions, Stack, IconButton, TextField, Link, Tooltip, useTheme, useMediaQuery } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { WebEventsData, Event, EventsData, NamedEvent, WebEvent, SubmitEventProps } from '../types/events'
+import { WebEventsData, emptyWebEvent, EventsData, NamedEvent, WebEvent, SubmitEventProps } from '@/types/events'
 import { usePrtsWiki } from '../utils/hooks/usePrtsWiki';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import ItemBase from '@/components/ItemBase';
-import itemsJson from '../data/items.json';
-import AddEventToDepotDialog from '@/components/SubmitEventDialog';
+import SubmitEventDialog from '@/components/SubmitEventDialog';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
-import { getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isTier3Material } from '@/utils/ItemUtils'
-import { Close, Fullscreen } from "@mui/icons-material";
+import { formatNumber, standardItemsSort, getItemBaseStyling, isMaterial } from '@/utils/ItemUtils'
+import { Close } from "@mui/icons-material";
 
 
 interface Props {
@@ -29,20 +28,31 @@ const ScraperDialog = React.memo((props: Props) => {
   const [rawWebEvents, setRawWebEvents] = useState<WebEventsData>({});
   const [monthsAgo, setMonthsAGo] = useState(6);
 
-  const [addEventToDepotDialogOpen, setAddEventToDepotDialogOpen] = useState<boolean>(false);
-  const [handledEvent, setHandledEvent] = useState({
-    index: -1,
-    name: "" as string,
-    materials: {} as Record<string, number>,
-    farms: [] as string[],
-  });
+  const [submitEventDialogOpen, setSubmitEventDialogOpen] = useState<boolean>(false);
+  const [handledEvent, setHandledEvent] = useState({ ...emptyWebEvent });
   const [selectedEvent, setSelectedEvent] = useState<NamedEvent>();
 
   useEffect(() => {
     if (!open) return;
-    setRawWebEvents(webEvents ?? {});
+    //use for release
+    //setRawWebEvents(webEvents ?? {});
+
+    //+remove for release;
+    setRawWebEvents((prev) => {
+      const _next = webEvents ?? {};
+      Object.keys(_next).forEach(key => {
+        const title = _next[key]?.title ?? "";
+        if (title) {
+          _next[key].name = title;
+          delete _next[key].title;
+        }
+      })
+      return _next
+    });
+    //-
   }, [open, webEvents]
   );
+
 
   const handleClose = () => {
     setWebEvents(rawWebEvents);
@@ -74,7 +84,7 @@ const ScraperDialog = React.memo((props: Props) => {
         const _webEvent = { ..._next[pageName] };
         _webEvent.materials = items;
         if (title) {
-          _webEvent.title = title;
+          _webEvent.name = title;
         }
         if (farms && farms.length > 0) {
           _webEvent.farms = farms;
@@ -95,19 +105,19 @@ const ScraperDialog = React.memo((props: Props) => {
   const handleAddEventDialogOpen = (item: WebEvent) => {
     if (Object.keys(rawWebEvents[item.pageName]?.materials ?? {}).length === 0) return;
     setHandledEvent({
-      name: item.title ?? item.pageName,
-      index: rawWebEvents[item.pageName].index || 99,
+      ...item,
+      name: item.name,
       materials: rawWebEvents[item.pageName].materials ?? {},
       farms: rawWebEvents[item.pageName].farms ?? []
     });
-    setAddEventToDepotDialogOpen(true);
+    setSubmitEventDialogOpen(true);
   }
 
   return (
     <>
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md"
-      fullScreen={fullScreen}
-      sx={{ overflow: 'visible' }}>
+        fullScreen={fullScreen}
+        sx={{ overflow: 'visible' }}>
         {loading["LIST"] && ProgressElement("LIST")}
         <DialogTitle>CN events from prts
           <IconButton onClick={handleClose} sx={{ display: { sm: "none" }, gridArea: "close" }}>
@@ -143,7 +153,7 @@ const ScraperDialog = React.memo((props: Props) => {
                     <AccordionSummary
                       expandIcon={<ExpandMoreIcon />}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch">
-                        {item.date && <Typography>{`(${(new Date(item.date)).toISOString().split('T')[0]}) ${item.title ?? item.pageName}`}</Typography>}
+                        {item.date && <Typography>{`(${(new Date(item.date)).toISOString().split('T')[0]}) ${item.name ?? item.pageName}`}</Typography>}
                         <Stack direction="row" gap={2}>
                           {(Object.keys(rawWebEvents[item.pageName]?.materials ?? {}).length > 0
                             || rawWebEvents[item.pageName]?.farms) && <Tooltip title="add mats to event list">
@@ -160,6 +170,12 @@ const ScraperDialog = React.memo((props: Props) => {
                                 }} />
                             </Tooltip>}
                           <CloudDownloadIcon
+                            sx={{
+                              transition: "opacity 0.1s",
+                              "&:focus, &:hover": {
+                                opacity: 0.5,
+                              },
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleParseEvent(item.pageName, item.link)
@@ -176,16 +192,16 @@ const ScraperDialog = React.memo((props: Props) => {
                           {rawWebEvents[item.pageName].farms && (
                             <Box>
                               Tier 3 Farms: {(rawWebEvents[item.pageName].farms ?? []).map((id) => (
-                                <ItemBase key={`${id}-farms`} itemId={id} size={getItemBaseStyling('builder').baseSize} />
+                                <ItemBase key={`${id}-farms`} itemId={id} size={getItemBaseStyling('builder').itemBaseSize} />
                               ))}
                             </Box>
                           )}
                           {rawWebEvents[item.pageName].materials && (
                             <>
-                              {Object.entries(rawWebEvents[item.pageName].materials)
-                                .sort(([idA], [idB]) => itemsJson[idA as keyof typeof itemsJson].sortId - itemsJson[idB as keyof typeof itemsJson].sortId)
+                              {Object.entries(rawWebEvents[item.pageName].materials ?? {})
+                                .sort(([idA], [idB]) => standardItemsSort(idA, idB))
                                 .map(([id, quantity], idx) => (
-                                  <ItemBase key={`${id}`} itemId={id} size={getItemBaseStyling('builder').baseSize}>
+                                  <ItemBase key={`${id}`} itemId={id} size={getItemBaseStyling('builder').itemBaseSize}>
                                     <Typography {...getItemBaseStyling('builder').numberCSS}>{formatNumber(quantity)}</Typography>
                                   </ItemBase>
                                 ))}
@@ -220,9 +236,9 @@ const ScraperDialog = React.memo((props: Props) => {
           )}
         </DialogActions>
       </Dialog>
-      <AddEventToDepotDialog
-        open={addEventToDepotDialogOpen}
-        onClose={() => setAddEventToDepotDialogOpen(false)}
+      <SubmitEventDialog
+        open={submitEventDialogOpen}
+        onClose={() => setSubmitEventDialogOpen(false)}
         variant="builder"
         onSubmit={submitEvent}
         eventsData={eventsData}
