@@ -1,13 +1,23 @@
 'use client'
-
 /* import Image from "next/image"; */
-import { Box, Button, Paper } from "@mui/material";
+import { Box, Button, colors, Divider, IconButton, Paper, Typography } from "@mui/material";
 import { useCallback, useState } from "react";
 import ScraperDialog from "../components/ScraperDialog";
 import EventsTracker from "@/components/EventsTrackerMain";
 import EventsTrackerDialog from "@/components/EventsTrackerDialog";
 import useEvents from "../utils/hooks/useEvents";
-import { SubmitEventProps } from "@/types/events";
+import { emptyNamedEvent, NamedEvent, SubmitEventProps } from "@/types/events";
+import { CacheProvider } from "@emotion/react";
+import createCache from "@emotion/cache";
+import Head from "./Head";
+import MenuIcon from '@mui/icons-material/Menu';
+import { CollapsibleDrawer } from "@/components/Drawer/CollapsibleDrawer";
+import { DrawerListItem } from "@/components/Drawer/DrawerListItem";
+import TravelExploreIcon from '@mui/icons-material/TravelExplore';
+import LogoDevIcon from '@mui/icons-material/LogoDev';
+import SubmitEventDialog from "@/components/SubmitEventDialog";
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function Home() {
 
@@ -16,8 +26,19 @@ export default function Home() {
   const [trackerOpen, setTrackerOpen] = useState(true);
   const [summaryOpen, setSummaryOpen] = useState(false);
 
+  const [submitDialogOpen, setSubmitDialogOpen] = useState<boolean>(false);
+  const [handledEvent, setHandledEvent] = useState({ ...emptyNamedEvent });
+  const [selectedEvent, setSelectedEvent] = useState<NamedEvent>();
+  const [submitVariant, setSubmitVariant] = useState<"tracker" | "months">("months");
+
   const [eventsData, setEvents, submitEvent] = useEvents();
   ///
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const handleDrawerOpen = () => {
+    setDrawerOpen((prev) => !prev);
+  }
 
   const [forceUpdate, setForceUpdate] = useState(false);
   const handleAddItemsToDepot = (items: [string, number][]) => {
@@ -32,51 +53,125 @@ export default function Home() {
   }, [submitEvent]
   );
 
-  return (
-    //<Box flex={1} overflow="auto"/* sx={{pt: 1, pb: 0, minHeight: "80vh", gridTemplateRows: "1fr", gap: 1}} */>
-    <Box sx={{ flex: 1, overflow: "auto" }}>
-      <Paper elevation={2} sx={{ maxWidth: "1200px", ml: "auto", mr: "auto" }}> {/* sx={{flex:1, overflow:"auto"}} */}
-        <EventsTracker
-          forceUpdate={forceUpdate}
-          forceUpdateCallback={setForceUpdate}
-          open={trackerOpen}
-          onClose={() => setTrackerOpen(false)}
-          eventsData={eventsData}
-          onChange={setEvents}
-          submitEvent={handleSubmitEvent}
-        >
-          <Button variant="contained"
-            color="primary" onClick={() => {
-              setEventsOpen(true);
-              setTrackerOpen(false)
-            }}>
-            Search CN events</Button>
-          <Button variant="contained"
-            color="primary" onClick={() => {
-              setEventsKroosterOpen(true);
-            }}>Krooster Component Check...</Button>
+  const createEmotionCache = () => {
+    return createCache({ key: "css", prepend: true });
+  };
+  const clientSideEmotionCache = createEmotionCache();
 
-        </EventsTracker>
-        <EventsTrackerDialog
-          eventsData={eventsData}
-          open={eventsKroosterOpen}
-          onChange={setEvents}
-          onClose={() => {
-            setEventsKroosterOpen(false);
+  return (
+    <CacheProvider value={clientSideEmotionCache}>
+      <Head menuButton={
+        <IconButton
+          color="inherit"
+          aria-label="open drawer"
+          onClick={handleDrawerOpen}
+          edge="start"
+          sx={[
+            {
+              display: { xs: "unset", md: "none" },
+              verticalAlign: "baseline",
+            },
+          ]}
+        >
+          <MenuIcon />
+        </IconButton>
+      }
+      >
+        {/* <Button variant="contained"
+          color="primary" onClick={() => {
+            setEventsOpen(true);
+            setTrackerOpen(false)
+          }}>
+          Search CN events</Button> */}
+      </Head>
+      <CollapsibleDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      >
+        <DrawerListItem
+          icon={<TravelExploreIcon fontSize="large" />}
+          text="Search PRTS events"
+          onClick={() => {
+            setEventsOpen(true);
+            setTrackerOpen(false);
           }}
-          openSummary={setSummaryOpen}
-          submitEvent={handleSubmitEvent}
         />
-        <ScraperDialog
-          open={eventsOpen}
-          onClose={() => {
-            setEventsOpen(false);
-            setTrackerOpen(true)
+        <DrawerListItem
+          icon={<CalendarMonthIcon fontSize="large" />}
+          text="Add months"
+          onClick={() => {
+            setHandledEvent({ ...emptyNamedEvent });
+            setSubmitVariant('months');
+            setSubmitDialogOpen(true);
           }}
-          eventsData={eventsData}
-          submitEvent={submitEvent}
         />
-      </Paper>
-    </Box>
-  );
+        <Divider />
+        <DrawerListItem
+          icon={<LogoDevIcon fontSize="large" />}
+          text="Krooster test..."
+          onClick={() => {
+            setEventsKroosterOpen(true);
+          }} />
+        <Divider />
+        <DrawerListItem
+          icon={<DeleteIcon fontSize="large" />}
+          text={"Reset Events"}
+          onClick={() => {
+            setEvents({});
+            setForceUpdate(true);
+          }}
+          sx={{color: "rgb(248, 112, 97) "}} />
+
+        {/* 
+                <DrawerListItem icon={<SettingsIcon />} text="Settings" /> */}
+        {/* Add more items or pass children */}
+      </CollapsibleDrawer>
+      <Box sx={{ flex: 1}}>
+        <Paper elevation={2}
+        sx={{ maxWidth: "1200px", ml: {xs: "auto", md: "80px", xl: "auto"}, mr: "auto", /* pb: "20px" */  }}>
+          <EventsTracker
+            forceUpdate={forceUpdate}
+            forceUpdateCallback={setForceUpdate}
+            open={trackerOpen}
+            onClose={() => setTrackerOpen(false)}
+            eventsData={eventsData}
+            onChange={setEvents}
+            submitEvent={handleSubmitEvent}
+          >
+          </EventsTracker>
+          <EventsTrackerDialog
+            eventsData={eventsData}
+            open={eventsKroosterOpen}
+            onChange={setEvents}
+            onClose={() => {
+              setEventsKroosterOpen(false);
+            }}
+            openSummary={setSummaryOpen}
+            submitEvent={handleSubmitEvent}
+          />
+          <ScraperDialog
+            open={eventsOpen}
+            onClose={() => {
+              setEventsOpen(false);
+              setTrackerOpen(true)
+            }}
+            eventsData={eventsData}
+            submitEvent={submitEvent}
+          />
+          <SubmitEventDialog
+            open={submitDialogOpen}
+            onClose={() => {
+              setSubmitDialogOpen(false)
+              setSubmitVariant('months');
+            }}
+            variant={submitVariant}
+            onSubmit={handleSubmitEvent}
+            handledEvent={handledEvent}
+            eventsData={eventsData}
+            selectedEvent={selectedEvent}
+            onSelectorChange={setSelectedEvent}
+          />
+        </Paper>
+      </Box>
+    </CacheProvider>);
 }

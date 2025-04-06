@@ -139,13 +139,13 @@ const SubmitEventDialog = (props: Props) => {
                 break;
             default:
         }
-        console.log("handling:",
+        /* console.log("handling:",
             eventName,
             selectedEventIndex,
             [...materialsToDepot],
             { ...materialsToEvent },
             [...farms],
-            replaceName);
+            replaceName); */
         onSubmit({
             eventName,
             selectedEventIndex,

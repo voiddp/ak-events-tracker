@@ -30,7 +30,7 @@
 .main {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 10px;
   grid-row-start: 2;
 }
 

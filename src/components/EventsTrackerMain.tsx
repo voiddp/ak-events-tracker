@@ -124,14 +124,15 @@ const EventsTrackerMain = React.memo((props: Props) => {
                 <li>Events can be added manually by creating a new event, expanding it, and entering material amounts.</li>
                 <li>Up to three farmable Tier 3 materials per event can be selected by clicking on the item images within an expanded event.</li>
                 <li>Events can be reordered by dragging and dropping them in the event list.</li>
-                <li>Materials from an event can be fully or partially added to the depot using the `&quot;`Add to Depot`&quot;` button on the event.</li>
+                {/* <li>Materials from an event can be fully or partially added to the depot using the `&quot;`Add to Depot`&quot;` button on the event.</li> */}
             </ul>
             <ul>
-                <li>Some event building functions are preset to apply to event list</li>
+                <h3>Menu has some events building functions to use:</h3>
                 <ul>
-                    <li>`&quot;`Search CN events`&quot;`Data is pulled from prts.wiki.</li>
-                    <li>Use individual events pages pull buttons to get income data for each</li>
-                    <li>`&quot;`Add Months`&quot;` 6 next months income from dailies, weeklies, and monthlies as event data.</li>
+                    <li><big><b>Search CN events</b></big>: Data is pulled and parsed from prts.wiki.</li>
+                    <li>Individual event list entries download buttons pull income data for each event.</li>
+                    <li><big><b>Add Months</b></big>: 6 next months income from dailies, weeklies, and monthlies as event data.</li>
+                    <li>PRTS list and Month events can be added as new, replace or add to mats of some other event.</li>
                 </ul>
             </ul>
             <ul>
@@ -399,7 +400,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
                             </Stack>
                         </Stack>
                         <Stack direction="row" gap={2}>
-                            <Tooltip title="Select materials to add to depot">
+                            {/* <Tooltip title="Select materials to add to depot">
                                 <MoveToInboxIcon
                                     fontSize="large"
                                     sx={{
@@ -414,7 +415,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
                                         setHandledEvent({ name, index: _eventData.index, materials: _eventData.materials ?? {}, farms: _eventData.farms ?? [] });
                                         setSubmitDialogOpen(true);
                                     }} />
-                            </Tooltip>
+                            </Tooltip> */}
                             <DeleteIcon
                                 fontSize="large"
                                 sx={{
@@ -597,58 +598,63 @@ const EventsTrackerMain = React.memo((props: Props) => {
 
     return (
         <>
-            <Box sx={{ width: "100%", padding: 2 }}>
+            <Box sx={{ width: "100%", padding: 2, height: "inherit" }}>
                 {/* Top Section */}
-                <Stack direction="row" alignItems="center" spacing={2} mb={2}>
-                    <ToggleButtonGroup
-                        orientation="horizontal"
-                        value={tab}
-                        exclusive
-                        onChange={(_, value) => value && setTab(value)}
-                        aria-label="toggle-tab"
-                    >
-                        <ToggleButton value="input" aria-label="input">
-                            <InputIcon />
-                        </ToggleButton>
-                        <ToggleButton value="importExport" aria-label="importExport">
-                            <ImportExportIcon />
-                        </ToggleButton>
-                        <ToggleButton value="help" aria-label="help">
-                            <QuestionMarkIcon />
-                        </ToggleButton>
-                    </ToggleButtonGroup>
-                    <Typography>
-                        {(tab === "input") && (!fullScreen ? "Events Tracker" : "Events")}
-                        {(tab === "importExport") && "Import/Export"}
-                        {(tab === "help") && "Description"}
-                    </Typography>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} mb={1}>
+                    <Stack direction="row" alignItems="baseline" gap={3}>
+                        <ToggleButtonGroup
+                            orientation="horizontal"
+                            value={tab}
+                            exclusive
+                            onChange={(_, value) => value && setTab(value)}
+                            aria-label="toggle-tab"
+                        >
+                            <ToggleButton value="input" aria-label="input">
+                                <InputIcon />
+                            </ToggleButton>
+                            <ToggleButton value="importExport" aria-label="importExport">
+                                <ImportExportIcon />
+                            </ToggleButton>
+                            <ToggleButton value="help" aria-label="help">
+                                <QuestionMarkIcon />
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                        {!fullScreen && <Box component="h3">
+                            {(tab === "input") && (!fullScreen ? "Events" : "Events")}
+                            {(tab === "importExport") && "Import/Export"}
+                            {(tab === "help") && "Description"}
+                        </Box>}
+                    </Stack>
+                    <Stack direction="row">
+                        <Stack direction="row" gap={2} ml={2}>
+                            <TextField
+                                size="small"
+                                label="New Event Name"
+                                value={rawName}
+                                onChange={(e) => setRawName(e.target.value)}
+                            />
+                            <Button
+                                size={fullScreen ? 'small': "medium"}
+                                startIcon={<AddIcon />}
+                                variant="contained"
+                                color="primary"
+                                disabled={rawName.length === 0}
+                                onClick={() => addNewEvent(rawName.trim())}
+                            >
+                                {!fullScreen && "New Event"}
+                            </Button>
+                        </Stack>
+                    </Stack>
                     {/* <IconButton>
               <CloseIcon />
             </IconButton> */}
                 </Stack>
                 {/* Content Section */}
-                <Box sx={{ position: "relative", height: "75vh", /* { sm: "500px", xl: "700px" } ,*/ overflowY: "auto" }}>
+                <Box sx={{ /* height: "85vh", */ /* { sm: "500px", xl: "700px" } ,*/ /* overflowY: "auto" */ }}>
                     {/* Input Tab */}
                     {tab === "input" && (
                         <Box>
                             {renderedEvents}
-                            <Stack direction="row" gap={2} ml={2} mt={2} justifyContent="flex-start">
-                                <TextField
-                                    size="small"
-                                    label="New Event Name"
-                                    value={rawName}
-                                    onChange={(e) => setRawName(e.target.value)}
-                                />
-                                <Button
-                                    startIcon={<AddIcon />}
-                                    variant="contained"
-                                    color="primary"
-                                    disabled={rawName.length === 0}
-                                    onClick={() => addNewEvent(rawName.trim())}
-                                >
-                                    New Event
-                                </Button>
-                            </Stack>
                         </Box>
                     )}
 
@@ -783,40 +789,20 @@ const EventsTrackerMain = React.memo((props: Props) => {
                 </Box>
 
                 {/* Bottom Section */}
-                <Stack direction="row" justifyContent="space-between" gap={2} mt={2}>
+                {/* <Stack direction="row" justifyContent="space-between" gap={2} mt={2}>
                     <Stack direction="row" justifyContent="flex-start" gap={2}>
-                        {/* <Button onClick={() => {
+                        {<Button onClick={() => {
                         handleClose();
                         openSummary(true);
                     }}
                         variant="contained"
                         color="primary">
                         Open Summary
-                    </Button> */}
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={() => {
-                                setHandledEvent({ ...emptyNamedEvent });
-                                setSubmitVariant('months');
-                                setSubmitDialogOpen(true);
+                    </Button>}
 
-                            }}
-                        >
-                            Add Months
-                        </Button>
                         {children}
                     </Stack>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<DeleteIcon />}
-                        onClick={resetEventsList}
-                        disabled={tab !== "input"}
-                    >
-                        Reset
-                    </Button>
-                </Stack>
+                </Stack> */}
             </Box>
             <Snackbar
                 anchorOrigin={{

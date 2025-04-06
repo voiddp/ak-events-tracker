@@ -6,31 +6,36 @@ First, run the development server:
 
 ## install dependacies
 1. yarn install
-2. Activate Vercel - Redis storage and connect to project, or Redis account (REDIS_URL into .env.development.local)
+2. Activate Vercel - Redis storage and connect to project, or Redis account (REDIS_URL into .env.local)
 
 ##  run dev build
 yarn dev
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## eslint check
-yarn lint
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## production deploy
 yarn build
+
 yarn start
 
 ## License
 BSD0
 
 ## Acknowledgements
-Krooster for
+Krooster for 
+
 [ak-rooster](https://github.com/neeia/ak-roster)
+
 Aceship and PuppiizSunniiz for
+
 [Arknight-Images](https://github.com/PuppiizSunniiz/Arknight-Images)
+
 Kengxxiao for
+
 [ArknightsGameData CN](https://github.com/Kengxxiao/ArknightsGameData)
+
 [ArknightsGameData Yostar](https://github.com/Kengxxiao/ArknightsGameData_YoStar)
 
-[prts.wiki CN events to create](https://prts.wiki/)
+[prts.wiki as source of future events data](https://prts.wiki/)
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).e

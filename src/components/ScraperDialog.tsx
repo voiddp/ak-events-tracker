@@ -119,12 +119,40 @@ const ScraperDialog = React.memo((props: Props) => {
         fullScreen={fullScreen}
         sx={{ overflow: 'visible' }}>
         {loading["LIST"] && ProgressElement("LIST")}
-        <DialogTitle>CN events from prts
+        <DialogTitle justifyContent="space-between">
+        <Stack direction="row" gap={1} mr={1}>
+          From prts.wiki:
+        <TextField
+            label="months"
+            value={monthsAgo}
+            size="small"
+            sx={{width:"4ch"}}
+            slotProps={{
+              htmlInput: {
+                sx: {textAlign: "center"}
+              }
+            }}
+            onChange={(e) => setMonthsAGo(Number(e.target.value) || 6)}
+          /> 
+        <Button
+            variant="contained"
+            color="primary"
+            onClick={handleFetchEvents}
+            disabled={loading["LIST"]}
+          >
+            Fetch Events
+          </Button>
+          </Stack>
           <IconButton onClick={handleClose} sx={{ display: { sm: "none" }, gridArea: "close" }}>
             <Close />
           </IconButton>
         </DialogTitle>
         <DialogContent>
+          {error && (
+            <Typography textAlign="center">
+              Error: {error.message}
+            </Typography>
+          )}
           {Object.keys(rawWebEvents ?? {}).length > 0 &&
             Object.entries(rawWebEvents)
               .sort(([, a], [, b]) => {
@@ -152,11 +180,11 @@ const ScraperDialog = React.memo((props: Props) => {
                   }}>
                     <AccordionSummary
                       expandIcon={<ExpandMoreIcon />}>
-                      <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch">
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch" pr={2}>
                         {item.date && <Typography>{`(${(new Date(item.date)).toISOString().split('T')[0]}) ${item.name ?? item.pageName}`}</Typography>}
                         <Stack direction="row" gap={2}>
                           {(Object.keys(rawWebEvents[item.pageName]?.materials ?? {}).length > 0
-                            || rawWebEvents[item.pageName]?.farms) && <Tooltip title="add mats to event list">
+                            || rawWebEvents[item.pageName]?.farms) && <Tooltip title="Add event to Tracker">
                               <MoveToInboxIcon
                                 fontSize="large"
                                 sx={{
@@ -171,7 +199,8 @@ const ScraperDialog = React.memo((props: Props) => {
                                 }} />
                             </Tooltip>}
                           {!rawWebEvents[item.pageName]?.webDisable
-                            && <CloudDownloadIcon
+                            && <Tooltip title="pull event data from page">
+                              <CloudDownloadIcon
                               fontSize="large"
                               sx={{
                                 transition: "opacity 0.1s",
@@ -183,6 +212,7 @@ const ScraperDialog = React.memo((props: Props) => {
                                 e.stopPropagation();
                                 handleParseEvent(item.pageName, item.link)
                               }} />
+                              </Tooltip>
                           }
                         </Stack>
                       </Stack>
@@ -220,24 +250,6 @@ const ScraperDialog = React.memo((props: Props) => {
           }
         </DialogContent>
         <DialogActions sx={{ justifyContent: "flex-start" }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleFetchEvents}
-            disabled={loading["LIST"]}
-          >
-            Fetch Events, months:
-          </Button>
-          <TextField
-            value={monthsAgo}
-            size="small"
-            onChange={(e) => setMonthsAGo(Number(e.target.value) || 6)}
-          />
-          {error && (
-            <Typography>
-              Error: {error.message}
-            </Typography>
-          )}
         </DialogActions>
       </Dialog>
       <SubmitEventDialog
