@@ -52,7 +52,8 @@ const argNames = {
   curAniPrefix: '轮换委托',
   curAniDate: `结束时间`,
   link: `link=`,
-  themeUpdateHistory: '主题更新记录'
+  themeUpdateHistory: '主题更新记录',
+  totals: '报酬合计',
 };
 
 const dictionary = {
@@ -387,7 +388,7 @@ export const usePrtsWiki = () => {
       let result: Record<string, number> = {};
       const title = findENTitle($);
       const farms = findFarms($);
-      result = parseSignInEvent($, result);
+      result = parseTextRewards($, result);
       result = parseShopInEvent($, result);
       result = parseNumDivs($, result);
       result = parseListDivs($, result);
@@ -625,12 +626,34 @@ const findFarms = ($: cheerio.CheerioAPI): string[] => {
 };
 
 const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, number>) => {
-  $('tr').each((_, tr) => {
-    const $tr = $(tr);
-    if ($tr.text().includes('报酬合计')) return;
+  $('tr, div:not(tr div)').each((_, element) => {
 
-    $tr.find('div').each((_, div) => {
-      const $div = $(div);
+    const $element = $(element);
+    if ($element.is('tr')) {
+      if ($element.text().includes(argNames.totals)) return; //ignore "totals" row, count only normals
+
+      $element.find('div').each((_, div) => {
+        //parse multiple divs in tr
+        const $div = $(div);
+        const title = $div.find('a').attr('title');
+
+        if (title) {
+          const matchedItem = getItemByCnName(title);
+
+          if (matchedItem) {
+            const id = matchedItem.id;
+            const valueText = $div.find('span').text().trim();
+            const value = parseChineseNumber(valueText) ?? 0;
+
+            if (value > 0) {
+              result[id] = (result[id] || 0) + value;
+            }
+          }
+        }
+      });
+    } else if ($element.is('div')) {
+      //parse one divs outside of table ros same way
+      const $div = $element;
       const title = $div.find('a').attr('title');
 
       if (title) {
@@ -646,7 +669,7 @@ const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, number>) => 
           }
         }
       }
-    });
+    }
   });
 
   return result;
@@ -699,25 +722,30 @@ function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-const parseSignInEvent = ($: cheerio.CheerioAPI, result: Record<string, number>) => {
-  $('p').each((_, element) => {
-    const text = $(element).text();
-    if (!text.includes('日')) return;
+const parseTextRewards = ($: cheerio.CheerioAPI, result: Record<string, number>) => {
 
-    Object.values(itemsJson).forEach((item) => {
-      const { cnName } = item as { cnName: string };
-      if (!cnName) return;
-      const regex = new RegExp(`${cnName}[\\*xX](\\d+)`, 'g');
-      let match;
+  //restrict text search to ouside of inner elements of table rows (other cases) and known li evenpoint case
+  $('p, span, li:not([class*="eventpoint"])').not('tr p, tr span, tr li')
+    .each((_, element) => {
+      const fullText = $(element).text();
+      const splits = fullText.split(/[,.;]/).map(part => part.trim()).filter(part => part);
+      // if (!text.includes('日')) return; not restrict to sign-ins.
 
-      while ((match = regex.exec(text)) !== null) {
-        const quantity = parseChineseNumber(match[1]) ?? 0;
-        if (quantity > 0) {
-          result[item.id] = (result[item.id] ?? 0) + quantity;
-        }
-      }
+      Object.values(itemsJson).forEach((item) => {
+        const { cnName } = item as { cnName: string };
+        if (!cnName) return;
+        const regex = new RegExp(`${cnName}[x×*]\s*(\\d+)`, 'g');
+        let match;
+        splits.forEach((text) => {
+          while ((match = regex.exec(text)) !== null) {
+            const quantity = parseChineseNumber(match[1]) ?? 0;
+            if (quantity > 0) {
+              result[item.id] = (result[item.id] ?? 0) + quantity;
+            }
+          }
+        })
+      });
     });
-  });
   return result;
 };
 
