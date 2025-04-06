@@ -97,7 +97,7 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
                                     {(event.farms ?? []).map((id) => [id, 0] as [string, number])
                                         .concat(Object.entries(event.materials)
                                             .sort(([itemIdA], [itemIdB]) => customItemsSort(itemIdA, itemIdB)))
-                                        .slice(0, fullScreen ? 4 : 9)
+                                        .slice(0, fullScreen ? 4 : 10)
                                         .map(([id, quantity], idx) => (
                                             <ItemBase key={`${id}${quantity === 0 && "-farm"} `} itemId={id} size={itemBaseSize}>
                                                 <Typography {...numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>

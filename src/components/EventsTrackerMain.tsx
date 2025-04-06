@@ -127,6 +127,14 @@ const EventsTrackerMain = React.memo((props: Props) => {
                 <li>Materials from an event can be fully or partially added to the depot using the `&quot;`Add to Depot`&quot;` button on the event.</li>
             </ul>
             <ul>
+                <li>Some event building functions are preset to apply to event list</li>
+                <ul>
+                    <li>`&quot;`Search CN events`&quot;`Data is pulled from prts.wiki.</li>
+                    <li>Use individual events pages pull buttons to get income data for each</li>
+                    <li>`&quot;`Add Months`&quot;` 6 next months income from dailies, weeklies, and monthlies as event data.</li>
+                </ul>
+            </ul>
+            <ul>
                 <li>Supports export and import from other Arknights community data sources (like tracking sheets). Data should be compiled into the presented import formats.</li>
             </ul>
         </>;
@@ -135,8 +143,8 @@ const EventsTrackerMain = React.memo((props: Props) => {
         if (forceUpdate) {
             setRawEvents(eventsData ?? {})
             forceUpdateCallback(false);
-    }
-    },[forceUpdate, eventsData, forceUpdateCallback])
+        }
+    }, [forceUpdate, eventsData, forceUpdateCallback])
 
     useEffect(() => {
         if (open) {
@@ -334,7 +342,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
         }
         setHandledEvent({ ...emptyNamedEvent });
 
-    }, [submitVariant, handledEvent, submitEvent, handleDeleteEvent, setRawEvents, setHandledEvent, ]);
+    }, [submitVariant, handledEvent, submitEvent, handleDeleteEvent, setRawEvents, setHandledEvent,]);
 
     const defaultEventMaterials = useMemo(() =>
         getDefaultEventMaterials(itemsJson),

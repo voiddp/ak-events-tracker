@@ -158,6 +158,7 @@ const ScraperDialog = React.memo((props: Props) => {
                           {(Object.keys(rawWebEvents[item.pageName]?.materials ?? {}).length > 0
                             || rawWebEvents[item.pageName]?.farms) && <Tooltip title="add mats to event list">
                               <MoveToInboxIcon
+                                fontSize="large"
                                 sx={{
                                   transition: "opacity 0.1s",
                                   "&:focus, &:hover": {
@@ -169,17 +170,20 @@ const ScraperDialog = React.memo((props: Props) => {
                                   handleAddEventDialogOpen(item);
                                 }} />
                             </Tooltip>}
-                          <CloudDownloadIcon
-                            sx={{
-                              transition: "opacity 0.1s",
-                              "&:focus, &:hover": {
-                                opacity: 0.5,
-                              },
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleParseEvent(item.pageName, item.link)
-                            }} />
+                          {!rawWebEvents[item.pageName]?.webDisable
+                            && <CloudDownloadIcon
+                              fontSize="large"
+                              sx={{
+                                transition: "opacity 0.1s",
+                                "&:focus, &:hover": {
+                                  opacity: 0.5,
+                                },
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleParseEvent(item.pageName, item.link)
+                              }} />
+                          }
                         </Stack>
                       </Stack>
                     </AccordionSummary>

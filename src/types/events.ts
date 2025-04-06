@@ -18,6 +18,7 @@ export type WebEvent = {
     pageName: string;
     date?: Date;
     link: string;
+    webDisable?: boolean;
     //+remove for release;
     title?: string;
     //-

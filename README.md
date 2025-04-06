@@ -1,30 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This project was created as a module component to add to Krooster or use standalone with export/import, to allow track future Arknights events and have event constructor. Data is either precalculated or pulled and parsed from prts.wiki with web scrapping functionality.
 
 ## Getting Started
 
 First, run the development server:
 
-```bash
-yarn dev
-```
+## install dependacies
+1. yarn install
+2. Activate Vercel - Redis storage and connect to project, or Redis account (REDIS_URL into .env.development.local)
 
+##  run dev build
+yarn dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## eslint check
+yarn lint
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## production deploy
+yarn build
+yarn start
 
-## Learn More
+## License
+BSD0
 
-To learn more about Next.js, take a look at the following resources:
+## Acknowledgements
+Krooster for
+[ak-rooster](https://github.com/neeia/ak-roster)
+Aceship and PuppiizSunniiz for
+[Arknight-Images](https://github.com/PuppiizSunniiz/Arknight-Images)
+Kengxxiao for
+[ArknightsGameData CN](https://github.com/Kengxxiao/ArknightsGameData)
+[ArknightsGameData Yostar](https://github.com/Kengxxiao/ArknightsGameData_YoStar)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+[prts.wiki CN events to create](https://prts.wiki/)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).

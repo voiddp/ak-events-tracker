@@ -6,7 +6,7 @@ import { getItemByCnName } from '@/utils/ItemUtils';
 import { fetchHtml, fetchJson } from '@/lib/axiosServer';
 import { LinearProgress } from '@mui/material';
 import { randomBytes } from 'crypto';
-import { WebEvent, WebEventsData, emptyWebEvent } from '@/types/events';
+import { WebEvent, WebEventsData, emptyEvent, emptyWebEvent } from '@/types/events';
 import useLocalStorage from './useLocalStorage';
 
 type PageResult = {
@@ -31,7 +31,9 @@ interface MediaWikiApiResponse {
 
 const pageNames = {
   events: '活动一览',
-  operations: '关卡一览/常态事务'
+  operations: '关卡一览/常态事务',
+  integratedStrategyList: '模板:集成战略导航',
+  IS_navbox: '模板:Navbox_集成战略'
 };
 
 const templates = {
@@ -48,7 +50,9 @@ const argNames = {
   sssEndDate: '派驻周期刷新时间',
   aniPrefix: '委托',
   curAniPrefix: '轮换委托',
-  curAniDate: `结束时间`
+  curAniDate: `结束时间`,
+  link: `link=`,
+  themeUpdateHistory: '主题更新记录'
 };
 
 const dictionary = {
@@ -123,12 +127,43 @@ export const usePrtsWiki = () => {
     }, [webEvents, sessionId]
   );
 
-  const fetchArgumentList = async (pageName: string, templateName: string) => {
+  const getWikitextFromApiJson = async (pageName: string) => {
     setError(null);
     try {
       const response = await fetchJson<MediaWikiApiResponse>(getApiUrl(pageName), sessionId);
       const page = Object.values(response.query.pages)[0];
       const wikitext = page.revisions?.[0]?.slots?.main?.['*'] || '';
+      return wikitext;
+
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+      throw err;
+    }
+  };
+
+  const fetchArgumentsByName = async (pageName: string, argument: string) => {
+    setError(null);
+    try {
+      const wikitext = await getWikitextFromApiJson(pageName);
+      if (!wikitext) return null;
+      const argumentRegex = new RegExp(`${argument}([^|\\]\\n]+)`, 'g');
+      const matches = wikitext.match(argumentRegex)
+      if (!matches) return null;
+
+      const values = matches.map(m => m.replace(argument, ''));
+      return values;
+
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+      throw err;
+    }
+
+  }
+
+  const fetchTemplateArguments = async (pageName: string, templateName: string) => {
+    setError(null);
+    try {
+      const wikitext = await getWikitextFromApiJson(pageName);
       if (!wikitext) return null;
 
       const templateRegex = new RegExp(`\\{\\{${templateName}\\s*\\|([^}]+)\\}\\}`);
@@ -158,13 +193,14 @@ export const usePrtsWiki = () => {
       const today = new Date();
       const monthsAgoDate = new Date();
       monthsAgoDate.setMonth(today.getMonth() - monthsAgo);
-      setProgress(prev => ({ ...prev ?? {}, "LIST": 25 }));
+
+      setProgress(prev => ({ ...prev ?? {}, "LIST": 10 }));
       //get normal events
       const webEvents = await fetchEvents(monthsAgoDate);
 
-      setProgress(prev => ({ ...prev ?? {}, "LIST": 50 }));
+      setProgress(prev => ({ ...prev ?? {}, "LIST": 20 }));
       //get SSS last event
-      const sssArgs = await fetchArgumentList(pageNames.operations, templates.sss);
+      const sssArgs = await fetchTemplateArguments(pageNames.operations, templates.sss);
 
       if (sssArgs) {
         const link = getUrl(pageNames.operations);
@@ -181,9 +217,9 @@ export const usePrtsWiki = () => {
           webEvents[pageName] = { ...(webEvents[pageName] ?? emptyWebEvent), pageName, name, link, date }
         }
       }
-      setProgress(prev => ({ ...prev ?? {}, "LIST": 75 }));
+      setProgress(prev => ({ ...prev ?? {}, "LIST": 30 }));
       //get anihilation events      
-      const aniArgs = await fetchArgumentList(pageNames.operations, templates.anihilations);
+      const aniArgs = await fetchTemplateArguments(pageNames.operations, templates.anihilations);
       if (aniArgs) {
         const anniEventList = getAniEventsList(aniArgs);
 
@@ -198,6 +234,14 @@ export const usePrtsWiki = () => {
             }
           });
       }
+
+      //Integrated Strategies
+      const ISEvents = await fetchLastISEvents(monthsAgoDate);
+      if (ISEvents && Object.keys(ISEvents).length > 0) {
+        Object.values(ISEvents).forEach(event =>
+          webEvents[event.pageName] = {...event}
+        )
+      };
 
       //apply dictionary
       Object.entries(webEvents ?? {}).forEach(([_, event]) => {
@@ -219,6 +263,113 @@ export const usePrtsWiki = () => {
         delete next["LIST"];
         return next;
       });
+    }
+  }
+
+
+  const fetchLastISEvents = async (monthsAgoDate: Date) => {
+    setError(null);
+    try {
+      setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"]+10 }));
+      const ISPages = await fetchArgumentsByName(pageNames.integratedStrategyList, argNames.link);
+      if (!ISPages || ISPages.length < 2) return null;
+
+      setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"]+10 }));
+      const NAV_wikiText = await getWikitextFromApiJson(pageNames.IS_navbox);
+      if (!NAV_wikiText) return null;
+
+      const resultData: WebEventsData = {};
+      for (let i = 1; i <= 2; i++) {
+        const ISpage = ISPages[ISPages.length - i];
+        const ISprefix = `IS${ISPages.length - i}:`
+
+        //get subpages
+        const pattern = new RegExp(`\\[\\[${ISpage}\\/([^\\]\\|]+)(?:[\\]\\|])?`, 'g');
+        const matches: string[] = [];
+        let match;
+        while ((match = pattern.exec(NAV_wikiText)) !== null && matches.length < 2) {
+          const subpage = match[1];
+          if (subpage) {
+            matches.push(subpage);
+          }
+        }
+        if (matches.length < 2) return;
+        const [squadsSubpage, deepSubpage] = matches;
+        /* const ISsquads = `${ISpage}/${squadsSubpage}`;
+        const ISdeep = `${ISpage}/${deepSubpage}`; */
+        /* console.log(getUrl(ISpage), `
+        `, getUrl(`${ISpage}/${squadsSubpage}`), `
+        `, getUrl(`${ISpage}/${deepSubpage}`)); */
+
+        setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"]+10 }));
+        const html_main = await fetchHtml(getUrl(ISpage), sessionId);
+        const $_main = cheerio.load(html_main);
+        const IShistoryDates = parseISHistoryTable($_main, squadsSubpage, deepSubpage);
+        if (IShistoryDates && Object.keys(IShistoryDates).length > 0) {
+          /* console.log(IShistoryDates); */
+          //if any IS months in target date - fetch ani months
+          if (Object.entries(IShistoryDates)
+            .some(([name, date]) =>
+              name !== deepSubpage && date >= monthsAgoDate)) {
+
+            const ISMonthlyEvents = parseISMonthsTabber($_main, IShistoryDates, ISpage, ISprefix, deepSubpage);
+            if (ISMonthlyEvents && Object.keys(ISMonthlyEvents).length > 0) {
+
+              //fetch squads page
+              setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"]+10 }));
+              const html_squads = await fetchHtml(getUrl(`${ISpage}/${squadsSubpage}`), sessionId);
+              const $_squads = cheerio.load(html_squads);
+
+              const squadsData = parseISSquadsPage($_squads, Object.keys(IShistoryDates));
+              Object.values(ISMonthlyEvents).forEach(event => {
+                if (event.date && event.date >= monthsAgoDate) {
+
+                  const _event = { 
+                    ...emptyEvent,
+                    ...event,
+                    webDisable: true,
+                  }
+                  const _page = event.pageName;
+
+                  if (squadsData[_page])
+                    _event.name = _event.name?.replace(event.pageName,squadsData[_page].title);
+
+                  Object.entries(squadsData[_page].materials)
+                    .forEach(([id, amount]) => {
+                      if (!_event.materials) _event.materials = {};
+
+                      _event.materials[id] = (_event.materials[id] ?? 0) + amount;
+                    });
+                  resultData[_page] = _event;
+                }
+              })
+            }
+          };
+        }
+
+        //deep investigation - fetch once
+        if (IShistoryDates[deepSubpage] >= monthsAgoDate) {
+
+          setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"]+10 }));
+          const html = await fetchHtml(getUrl(`${ISpage}/${deepSubpage}`), sessionId);
+          const $ = cheerio.load(html);
+          let deepResult: Record<string, number> = {};
+          deepResult = parseNumDivs($, deepResult);
+          const deepEvent = {
+            ...emptyEvent,
+            date: IShistoryDates[deepSubpage],
+            materials: deepResult,
+            pageName: `${ISpage}/${deepSubpage}`,
+            link: getUrl(`${ISpage}/${deepSubpage}`),
+            name: `${ISprefix} Deep Investigations`
+          }
+          resultData[deepEvent.pageName] = deepEvent;
+        }
+      }
+      return resultData;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+      throw err;
     }
   }
 
@@ -298,6 +449,103 @@ const isMostlyEnglish = (text: string): boolean => {
   return totalLetters > 0 && enLetters / totalLetters >= 0.5;
 };
 
+const parseISHistoryTable = ($: cheerio.CheerioAPI, squadsSubpage: string, deepSubpage: string): Record<string, Date> => {
+
+  const result: Record<string, Date> = {};
+
+  // Find the theme update history table
+  const themeUpdateHeader = $(`span.mw-headline`).filter((_, el) =>
+    $(el).text().trim() === argNames.themeUpdateHistory
+  );
+  if (!themeUpdateHeader.length) return result;
+  const historyTable = themeUpdateHeader.parent().next('table');
+  if (!historyTable.length) return result;
+
+  // Process each row in the table (skip header rows)
+  historyTable.find('tr').each((i, row) => {
+    //if (i < 2) return; // Skip first two header rows
+
+    const cols = $(row).find('td');
+    if (cols.length < 3) return;
+
+    const dateText = $(cols[0]).text().trim();
+    const updateContent = $(cols[1]).text().trim();
+    const details = $(cols[2]).html() || '';
+
+    // Parse date
+    const dateMatch = dateText.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+    if (!dateMatch) return;
+
+    const year = parseInt(dateMatch[1]);
+    const month = parseInt(dateMatch[2]) - 1; // 0-indexed month
+    const day = parseInt(dateMatch[3]);
+    const date = new Date(year, month, day);
+
+    // Check for deep investigation
+    if (updateContent.includes(deepSubpage)) {
+      result[deepSubpage] = date;
+    }
+
+    // Check for narrator list entries
+    const tempDiv = $('<div>').html(details);
+    tempDiv.find('a').each((_, link) => {
+      const href = $(link).attr('href') || '';
+      if ((href.includes(squadsSubpage) || href.includes(encodeURIComponent(squadsSubpage)))) {
+        const linkText = $(link).text().trim();
+        if (linkText) {
+          result[linkText] = date;
+        }
+      }
+    });
+  });
+
+  return result;
+};
+
+const parseISMonthsTabber = (
+  $: cheerio.CheerioAPI,
+  IShistory: Record<string, Date>,
+  ISpage: string,
+  ISprefix: string,
+  deepSubpage: string): WebEventsData => {
+
+  const WebEventsData_IS: WebEventsData = {};
+
+  // Get all dates excluding the deepInvestigation entry
+  const dates = Object.entries(IShistory)
+    .filter(([key]) => key !== deepSubpage)
+    .sort(([, a], [, b]) => a.getTime() - b.getTime())
+    .forEach(([name, date], idx) => {
+
+      // Format date as YY/MM (e.g., "25/02" for February 2025)
+      const yearShort = date.getFullYear().toString().slice(-2);
+      const month = (date.getMonth() + 1).toString(); // Months are 0-indexed in JS
+      const datePattern = `${yearShort}/${month}`;
+
+      // Find the tabber panel with matching data-title
+      const tabPanel = $(`article.tabber__panel[data-title*="${datePattern}"]`);
+
+      if (tabPanel.length > 0) {
+        // Process the tab panel content
+        const panel_$ = cheerio.load(tabPanel.html() || "");
+        let result: Record<string, number> = {};
+        result = parseListDivs(panel_$, result);
+
+        const webEvent = {
+          ...emptyWebEvent,
+          pageName: name,
+          date: date,
+          link: getUrl(ISpage),
+          materials: result,
+          name: `${ISprefix} Month ${idx + 1} - ${name}`,
+        }
+        WebEventsData_IS[webEvent.pageName] = webEvent;
+      }
+
+    });
+  return WebEventsData_IS;
+}
+
 const parseListDivs = ($: cheerio.CheerioAPI, result: Record<string, number>) => {
   $('ul').each((_, ul) => {
     $(ul)
@@ -364,7 +612,7 @@ const findFarms = ($: cheerio.CheerioAPI): string[] => {
         const title = $(link).attr('title')?.trim();
         if (!title) return;
 
-        const matchedItem = getItemByCnName(title,3,true);
+        const matchedItem = getItemByCnName(title, 3, true);
 
         if (matchedItem && !foundItems.includes(matchedItem.id)) {
           foundItems.push(matchedItem.id);
@@ -472,6 +720,58 @@ const parseSignInEvent = ($: cheerio.CheerioAPI, result: Record<string, number>)
   });
   return result;
 };
+
+function parseISSquadsPage($: cheerio.CheerioAPI, keywords: string[]) {
+
+  const result: Record<string, { materials: Record<string, number>, title: string }> = {};
+  let currentKeyword: string | null = null;
+  let currentChunk = $('<div></div>');
+  let currentTitle: string | null = null;
+
+  // Find all h2 elements
+  $('h2').each((i, h2) => {
+    const $h2 = $(h2);
+    const h2Text = $h2.text();
+    if (!h2Text) return;
+
+    // Check if this h2 contains any of keyword names
+    const matchedKeyword = keywords.find(keyword => h2Text.includes(keyword));
+    if (matchedKeyword) {
+      // if chunk is started - end it and process
+      if (currentKeyword && currentChunk.contents().length > 0) {
+
+        const materials = parseNumDivs(cheerio.load(currentChunk.html() || ""), {});
+        result[currentKeyword] = {
+          title: currentTitle || '',
+          materials,
+        }
+      }
+
+      // Start new chunk
+      currentKeyword = matchedKeyword;
+      currentChunk = $('<div></div>');
+
+      // Get the title from the following <p><b> element
+      currentTitle = $h2.next('p').find('b').first().text().trim();
+
+      // Start collecting elements for this chunk
+      const chunkElements = $h2.nextUntil('h2');
+      chunkElements.each((_, el) => {
+        currentChunk.append($(el));
+      });
+    }
+  });
+  // Process the last chunk if it exists
+  if (currentKeyword && currentChunk.contents().length > 0) {
+    const materials = parseNumDivs(cheerio.load(currentChunk.html() || ""), {});
+    result[currentKeyword] = {
+      title: currentTitle || '',
+      materials,
+    }
+  }
+
+  return result;
+}
 
 const getAniEventsList = (data: Record<string, string>): WebEvent[] => {
   const events: WebEvent[] = [];

@@ -64,6 +64,12 @@ const SubmitEventDialog = (props: Props) => {
     };
     //-months
 
+    const handleEventsSelectorChange = (event: NamedEvent) => {
+        if (event.index === -1)
+            setReplace(false);
+        onSelectorChange?.(event);
+    }
+
     const handleInputChange = (id: string, value: number) => {
 
         setRawMaterials((prev) => {
@@ -207,10 +213,12 @@ const SubmitEventDialog = (props: Props) => {
                                 selectedEvent={selectedMonth}
                                 onChange={handleMonthsSelectorChange}
                             />}
-                        <Checkbox
-                            disabled={selectedEvent?.index === -1 || variant === "tracker"}
-                            checked={replace}
-                            onChange={() => setReplace(!replace)} />
+                        {variant !== "tracker"
+                            && <Checkbox
+                                disabled={selectedEvent?.index === -1}
+                                checked={replace}
+                                onChange={() => setReplace(!replace)} />
+                        }
                     </Stack>
                 </Stack>
             </DialogTitle>
@@ -248,7 +256,7 @@ const SubmitEventDialog = (props: Props) => {
                         variant="builder"
                         eventsData={eventsData}
                         selectedEvent={selectedEvent ?? emptyEvent}
-                        onChange={onSelectorChange}
+                        onChange={handleEventsSelectorChange}
                     />
                 }
                 <Button disabled={isSubmitDisabled} onClick={handleSubmit} variant="contained">
