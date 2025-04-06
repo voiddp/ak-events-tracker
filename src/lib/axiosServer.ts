@@ -37,21 +37,39 @@ class AxiosServer {
       headers: { 'User-Agent': `AKEventsTracker (in-built ${RATE_LIMIT_MS / 1000}s delay)` }
     };
 
+    const maxWaitTime = 10_000;
+    const startTime = Date.now();
+
     try {
       // 1. Add to queue and wait for turn
-      console.log(`[${new Date().toISOString()}] [${sessionId}] Adding to queue...`);
+      //timing in logs [${new Date().toISOString()}]
+      console.log(`[${sessionId}] Adding to queue...`);
       await redis.rPush(QUEUE_KEY, sessionId);
 
-      while (true) {
+      const fullQueue = await redis.lRange(QUEUE_KEY, 0, -1);
+      console.log(`Full queue contents:`, fullQueue);
+
+      const startTime = Date.now();
+      let isMyTurn = false;
+
+      while (Date.now() - startTime < maxWaitTime) {
         const [firstInQueue, queueLength] = await redis.multi()
           .lIndex(QUEUE_KEY, 0)
           .lLen(QUEUE_KEY)
           .exec();
-        /* console.log(`[${new Date().toISOString()}] [${sessionId}] First in query? ${firstInQueue === sessionId}`); */
+
+        /* console.log(`Queue state - First: ${firstInQueue}, Length: ${queueLength}`); */
         if (firstInQueue === sessionId) {
+          isMyTurn = true;
           break;
         }
         await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      if (!isMyTurn) {
+        console.warn(`[${sessionId}] Timed out waiting in queue after ${maxWaitTime / 1000}s`);
+        await redis.lRem(QUEUE_KEY, 0, sessionId);
+        throw new Error(`Queue timeout (${maxWaitTime / 1000}s)`);
       }
 
       // 2. Process with rate limiting
@@ -60,11 +78,11 @@ class AxiosServer {
         const delay = Math.max(0, RATE_LIMIT_MS - (Date.now() - parseInt(lastRequestTime || '0')));
 
         if (delay > 0) {
-          console.log(`[${new Date().toISOString()}] [${sessionId}] Delaying by ${delay}ms`);
+          console.log(`[${sessionId}] Delaying by ${delay}ms`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
 
-        console.log(`[${new Date().toISOString()}] [${sessionId}] Fetching: <<<<<<<<<<<<`);
+        console.log(`[${sessionId}] Fetching: <<<<<<<<<<<<`);
         const response: AxiosResponse<T> = await axios.get(url, userAgent);
 
         // Update last request time
@@ -74,11 +92,11 @@ class AxiosServer {
         } throw new Error(`Request failed with status ${response.status}`);
       });
     } catch (error) {
-      console.error(`[${new Date().toISOString()}] [${sessionId}] Error:`, error);
+      console.error(`[${sessionId}] Error:`, error);
       throw error;
     } finally {
       // Cleanup queue
-      /* console.log(`[${new Date().toISOString()}] [${sessionId}] remove from query...`); */
+      console.log(`[${sessionId}] remove from query...`);
       await redis.lRem(QUEUE_KEY, 0, sessionId);
     }
   }

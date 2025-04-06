@@ -239,7 +239,7 @@ export const usePrtsWiki = () => {
       const ISEvents = await fetchLastISEvents(monthsAgoDate);
       if (ISEvents && Object.keys(ISEvents).length > 0) {
         Object.values(ISEvents).forEach(event =>
-          webEvents[event.pageName] = {...event}
+          webEvents[event.pageName] = { ...event }
         )
       };
 
@@ -270,11 +270,11 @@ export const usePrtsWiki = () => {
   const fetchLastISEvents = async (monthsAgoDate: Date) => {
     setError(null);
     try {
-      setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"]+10 }));
+      setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"] + 10 }));
       const ISPages = await fetchArgumentsByName(pageNames.integratedStrategyList, argNames.link);
       if (!ISPages || ISPages.length < 2) return null;
 
-      setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"]+10 }));
+      setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"] + 10 }));
       const NAV_wikiText = await getWikitextFromApiJson(pageNames.IS_navbox);
       if (!NAV_wikiText) return null;
 
@@ -301,7 +301,7 @@ export const usePrtsWiki = () => {
         `, getUrl(`${ISpage}/${squadsSubpage}`), `
         `, getUrl(`${ISpage}/${deepSubpage}`)); */
 
-        setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"]+10 }));
+        setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"] + 10 }));
         const html_main = await fetchHtml(getUrl(ISpage), sessionId);
         const $_main = cheerio.load(html_main);
         const IShistoryDates = parseISHistoryTable($_main, squadsSubpage, deepSubpage);
@@ -316,7 +316,7 @@ export const usePrtsWiki = () => {
             if (ISMonthlyEvents && Object.keys(ISMonthlyEvents).length > 0) {
 
               //fetch squads page
-              setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"]+10 }));
+              setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"] + 10 }));
               const html_squads = await fetchHtml(getUrl(`${ISpage}/${squadsSubpage}`), sessionId);
               const $_squads = cheerio.load(html_squads);
 
@@ -324,7 +324,7 @@ export const usePrtsWiki = () => {
               Object.values(ISMonthlyEvents).forEach(event => {
                 if (event.date && event.date >= monthsAgoDate) {
 
-                  const _event = { 
+                  const _event = {
                     ...emptyEvent,
                     ...event,
                     webDisable: true,
@@ -332,7 +332,7 @@ export const usePrtsWiki = () => {
                   const _page = event.pageName;
 
                   if (squadsData[_page])
-                    _event.name = _event.name?.replace(event.pageName,squadsData[_page].title);
+                    _event.name = _event.name?.replace(event.pageName, squadsData[_page].title);
 
                   Object.entries(squadsData[_page].materials)
                     .forEach(([id, amount]) => {
@@ -350,7 +350,7 @@ export const usePrtsWiki = () => {
         //deep investigation - fetch once
         if (IShistoryDates[deepSubpage] >= monthsAgoDate) {
 
-          setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"]+10 }));
+          setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"] + 10 }));
           const html = await fetchHtml(getUrl(`${ISpage}/${deepSubpage}`), sessionId);
           const $ = cheerio.load(html);
           let deepResult: Record<string, number> = {};
