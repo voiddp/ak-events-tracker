@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import useSettings from '@/utils/hooks/useSettings'
-import { Event, EventsData, NamedEvent, SubmitEventProps, reindexEvents } from "@/types/events";
+import { EventsData, NamedEvent, SubmitEventProps, emptyEvent, reindexEvents } from "@/types/events";
 import { AK_CALENDAR, AK_DAILY, AK_WEEKLY } from "@/utils/ItemUtils";
 import useLocalStorage from "@/utils/hooks/useLocalStorage";
 
@@ -50,13 +50,13 @@ function useEvents(): [
         if (index === -1) {
             return {
                 name: null,
-                eventData: { index: 99, materials: {} } as Event,
+                eventData: { ...emptyEvent, index: 99 },
             };
         }
         const foundEntry = Object.entries(eventsData).find(([, event]) => event.index === index);
         return {
             name: foundEntry ? foundEntry[0] : null,
-            eventData: foundEntry ? foundEntry[1] : { index: -1, materials: {} } as Event,
+            eventData: foundEntry ? foundEntry[1] : { ...emptyEvent, index: 99 },
         };
     }, [eventsData]
     );
@@ -105,19 +105,15 @@ function useEvents(): [
                 }
             };
             //add/delete farms
-            if (replaceName) {
-                if (farms.length > 0) {
-                    _event.farms = [...farms];
-                } else {
-                    delete _event.farms;
-                }
-            }
+            if (farms.length > 0) {
+                _event.farms = [...farms];
+            };
             //handle name change if new name is set.
-            if (!replaceName) {
+            if (!replaceName || _name === replaceName) {
                 _eventsData[_name] = _event;
             } else {
-                _eventsData[replaceName] = _event;
                 delete _eventsData[_name];
+                _eventsData[replaceName] = _event;
             };
         }
         _setEvents(reindexEvents(_eventsData));

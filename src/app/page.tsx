@@ -60,8 +60,10 @@ export default function Home() {
 
   return (
     <CacheProvider value={clientSideEmotionCache}>
-      <Head menuButton={
-        <IconButton
+      <Head
+        onClick={handleDrawerOpen}
+        menuButton={<MenuIcon sx={{ display: { xs: "unset", md: "none" } }} />}
+      >        {/* <IconButton
           color="inherit"
           aria-label="open drawer"
           onClick={handleDrawerOpen}
@@ -72,11 +74,11 @@ export default function Home() {
               verticalAlign: "baseline",
             },
           ]}
-        >
+        
           <MenuIcon />
-        </IconButton>
+        </IconButton> 
       }
-      >
+      >*/}
         {/* <Button variant="contained"
           color="primary" onClick={() => {
             setEventsOpen(true);
@@ -120,15 +122,15 @@ export default function Home() {
             setEvents({});
             setForceUpdate(true);
           }}
-          sx={{color: "rgb(248, 112, 97) "}} />
+          sx={{ color: "rgb(248, 112, 97) " }} />
 
         {/* 
                 <DrawerListItem icon={<SettingsIcon />} text="Settings" /> */}
         {/* Add more items or pass children */}
       </CollapsibleDrawer>
-      <Box sx={{ flex: 1}}>
+      <Box sx={{ flex: 1 }}>
         <Paper elevation={2}
-        sx={{ maxWidth: "1200px", ml: {xs: "auto", md: "80px", xl: "auto"}, mr: "auto", /* pb: "20px" */  }}>
+          sx={{ height: "100%", maxWidth: "1200px", ml: { xs: "auto", md: "80px", xl: "auto" }, mr: "auto", /* pb: "20px" */ }}>
           <EventsTracker
             forceUpdate={forceUpdate}
             forceUpdateCallback={setForceUpdate}

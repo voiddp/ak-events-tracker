@@ -17,11 +17,11 @@ const Layout = React.memo((props: Props) => {
     <html>
       <body>
         <AppRouterCacheProvider>
-            <ThemeProvider theme={theme}>
-            <Box className={styles.main} sx={{height:"100vh", display:"flex", flexDirection:"column", overflow:"auto"}}>
+          <ThemeProvider theme={theme}>
+            <Box className={styles.main} sx={{ height: "100vh", display: "flex", flexDirection: "column", overflow: "auto" }}>
               {children}
             </Box>
-            </ThemeProvider>
+          </ThemeProvider>
         </AppRouterCacheProvider>
       </body>
     </html>

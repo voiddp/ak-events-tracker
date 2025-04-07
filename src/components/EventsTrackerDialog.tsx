@@ -324,7 +324,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 <AccordionSummary>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch">
                         <Stack direction="row" alignItems="center" flexWrap="nowrap">
-                            <DragIndicator sx={{ mr: 1 }} />
+                            <DragIndicator sx={{ mr: 1 }}  onClick={(e) => e.stopPropagation()} />
                             <Stack direction="row" alignItems="center" flexWrap="wrap">
                                 <TextField size="small" value={newEventNames[name] ?? name}
                                     sx={{

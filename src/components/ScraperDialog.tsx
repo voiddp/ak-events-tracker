@@ -120,28 +120,31 @@ const ScraperDialog = React.memo((props: Props) => {
         sx={{ overflow: 'visible' }}>
         {loading["LIST"] && ProgressElement("LIST")}
         <DialogTitle justifyContent="space-between">
-        <Stack direction="row" gap={1} mr={1}>
-          From prts.wiki:
-        <TextField
-            label="months"
-            value={monthsAgo}
-            size="small"
-            sx={{width:"4ch"}}
-            slotProps={{
-              htmlInput: {
-                sx: {textAlign: "center"}
-              }
-            }}
-            onChange={(e) => setMonthsAGo(Number(e.target.value) || 6)}
-          /> 
-        <Button
-            variant="contained"
-            color="primary"
-            onClick={handleFetchEvents}
-            disabled={loading["LIST"]}
-          >
-            Fetch Events
-          </Button>
+          <Stack direction="row" gap={1} mr={1}>
+            From prts.wiki:
+            <TextField
+              label="months"
+              value={monthsAgo}
+              size="small"
+              sx={{ width: "4ch" }}
+              slotProps={{
+                htmlInput: {
+                  sx: { textAlign: "center" }
+                }
+              }}
+              onChange={(e) => {
+                setMonthsAGo(Number(e.target.value) || 1);
+                e.target.select();
+              }}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleFetchEvents}
+              disabled={loading["LIST"]}
+            >
+              Fetch Events
+            </Button>
           </Stack>
           <IconButton onClick={handleClose} sx={{ display: { sm: "none" }, gridArea: "close" }}>
             <Close />
@@ -201,18 +204,18 @@ const ScraperDialog = React.memo((props: Props) => {
                           {!rawWebEvents[item.pageName]?.webDisable
                             && <Tooltip title="pull event data from page">
                               <CloudDownloadIcon
-                              fontSize="large"
-                              sx={{
-                                transition: "opacity 0.1s",
-                                "&:focus, &:hover": {
-                                  opacity: 0.5,
-                                },
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleParseEvent(item.pageName, item.link)
-                              }} />
-                              </Tooltip>
+                                fontSize="large"
+                                sx={{
+                                  transition: "opacity 0.1s",
+                                  "&:focus, &:hover": {
+                                    opacity: 0.5,
+                                  },
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleParseEvent(item.pageName, item.link)
+                                }} />
+                            </Tooltip>
                           }
                         </Stack>
                       </Stack>

@@ -378,7 +378,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
                 <AccordionSummary>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch">
                         <Stack direction="row" alignItems="center" flexWrap="nowrap">
-                            <DragIndicator sx={{ mr: 1 }} />
+                            <DragIndicator sx={{ mr: 1 }} onClick={(e) => e.stopPropagation()} />
                             <Stack direction="row" alignItems="center" flexWrap="wrap">
                                 <TextField size="small" value={newEventNames[name] ?? name}
                                     sx={{
@@ -634,7 +634,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
                                 onChange={(e) => setRawName(e.target.value)}
                             />
                             <Button
-                                size={fullScreen ? 'small': "medium"}
+                                size={fullScreen ? 'small' : "medium"}
                                 startIcon={<AddIcon />}
                                 variant="contained"
                                 color="primary"
@@ -654,6 +654,9 @@ const EventsTrackerMain = React.memo((props: Props) => {
                     {/* Input Tab */}
                     {tab === "input" && (
                         <Box>
+                            {rawEvents && Object.keys(rawEvents).length === 0 && (
+                                <Typography variant='h2' textAlign="center">Input future events, using sidebar menu options, with import, or manually.</Typography>
+                            )}
                             {renderedEvents}
                         </Box>
                     )}
