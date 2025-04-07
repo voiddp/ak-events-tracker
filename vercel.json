@@ -11,8 +11,8 @@
   },
   "crons": [
     {
-      "path": "/api/cron/fetchData",
-      "schedule": "0 * * * *"
+      "path": "/api/cron/updateData",
+      "schedule": "0 18 * * *"
     }
   ]
 }

@@ -45,7 +45,9 @@ import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import SubmitEventDialog from './SubmitEventDialog';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, getItemBaseStyling, isMaterial, getDefaultEventMaterials, standardItemsSort } from '@/utils/ItemUtils'
-import { SubmitEventProps, emptyNamedEvent, reindexEvents, } from '../lib/events/types';
+import { SubmitEventProps, emptyNamedEvent } from '@/lib/events/types';
+import { reindexEvents } from "@/lib/events/utils"
+
 import ItemEditBox from './ItemEditBox';
 
 const Transition = React.forwardRef(function Transition(
@@ -653,12 +655,14 @@ const EventsTrackerMain = React.memo((props: Props) => {
                 <Box sx={{ /* height: "85vh", */ /* { sm: "500px", xl: "700px" } ,*/ /* overflowY: "auto" */ }}>
                     {/* Input Tab */}
                     {tab === "input" && (
-                        <Box>
-                            {rawEvents && Object.keys(rawEvents).length === 0 && (
+                        <Stack direction="column" justifyContent="center" alignItems="center">
+                            {rawEvents && Object.keys(rawEvents).length === 0 && (<>
                                 <Typography variant='h2' textAlign="center">Input future events, using sidebar menu options, with import, or manually.</Typography>
+                                {children}
+                                </>
                             )}
                             {renderedEvents}
-                        </Box>
+                        </Stack>
                     )}
 
                     {/* Import/Export Tab */}

@@ -49,7 +49,8 @@ import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import SubmitEventDialog from './SubmitEventDialog';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isMaterial, getDefaultEventMaterials } from '@/utils/ItemUtils'
-import { SubmitEventProps, emptyNamedEvent, reindexEvents, } from '../lib/events/types';
+import { SubmitEventProps, emptyNamedEvent} from '@/lib/events/types';
+import { reindexEvents } from "@/lib/events/utils"
 import ItemEditBox from './ItemEditBox';
 
 const Transition = React.forwardRef(function Transition(

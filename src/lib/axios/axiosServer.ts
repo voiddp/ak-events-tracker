@@ -20,16 +20,20 @@ class AxiosServer {
     return new AxiosServer();
   }
 
-  private async withLock<T>(fn: () => Promise<T>): Promise<T> {
+  private async withLock<T>(fn: () => Promise<T>, session: Session): Promise<T> {
+    const isServerJob = (session as any).isServerJob;
+    const lockKey = isServerJob ? 'server-job:lock' : 'global:lock';
+    const lockTimeout = isServerJob ? 30000 : LOCK_TIMEOUT; // 30s for server jobs
+    
     try {
-      const lockAcquired = await redis.set('global:lock', '1', {
+      const lockAcquired = await redis.set(lockKey, '1', {
         NX: true,
         EX: LOCK_TIMEOUT / 1000
       });
       if (!lockAcquired) throw new Error('Could not acquire lock');
       return await fn();
     } finally {
-      await redis.del('global:lock');
+      await redis.del(lockKey);
     }
   }
 
@@ -98,7 +102,7 @@ class AxiosServer {
         if (response.status >= 200 && response.status < 300) {
           return response.data;
         } throw new Error(`Request failed with status ${response.status}`);
-      });
+      }, session);
     } catch (error) {
       console.error(`[${sessionId}] Error:`, error);
       throw error;

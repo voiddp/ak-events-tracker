@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 import { fetchHtml, fetchJson } from '@/lib/axios/axiosServer';
 import { Session } from '@/lib/axios/types';
-import { 
+import {
   PageResult,
   MediaWikiApiResponse,
   ApiContext,
@@ -9,12 +9,12 @@ import {
   WebEventsData,
   WebEvent
 } from './types';
-import { 
+import {
   pageNames,
   templates,
   argNames
 } from './constants';
-import { 
+import {
   parseISHistoryTable,
   parseISMonthsTabber,
   parseISSquadsPage,
@@ -108,7 +108,7 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
     if (!NAV_wikiText) return null;
 
     const resultData: WebEventsData = {};
-    
+
     for (let i = 1; i <= 2; i++) {
       const ISpage = ISPages[ISPages.length - i];
       const ISprefix = `IS${ISPages.length - i}:`;
@@ -129,9 +129,9 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
       const IShistoryDates = parseISHistoryTable($_main, squadsSubpage, deepSubpage);
 
       if (IShistoryDates && Object.keys(IShistoryDates).length > 0) {
-        if (Object.entries(IShistoryDates).some(([name, date]) => 
+        if (Object.entries(IShistoryDates).some(([name, date]) =>
           name !== deepSubpage && date >= monthsAgoDate)) {
-          
+
           const ISMonthlyEvents = parseISMonthsTabber($_main, IShistoryDates, ISpage, ISprefix, deepSubpage);
           if (ISMonthlyEvents && Object.keys(ISMonthlyEvents).length > 0) {
             context.setProgress?.("LIST", 40);
@@ -167,7 +167,7 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
         const html = await fetchHtml(getUrl(`${ISpage}/${deepSubpage}`), context.session);
         const $ = cheerio.load(html);
         const deepResult = parseNumDivs($, {});
-        
+
         resultData[`${ISpage}/${deepSubpage}`] = {
           date: IShistoryDates[deepSubpage],
           materials: deepResult,
@@ -198,7 +198,7 @@ export const getDataFromPage = async (pageName: string, page_link: string, conte
     result = parseShopInEvent($, result);
     result = parseNumDivs($, result);
     result = parseListDivs($, result);
-    
+
     return { title, items: result, farms };
   } catch (err) {
     throw err;
@@ -221,7 +221,7 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
       if (isDateTextValid(dateText)) {
         const date = new Date(dateText);
         date.setDate(date.getDate() - 4 * 4 * 7); // -4 months
-        
+
         if (date <= today && date > monthsAgoDate) {
           webEvents[sssArgs[argNames.sssMission]] = {
             pageName: sssArgs[argNames.sssMission],
@@ -259,44 +259,44 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
 
 export const getEverythingAtOnce = async (session: Session, setProgress?: ProgressUpdater) => {
   const context: ApiContext = { session, setProgress };
-  
+
   try {
     const eventsList = await getEventList(6, context);
     if (!eventsList || Object.keys(eventsList).length === 0) return;
 
-    const arrayOfResults = await Promise.allSettled(
-      Object.entries(eventsList).map(async ([_, event]) => {
-        if (!event.webDisable) {
+    const results: WebEvent[] = [];
+    const entries = Object.entries(eventsList);
+
+    for (const [i, [_, event]] of entries.entries()) {
+        try {
+          if (event.webDisable || Object.keys(event.materials ?? {}).length > 0) continue;
+
+          /* // Update progress
+          setProgress?.({ current: i + 1, total: entries.length }); */
+
           const pageResult = await getDataFromPage(event.pageName, event.link, context);
-         
-          if (!pageResult) return undefined;
-          
+          if (!pageResult) continue;
+
           const webEvent: WebEvent = {
             ...event,
-            materials: pageResult.items,
+            materials: pageResult?.items ?? {},
           };
-          
-          if (pageResult.farms.length > 0) {
-            webEvent.farms = pageResult.farms;
+
+          if ((pageResult?.farms ?? []).length > 0) {
+            webEvent.farms = pageResult?.farms;
           }
-          if (pageResult.title) {
+          if (pageResult?.title) {
             webEvent.name = pageResult.title;
           }
-          
-          return webEvent;
+          results.push(webEvent);
+        } catch (err) {
+          console.error(`Failed to process ${event.pageName}:`, err);
         }
-        return undefined;
-      })
-    );
-    const validResults = arrayOfResults.filter(
-        (result): result is PromiseFulfilledResult<WebEvent> => 
-          result.status === 'fulfilled' && result.value !== undefined
-      );
-
-      return validResults.reduce((acc, result) => {
-        acc[result.value.pageName] = result.value;
-        return acc;
-      }, {} as WebEventsData);
+      }    
+    return results.reduce((acc, event) => {
+      acc[event.pageName] = event;
+      return acc;
+    }, {} as WebEventsData);
 
   } catch (err) {
     throw err;

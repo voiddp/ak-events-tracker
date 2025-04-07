@@ -66,11 +66,11 @@ export default function Home() {
     const data = createDefaultEventsData(webEvents);
     console.log("data", Object.entries(data).sort(([,a],[,b]) => a.index - b.index ));
   }
-  const handleFetchEventsFromStorage = async () => {
+  const handleSetEventsFromDefaults = async () => {
   const result = await fetchEventsFromStorage();
   if (!result) return;
-  const { data, lastUpdated } = result;
-  console.log("fetched data:",lastUpdated, data);
+  setEvents(result.data.eventsData);
+  setForceUpdate(true);
   }
   
   return (
@@ -78,14 +78,7 @@ export default function Home() {
       <Head
         onClick={handleDrawerOpen}
         menuButton={<MenuIcon sx={{ display: { xs: "unset", md: "none" } }} />}
-      > 
-      <Button 
-        variant="contained" 
-        onClick={handleFetchEventsFromStorage}
-        disabled={loading}
-      >
-        {'Fetch Defaults (console.log)'}
-      </Button>
+      > {lastUpdated && `Last defaults update: ${new Date(lastUpdated).toLocaleDateString("en-US", {day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"})}`} 
       </Head>
       <CollapsibleDrawer
         open={drawerOpen}
@@ -145,6 +138,13 @@ export default function Home() {
             onChange={setEvents}
             submitEvent={handleSubmitEvent}
           >
+            <Button
+              variant="contained"
+              onClick={handleSetEventsFromDefaults}
+              disabled={loading}
+            >
+              {'Or use 6 months default list'}
+            </Button>
           </EventsTracker>
           <EventsTrackerDialog
             eventsData={eventsData}

@@ -2,10 +2,15 @@ import { NextResponse } from 'next/server';
 import { getEverythingAtOnce } from '@/lib/prtsWiki/api';
 import { createDefaultEventsData } from '@/lib/events/utils';
 import { putEventsInStorage } from '@/lib/redisUtils';
+import { nanoid } from 'nanoid';
 
 export async function GET() {
   try {
-    const session = { sessionId: 'server-job', rateLimit_s: 3 };
+    const session = { 
+      sessionId: 'server-job-'+ nanoid(6),
+      rateLimit_s: 3,
+      isServerJob: true, 
+    };
     const webEventsData = await getEverythingAtOnce(session);
     if (!webEventsData) {
       return NextResponse.json({

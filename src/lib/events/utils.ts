@@ -123,7 +123,6 @@ export const createDefaultEventsData = (webEvents: WebEventsData) => {
             if (!b.date) return 1;
             return 0;
         }).reduce((acc, [_, event], idx) => {
-            console.log(idx,"event",{...event})
             const _name = event.name ?? event.pageName;
             acc[_name] = {
                 index: idx,

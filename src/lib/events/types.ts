@@ -26,23 +26,7 @@ export type SubmitEventProps = {
 export const emptyEvent: Event = { index: -1, materials: {} }
 export const emptyNamedEvent: NamedEvent = { ...emptyEvent, name: "", farms: [] }
 
-export const reindexEvents = (eventsData: EventsData | [string, Event][]): EventsData => {
-    const eventsArray = Array.isArray(eventsData)
-        ? eventsData
-        : Object.entries(eventsData).sort(([, a], [, b]) => a.index - b.index);
-
-    return eventsArray.reduce((acc, [name, data], idx) => {
-        const newData = { ...data, index: idx };
-
-        // Clean farms array
-        if (newData.farms) {
-            if (newData.farms.length === 0) {
-                delete newData.farms;
-            } else if (newData.farms.length > 3) {
-                newData.farms = newData.farms.slice(0, 3);
-            }
-        }
-        acc[name] = newData;
-        return acc;
-    }, {} as EventsData);
+export type eventSelectorProps = {
+    variant: "summary" | "builder";
+    disabled: boolean;
 };
