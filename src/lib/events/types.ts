@@ -14,20 +14,6 @@ export type EventsData = {
     [name: string]: Event;
 }
 
-export type WebEvent = {
-    pageName: string;
-    date?: Date;
-    link: string;
-    webDisable?: boolean;
-    //+remove for release;
-    title?: string;
-    //-
-} & Omit<Partial<NamedEvent>, 'index'>
-
-export type WebEventsData = {
-    [pageName: string]: WebEvent
-}
-
 export type SubmitEventProps = {
     eventName: string,
     selectedEventIndex: number,
@@ -39,7 +25,6 @@ export type SubmitEventProps = {
 
 export const emptyEvent: Event = { index: -1, materials: {} }
 export const emptyNamedEvent: NamedEvent = { ...emptyEvent, name: "", farms: [] }
-export const emptyWebEvent: WebEvent = { pageName: "", link: "" };
 
 export const reindexEvents = (eventsData: EventsData | [string, Event][]): EventsData => {
     const eventsArray = Array.isArray(eventsData)

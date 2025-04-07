@@ -1,4 +1,5 @@
 'use server'
+import { Session } from  './types'
 import axios, { AxiosResponse } from 'axios';
 import { createClient } from 'redis';
 
@@ -32,17 +33,24 @@ class AxiosServer {
     }
   }
 
-  public async fetchData<T>(url: string, sessionId: string): Promise<T> {
-    const userAgent = {
-      headers: { 'User-Agent': `AKEventsTracker (in-built ${RATE_LIMIT_MS / 1000}s delay)` }
-    };
+  public async fetchData<T>(url: string, session: Session): Promise<T> {
+    const sessionId = session.sessionId ? session.sessionId : 'anonymous';
+    const rate_limit_s = session.rateLimit_s;
+    const _rateLimit_MS = (rate_limit_s && rate_limit_s * 1000 > RATE_LIMIT_MS) ? rate_limit_s * 1000 : RATE_LIMIT_MS;
 
+    const userAgent = {
+      headers: { 'User-Agent': `AKEventsTracker (in-built min ${RATE_LIMIT_MS / 1000}s delay)` }
+    };
+    
+    //fetch for session can be slowed down further, but not faster then RATE_LIMIT_MS
     const maxWaitTime = 10_000;
     const startTime = Date.now();
 
     try {
       // 1. Add to queue and wait for turn
       //timing in logs [${new Date().toISOString()}]
+      console.log(`rate_limit: ${_rateLimit_MS}`);
+      console.log(url);
       console.log(`[${sessionId}] Adding to queue...`);
       await redis.rPush(QUEUE_KEY, sessionId);
 
@@ -75,7 +83,7 @@ class AxiosServer {
       // 2. Process with rate limiting
       return await this.withLock(async () => {
         const lastRequestTime = await redis.get('global:last_request');
-        const delay = Math.max(0, RATE_LIMIT_MS - (Date.now() - parseInt(lastRequestTime || '0')));
+        const delay = Math.max(0, _rateLimit_MS - (Date.now() - parseInt(lastRequestTime || '0')));
 
         if (delay > 0) {
           console.log(`[${sessionId}] Delaying by ${delay}ms`);
@@ -104,12 +112,12 @@ class AxiosServer {
 
 const axiosServer = AxiosServer.createInstance();
 
-export async function fetchHtml(url: string, sessionId: string = 'anonymous'): Promise<string> {
+export async function fetchHtml(url: string, session: Session): Promise<string> {
   if (!url) throw new Error('No page link provided');
-  return await axiosServer.fetchData(url, sessionId);
+  return await axiosServer.fetchData(url, session);
 }
 
-export async function fetchJson<T = any>(url: string, sessionId: string = 'anonymous'): Promise<T> {
+export async function fetchJson<T = any>(url: string, session: Session): Promise<T> {
   if (!url) throw new Error('No page link provided');
-  return await axiosServer.fetchData<T>(url, sessionId);
+  return await axiosServer.fetchData<T>(url, session);
 }

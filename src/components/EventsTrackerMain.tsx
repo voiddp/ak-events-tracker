@@ -34,7 +34,7 @@ import itemsJson from '../data/items.json';
 import ItemBase from './ItemBase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { TransitionProps } from '@mui/material/transitions';
-import { emptyEvent, EventsData, NamedEvent } from "../types/events";
+import { emptyEvent, EventsData, NamedEvent } from "../lib/events/types";
 import InputIcon from '@mui/icons-material/Input';
 import ImportExportIcon from '@mui/icons-material/ImportExport';
 import AddIcon from "@mui/icons-material/Add";
@@ -45,7 +45,7 @@ import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import SubmitEventDialog from './SubmitEventDialog';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, getItemBaseStyling, isMaterial, getDefaultEventMaterials, standardItemsSort } from '@/utils/ItemUtils'
-import { SubmitEventProps, emptyNamedEvent, reindexEvents, } from '../types/events';
+import { SubmitEventProps, emptyNamedEvent, reindexEvents, } from '../lib/events/types';
 import ItemEditBox from './ItemEditBox';
 
 const Transition = React.forwardRef(function Transition(

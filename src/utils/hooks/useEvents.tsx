@@ -1,19 +1,17 @@
 import { useCallback, useMemo } from "react";
 import useSettings from '@/utils/hooks/useSettings'
-import { EventsData, NamedEvent, SubmitEventProps, emptyEvent, reindexEvents } from "@/types/events";
-import { AK_CALENDAR, AK_DAILY, AK_WEEKLY } from "@/utils/ItemUtils";
+import { EventsData, SubmitEventProps, emptyEvent } from "@/lib/events/types";
+import { createDefaultEventsData, reindexEvents } from "@/lib/events/utils"
 import useLocalStorage from "@/utils/hooks/useLocalStorage";
-
-export type eventSelectorProps = {
-    variant: "summary" | "builder";
-    disabled: boolean;
-};
+import { getNextMonthsData } from "@/lib/events/utils";
+import { WebEventsData } from "@/lib/prtsWiki/types";
 
 function useEvents(): [
     EventsData,
     (newEventsData: EventsData) => void,
     (submit: SubmitEventProps) => false | [string, number][],
-    (months?: number) => EventsData
+    (months?: number) => EventsData,
+    (webEvents: WebEventsData) => EventsData,
 ] {
     const [eventsData, _setEvents] = useLocalStorage<EventsData>("eventsTracker", {});
     const [settings, setSettings] = useSettings();
@@ -120,65 +118,10 @@ function useEvents(): [
         return result;
     }, [eventsData, _setEvents, getEventByIndex]);
 
-    const createMonthEvent = (month: number, year: number): NamedEvent => {
-
-        const daysInMonth = new Date(year, month, 0).getDate();
-        const firstDayNum = new Date(year, month - 1, 1).getDay();
-        const lastDayNum = new Date(year, month - 1, daysInMonth).getDay();
-
-        const firstDay = (firstDayNum + 6) % 7;
-        const lastDay = (lastDayNum + 6) % 7;
-
-        const materials: Record<string, number> = {};
-
-        //AK_CALENDAR
-        for (const [dayStr, items] of Object.entries(AK_CALENDAR)) {
-            const day = parseInt(dayStr);
-            if (day <= daysInMonth) {
-                for (const [id, amount] of Object.entries(items)) {
-                    materials[id] = (materials[id] || 0) + amount;
-                }
-            }
-        }
-        //AK_DAILY
-        for (const [id, amount] of Object.entries(AK_DAILY)) {
-            materials[id] = (materials[id] || 0) + amount * daysInMonth;
-        }
-
-        //AK_WEEKLY
-        let fullWeeks = Math.floor(daysInMonth / 7);
-        if (firstDay <= 3) fullWeeks++;
-        if (lastDay >= 3) fullWeeks++;
-
-        for (const [id, amount] of Object.entries(AK_WEEKLY)) {
-            materials[id] = (materials[id] || 0) + amount * fullWeeks;
-        }
-
-        const monthName = new Date(year, month - 1).toLocaleString('en-US', { month: 'long' });
-        return {
-            name: `${monthName} ${year}`,
-            index: month,
-            materials
-        }
-    };
-
-    const getNextMonthsData = (months: number = 6): EventsData => {
-        const nextMonthsData: EventsData = {};
-        const currentDate = new Date();
-        const currentMonth = currentDate.getMonth() + 1;
-        const currentYear = currentDate.getFullYear();
-
-        for (let i = 1; i <= months; i++) {
-            const month = (currentMonth + i) % 12 || 12;
-            const year = currentYear + Math.floor((currentMonth + i) / 12);
-            const monthEvent = createMonthEvent(month, year);
-            nextMonthsData[monthEvent.name] = monthEvent;
-        }
-        return nextMonthsData;
+    const clientCreateDefaultEventsData = (webEvents: WebEventsData): EventsData => {
+       return createDefaultEventsData(webEvents) ?? {};
     }
-
-    return [_eventsData, setEvents, submitEvent, getNextMonthsData]
-
+      return [_eventsData, setEvents, submitEvent, getNextMonthsData, 
+        clientCreateDefaultEventsData]
 }
-
 export default useEvents;

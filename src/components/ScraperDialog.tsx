@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, Accordion, AccordionSummary, AccordionDetails, Button, Typography, Box, DialogActions, Stack, IconButton, TextField, Link, Tooltip, useTheme, useMediaQuery } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { WebEventsData, emptyWebEvent, EventsData, NamedEvent, WebEvent, SubmitEventProps } from '@/types/events'
+import {  EventsData, NamedEvent, SubmitEventProps } from '@/lib/events/types'
+import {WebEventsData, emptyWebEvent,WebEvent} from '@/lib/prtsWiki/types'
 import { usePrtsWiki } from '../utils/hooks/usePrtsWiki';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import ItemBase from '@/components/ItemBase';
@@ -129,7 +130,8 @@ const ScraperDialog = React.memo((props: Props) => {
               sx={{ width: "4ch" }}
               slotProps={{
                 htmlInput: {
-                  sx: { textAlign: "center" }
+                  onClick: (e: React.MouseEvent<HTMLInputElement>) => e.currentTarget.select(),
+                  sx: { textAlign: "center" },
                 }
               }}
               onChange={(e) => {

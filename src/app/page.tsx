@@ -6,7 +6,7 @@ import ScraperDialog from "../components/ScraperDialog";
 import EventsTracker from "@/components/EventsTrackerMain";
 import EventsTrackerDialog from "@/components/EventsTrackerDialog";
 import useEvents from "../utils/hooks/useEvents";
-import { emptyNamedEvent, NamedEvent, SubmitEventProps } from "@/types/events";
+import { emptyNamedEvent, NamedEvent, SubmitEventProps } from "@/lib/events/types";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import Head from "./Head";
@@ -18,6 +18,8 @@ import LogoDevIcon from '@mui/icons-material/LogoDev';
 import SubmitEventDialog from "@/components/SubmitEventDialog";
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { usePrtsWiki } from "@/lib/prtsWiki/client";
+import { useEventsWebStorage } from "@/utils/hooks/useEventsWebStorage";
 
 export default function Home() {
 
@@ -31,9 +33,10 @@ export default function Home() {
   const [selectedEvent, setSelectedEvent] = useState<NamedEvent>();
   const [submitVariant, setSubmitVariant] = useState<"tracker" | "months">("months");
 
-  const [eventsData, setEvents, submitEvent] = useEvents();
+  const [eventsData, setEvents, submitEvent,,createDefaultEventsData] = useEvents();
+  const { webEvents, getEverythingAtOnce } = usePrtsWiki();
+  const { data, lastUpdated, loading, error, fetchEventsFromStorage } = useEventsWebStorage();
   ///
-
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleDrawerOpen = () => {
@@ -58,33 +61,31 @@ export default function Home() {
   };
   const clientSideEmotionCache = createEmotionCache();
 
+  const handleGetEverythingAtOnce = async () => {
+    /* const data = await getEverythingAtOnce(3); */
+    const data = createDefaultEventsData(webEvents);
+    console.log("data", Object.entries(data).sort(([,a],[,b]) => a.index - b.index ));
+  }
+  const handleFetchEventsFromStorage = async () => {
+  const result = await fetchEventsFromStorage();
+  if (!result) return;
+  const { data, lastUpdated } = result;
+  console.log("fetched data:",lastUpdated, data);
+  }
+  
   return (
     <CacheProvider value={clientSideEmotionCache}>
       <Head
         onClick={handleDrawerOpen}
         menuButton={<MenuIcon sx={{ display: { xs: "unset", md: "none" } }} />}
-      >        {/* <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          onClick={handleDrawerOpen}
-          edge="start"
-          sx={[
-            {
-              display: { xs: "unset", md: "none" },
-              verticalAlign: "baseline",
-            },
-          ]}
-        
-          <MenuIcon />
-        </IconButton> 
-      }
-      >*/}
-        {/* <Button variant="contained"
-          color="primary" onClick={() => {
-            setEventsOpen(true);
-            setTrackerOpen(false)
-          }}>
-          Search CN events</Button> */}
+      > 
+      <Button 
+        variant="contained" 
+        onClick={handleFetchEventsFromStorage}
+        disabled={loading}
+      >
+        {'Fetch Defaults (console.log)'}
+      </Button>
       </Head>
       <CollapsibleDrawer
         open={drawerOpen}
@@ -114,6 +115,10 @@ export default function Home() {
           onClick={() => {
             setEventsKroosterOpen(true);
           }} />
+        <DrawerListItem
+          icon={<LogoDevIcon fontSize="large" />}
+          text="fetch all test..."
+          onClick={handleGetEverythingAtOnce} />
         <Divider />
         <DrawerListItem
           icon={<DeleteIcon fontSize="large" />}

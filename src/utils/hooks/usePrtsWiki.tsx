@@ -3,10 +3,10 @@ import { useCallback, useState } from 'react';
 import * as cheerio from 'cheerio';
 import itemsJson from '@/data/items.json';
 import { getItemByCnName } from '@/utils/ItemUtils';
-import { fetchHtml, fetchJson } from '@/lib/axiosServer';
+import { fetchHtml, fetchJson } from '@/lib/axios/axiosServer';
 import { LinearProgress } from '@mui/material';
 import { randomBytes } from 'crypto';
-import { WebEvent, WebEventsData, emptyEvent, emptyWebEvent } from '@/types/events';
+import { WebEvent, WebEventsData, emptyWebEvent } from '@/lib/prtsWiki/types';
 import useLocalStorage from './useLocalStorage';
 
 type PageResult = {
@@ -85,12 +85,14 @@ export const usePrtsWiki = () => {
   const [error, setError] = useState<Error | null>(null);
   const [progress, setProgress] = useState<Record<string, number>>({});
 
+  const [rateLimit_s, setRateLimit] = useState<number>(0); //defaults to axiosServer.ts default
+
   const fetchEvents = useCallback(
     async (monthsAgoDate: Date): Promise<WebEventsData> => {
       setError(null);
       try {
 
-        const html = await fetchHtml(getUrl(pageNames.events), sessionId);
+        const html = await fetchHtml(getUrl(pageNames.events), {sessionId, rateLimit_s});
         const $ = cheerio.load(html);
 
         const eventsResult: WebEventsData = webEvents ?? {};
@@ -125,13 +127,13 @@ export const usePrtsWiki = () => {
         setError(err instanceof Error ? err : new Error('Unknown error'));
         throw err;
       }
-    }, [webEvents, sessionId]
+    }, [webEvents, sessionId, rateLimit_s]
   );
 
   const getWikitextFromApiJson = async (pageName: string) => {
     setError(null);
     try {
-      const response = await fetchJson<MediaWikiApiResponse>(getApiUrl(pageName), sessionId);
+      const response = await fetchJson<MediaWikiApiResponse>(getApiUrl(pageName), {sessionId, rateLimit_s});
       const page = Object.values(response.query.pages)[0];
       const wikitext = page.revisions?.[0]?.slots?.main?.['*'] || '';
       return wikitext;
@@ -303,7 +305,7 @@ export const usePrtsWiki = () => {
         `, getUrl(`${ISpage}/${deepSubpage}`)); */
 
         setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"] + 10 }));
-        const html_main = await fetchHtml(getUrl(ISpage), sessionId);
+        const html_main = await fetchHtml(getUrl(ISpage), {sessionId, rateLimit_s});
         const $_main = cheerio.load(html_main);
         const IShistoryDates = parseISHistoryTable($_main, squadsSubpage, deepSubpage);
         if (IShistoryDates && Object.keys(IShistoryDates).length > 0) {
@@ -318,7 +320,7 @@ export const usePrtsWiki = () => {
 
               //fetch squads page
               setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"] + 10 }));
-              const html_squads = await fetchHtml(getUrl(`${ISpage}/${squadsSubpage}`), sessionId);
+              const html_squads = await fetchHtml(getUrl(`${ISpage}/${squadsSubpage}`), {sessionId, rateLimit_s});
               const $_squads = cheerio.load(html_squads);
 
               const squadsData = parseISSquadsPage($_squads, Object.keys(IShistoryDates));
@@ -326,7 +328,7 @@ export const usePrtsWiki = () => {
                 if (event.date && event.date >= monthsAgoDate) {
 
                   const _event = {
-                    ...emptyEvent,
+                    ...emptyWebEvent,
                     ...event,
                     webDisable: true,
                   }
@@ -352,12 +354,12 @@ export const usePrtsWiki = () => {
         if (IShistoryDates[deepSubpage] >= monthsAgoDate) {
 
           setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"] + 10 }));
-          const html = await fetchHtml(getUrl(`${ISpage}/${deepSubpage}`), sessionId);
+          const html = await fetchHtml(getUrl(`${ISpage}/${deepSubpage}`), {sessionId, rateLimit_s});
           const $ = cheerio.load(html);
           let deepResult: Record<string, number> = {};
           deepResult = parseNumDivs($, deepResult);
           const deepEvent = {
-            ...emptyEvent,
+            ...emptyWebEvent,
             date: IShistoryDates[deepSubpage],
             materials: deepResult,
             pageName: `${ISpage}/${deepSubpage}`,
@@ -382,7 +384,7 @@ export const usePrtsWiki = () => {
     try {
       pageName
       setProgress(prev => ({ ...prev ?? {}, [pageName]: 90 }));
-      const html = await fetchHtml(page_link, sessionId);
+      const html = await fetchHtml(page_link, {sessionId, rateLimit_s});
       const $ = cheerio.load(html);
 
       let result: Record<string, number> = {};
@@ -405,6 +407,54 @@ export const usePrtsWiki = () => {
     }
   };
 
+  const getEverythingAtOnce = async (rate_limit_s: number) => {
+    setRateLimit(rate_limit_s);
+    try {
+      const eventsList = await getEventList(6);
+      if (!eventsList || Object.keys(eventsList).length === 0) return;
+
+      const arrayOfResults = await Promise.allSettled(
+        Object.entries(eventsList).map(
+          async ([_,event]) => {
+            if (!event.webDisable) {
+              const pageName = event.pageName;
+              const page_link = event.link;
+              const pageResult = await getDataFromPage(pageName, page_link);
+              if (!pageResult) return;
+              
+              const webEvent: WebEvent = {
+                ...event,
+                materials: pageResult.items,                
+              }
+              if (pageResult.farms.length > 0) {
+                webEvent.farms = pageResult.farms;
+              }
+              if (pageResult.title) {
+                webEvent.name = pageResult.title;
+              }
+              return webEvent;              
+            }
+          }
+        )
+      );
+
+      const webEventsData: WebEventsData =
+        arrayOfResults.filter((result): result is PromiseFulfilledResult<WebEvent> => result.status === 'fulfilled' && result.value !== undefined)
+        .map((result) => result.value as WebEvent)
+        .reduce((acc, event) => {
+          acc[event.pageName] = event;
+          return acc
+        }, {} as WebEventsData);
+
+      return webEventsData;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+      throw err;
+    }
+  }
+
+
+
 
   // Loading component to be used by consumers
   const ProgressElement = (pageName: string) => {
@@ -423,7 +473,8 @@ export const usePrtsWiki = () => {
     getDataFromPage,
     error,
     loading,
-    ProgressElement
+    ProgressElement,
+    getEverythingAtOnce,
   };
 };
 

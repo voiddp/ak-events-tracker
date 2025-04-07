@@ -11,7 +11,7 @@ import {
     useMediaQuery
 } from '@mui/material';
 import ItemBase from "./ItemBase";
-import { Event, NamedEvent, EventsData, emptyEvent, emptyNamedEvent } from "../types/events"
+import { Event, NamedEvent, EventsData, emptyEvent, emptyNamedEvent } from "../lib/events/types"
 import { getItemBaseStyling, customItemsSort, formatNumber } from "../utils/ItemUtils";
 
 interface EventsSelectorProps {

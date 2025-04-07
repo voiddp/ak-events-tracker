@@ -8,5 +8,11 @@
   ],
   "github": {
     "silent": true
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/fetchData",
+      "schedule": "0 * * * *"
+    }
+  ]
 }

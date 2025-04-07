@@ -1,4 +1,4 @@
-import { EventsData } from "./events";
+import { EventsData } from "../lib/events/types";
 
 export interface LocalStorageSettings {
     version: string;

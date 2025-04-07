@@ -1,10 +1,11 @@
 import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Stack, TextField } from "@mui/material";
 import React, { useEffect, useMemo, useCallback, useState } from "react";
-import { NamedEvent, WebEvent, EventsData, emptyEvent, SubmitEventProps, emptyNamedEvent } from "@/types/events";
+import { NamedEvent, EventsData, emptyEvent, SubmitEventProps, emptyNamedEvent } from "@/lib/events/types";
 import EventsSelector from "./EventsSelector";
 import { formatNumber, getWidthFromValue, standardItemsSort, getItemBaseStyling } from "../utils/ItemUtils"
 import ItemEditBox from "./ItemEditBox";
 import useEvents from "@/utils/hooks/useEvents";
+import { WebEvent } from "@/lib/prtsWiki/types";
 
 interface Props {
     open: boolean;
