@@ -10,11 +10,11 @@ export async function GET() {
   try {
     const session = { 
       sessionId: 'server-job-'+ nanoid(6),
-      rateLimit_s: 2,
+      rateLimit_s: 0.5,
       isServerJob: true, 
     };
     const webEventsData = await getEverythingAtOnce(session);
-    if (!webEventsData) {
+    if (!webEventsData || Object.keys(webEventsData ?? {}).length <= 2) {
       return NextResponse.json({
         success: false,
         error: "No data recieved from the API",
