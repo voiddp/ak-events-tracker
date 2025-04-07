@@ -19,7 +19,7 @@ const Head = React.memo((props: Props) => {
     }
     return (
         <AppBar position="sticky" sx={{ gridArea: "header" }}>
-            <Toolbar variant="dense" sx={{ gap: 1 }}>
+            <Toolbar variant="dense" sx={{ gap: 1, alignItems: "center", justifyContent: "space-between" }} >
                 <Stack direction="row" alignItems="center" gap={1}
                     sx={{
                         transition: isMdUp ? "unset"
@@ -31,7 +31,7 @@ const Head = React.memo((props: Props) => {
                     onClick={handleOnClick}>
                     {menuButton}
                     <Typography component="h1" variant="h5" noWrap sx={{ display: "inline", verticalAlign: "baseline" }}>
-                        {String(metadata.title)}
+                        {isMdUp ?  String(metadata.title) : String(metadata.title).replace("Arknights events", "AK")}
                     </Typography>
                 </Stack>
                 <Stack direction="row" gap={1}>

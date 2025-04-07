@@ -1,6 +1,6 @@
 'use client'
 /* import Image from "next/image"; */
-import { Box, Button, colors, Divider, IconButton, Paper, Typography } from "@mui/material";
+import { Box, Button, colors, Divider, IconButton, List, ListItem, Paper, Stack, Tooltip, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { useCallback, useState } from "react";
 import ScraperDialog from "../components/ScraperDialog";
 import EventsTracker from "@/components/EventsTrackerMain";
@@ -18,10 +18,14 @@ import LogoDevIcon from '@mui/icons-material/LogoDev';
 import SubmitEventDialog from "@/components/SubmitEventDialog";
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { usePrtsWiki } from "@/lib/prtsWiki/client";
+import StorageIcon from '@mui/icons-material/Storage';
+import UpdateIcon from '@mui/icons-material/Update';
 import { useEventsWebStorage } from "@/utils/hooks/useEventsWebStorage";
 
 export default function Home() {
+
+  const theme = useTheme();
+  const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
 
   const [eventsOpen, setEventsOpen] = useState(false);
   const [eventsKroosterOpen, setEventsKroosterOpen] = useState(false);
@@ -33,9 +37,8 @@ export default function Home() {
   const [selectedEvent, setSelectedEvent] = useState<NamedEvent>();
   const [submitVariant, setSubmitVariant] = useState<"tracker" | "months">("months");
 
-  const [eventsData, setEvents, submitEvent,,createDefaultEventsData] = useEvents();
-  const { webEvents, getEverythingAtOnce } = usePrtsWiki();
-  const { data, lastUpdated, loading, error, fetchEventsFromStorage } = useEventsWebStorage();
+  const [eventsData, setEvents, submitEvent, , createDefaultEventsData] = useEvents();
+  const { dataDefaults, lastUpdated, loading, error, fetchEventsFromStorage } = useEventsWebStorage();
   ///
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -43,7 +46,8 @@ export default function Home() {
     setDrawerOpen((prev) => !prev);
   }
 
-  const [forceUpdate, setForceUpdate] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(false);  
+
   const handleAddItemsToDepot = (items: [string, number][]) => {
     console.log("adding to depot:", items);
   };
@@ -61,24 +65,36 @@ export default function Home() {
   };
   const clientSideEmotionCache = createEmotionCache();
 
-  const handleGetEverythingAtOnce = async () => {
-    /* const data = await getEverythingAtOnce(3); */
-    const data = createDefaultEventsData(webEvents);
-    console.log("data", Object.entries(data).sort(([,a],[,b]) => a.index - b.index ));
+  const handleSetEventsFromDefaults = useCallback(() => {
+    if (dataDefaults && dataDefaults.eventsData
+      && Object.keys(dataDefaults.eventsData).length > 0) {
+      setEvents(dataDefaults.eventsData);
+      setForceUpdate(true);
+    }
+  }, [dataDefaults, setEvents]
+  )
+
+  const formatTimeAgo = (date: string) => {
+    const timestamp = new Date(date).getTime();;
+    const now = Date.now();
+    const diffMs = Math.max(0, now - timestamp);
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const result = (diffHours > 0 ? `${diffHours}h`
+    : `${diffMinutes}m`) + (isMdUp ? " ago" : "");
+
+    return result;
   }
-  const handleSetEventsFromDefaults = async () => {
-  const result = await fetchEventsFromStorage();
-  if (!result) return;
-  setEvents(result.data.eventsData);
-  setForceUpdate(true);
-  }
-  
+
   return (
     <CacheProvider value={clientSideEmotionCache}>
       <Head
         onClick={handleDrawerOpen}
         menuButton={<MenuIcon sx={{ display: { xs: "unset", md: "none" } }} />}
-      > {lastUpdated && `Last defaults update: ${new Date(lastUpdated).toLocaleDateString("en-US", {day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"})}`} 
+      > {lastUpdated && 
+          <Tooltip title={`parsed prts.wiki ${!isMdUp ? formatTimeAgo(lastUpdated)+ " ago" : ""}`}>
+           <Stack direction="row" alignItems="center" fontSize="small">{isMdUp  && formatTimeAgo(lastUpdated)}<UpdateIcon fontSize="small"/></Stack>
+          </Tooltip>}
       </Head>
       <CollapsibleDrawer
         open={drawerOpen}
@@ -86,7 +102,7 @@ export default function Home() {
       >
         <DrawerListItem
           icon={<TravelExploreIcon fontSize="large" />}
-          text="Search PRTS events"
+          text="Build from prts"
           onClick={() => {
             setEventsOpen(true);
             setTrackerOpen(false);
@@ -101,6 +117,11 @@ export default function Home() {
             setSubmitDialogOpen(true);
           }}
         />
+        <DrawerListItem
+          icon={<StorageIcon fontSize="large" />}
+          text="Set defaults"
+          onClick={handleSetEventsFromDefaults}
+        />
         <Divider />
         <DrawerListItem
           icon={<LogoDevIcon fontSize="large" />}
@@ -108,10 +129,10 @@ export default function Home() {
           onClick={() => {
             setEventsKroosterOpen(true);
           }} />
-        <DrawerListItem
+        {/* <DrawerListItem
           icon={<LogoDevIcon fontSize="large" />}
           text="fetch all test..."
-          onClick={handleGetEverythingAtOnce} />
+          onClick={handleGetEverythingAtOnce} /> */}
         <Divider />
         <DrawerListItem
           icon={<DeleteIcon fontSize="large" />}
@@ -138,13 +159,30 @@ export default function Home() {
             onChange={setEvents}
             submitEvent={handleSubmitEvent}
           >
-            <Button
-              variant="contained"
-              onClick={handleSetEventsFromDefaults}
-              disabled={loading}
-            >
-              {'Or use 6 months default list'}
-            </Button>
+            <List>
+              <ListItem>Input future events, using sidebar menu options, import, or manually.</ListItem>
+              <ListItem ><Stack direction="row" gap={2} alignItems="center">
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleSetEventsFromDefaults}
+                  disabled={loading}
+                  sx={{minWidth: "fit-content"}}
+                >Default&nbsp;List
+                </Button> 6 months of upcoming events from prts.wiki sorted by date, updated daily.</Stack></ListItem>
+              <ListItem ><Stack direction="row" gap={2} alignItems="center">
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => {
+                    setEventsOpen(true);
+                    setTrackerOpen(false);
+                  }}
+                  disabled={loading}
+                  sx={{minWidth: "fit-content"}}
+                >CN&nbsp;Builder
+                </Button>CN data and builder to add, combine or replace</Stack></ListItem>
+            </List>
           </EventsTracker>
           <EventsTrackerDialog
             eventsData={eventsData}
@@ -160,9 +198,10 @@ export default function Home() {
             open={eventsOpen}
             onClose={() => {
               setEventsOpen(false);
-              setTrackerOpen(true)
+              setTrackerOpen(true);
             }}
             eventsData={eventsData}
+            defaultList={dataDefaults?.webEventsData ?? {}}
             submitEvent={submitEvent}
           />
           <SubmitEventDialog

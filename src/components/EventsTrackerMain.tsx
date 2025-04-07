@@ -122,23 +122,24 @@ const EventsTrackerMain = React.memo((props: Props) => {
             <p>
                 The Event Tracker helps track free income from unreleased future events, including rewards, shops, and similar sources.
             </p>
-            <ul>
+            <ul> 
+                <li>Default 6 months of sorted by date PRTS events and default tracker lists are updated daily</li>
                 <li>Events can be added manually by creating a new event, expanding it, and entering material amounts.</li>
                 <li>Up to three farmable Tier 3 materials per event can be selected by clicking on the item images within an expanded event.</li>
                 <li>Events can be reordered by dragging and dropping them in the event list.</li>
-                {/* <li>Materials from an event can be fully or partially added to the depot using the `&quot;`Add to Depot`&quot;` button on the event.</li> */}
             </ul>
             <ul>
-                <h3>Menu has some events building functions to use:</h3>
+                <h3>Menu has some building functions:</h3>
                 <ul>
-                    <li><big><b>Search CN events</b></big>: Data is pulled and parsed from prts.wiki.</li>
-                    <li>Individual event list entries download buttons pull income data for each event.</li>
-                    <li><big><b>Add Months</b></big>: 6 next months income from dailies, weeklies, and monthlies as event data.</li>
-                    <li>PRTS list and Month events can be added as new, replace or add to mats of some other event.</li>
+                    <li><big><b>Build from prts</b></big>: Data is pulled and parsed from prts.wiki.</li>
+                    <li>Individual CN events download buttons pull/update income data for each event. Or just wait for next daily update.</li>
+                    <li><big><b>Add Months</b></big>: 6 next months income from dailies, weeklies, and monthlies as event data. Calculated based on calendar.</li>
+                    <li>Flexibility: Prts and Month events can be added as new, replace other events or combined into them.</li>
                 </ul>
             </ul>
             <ul>
                 <li>Supports export and import from other Arknights community data sources (like tracking sheets). Data should be compiled into the presented import formats.</li>
+                <li><h3>Supports import to Krooster planner, use in combination with new Summary to plan upcoming farming</h3></li>
             </ul>
         </>;
 
@@ -656,9 +657,9 @@ const EventsTrackerMain = React.memo((props: Props) => {
                     {/* Input Tab */}
                     {tab === "input" && (
                         <Stack direction="column" justifyContent="center" alignItems="center">
-                            {rawEvents && Object.keys(rawEvents).length === 0 && (<>
-                                <Typography variant='h2' textAlign="center">Input future events, using sidebar menu options, with import, or manually.</Typography>
-                                {children}
+                            {!rawEvents || Object.keys(rawEvents).length === 0 && (
+                                <>
+                                    {children}
                                 </>
                             )}
                             {renderedEvents}

@@ -82,12 +82,12 @@ const appTheme = (brandColor: string, light = false) => {
         },
         variants: [
           {
-            props:{  },
+            props: {},
             style: {
               //color: _neutral[50],
-             // backgroundColor: _neutral[700],
-             // "&:hover": {
-             //   background: lighten(_neutral[700], 0.1),
+              // backgroundColor: _neutral[700],
+              // "&:hover": {
+              //   background: lighten(_neutral[700], 0.1),
               //},
               transition: "background-color 0.1s",
             },
@@ -160,7 +160,7 @@ const appTheme = (brandColor: string, light = false) => {
         styleOverrides: {
           root: {
             padding: 8,
-           //color: _neutral[50],
+            //color: _neutral[50],
             //backgroundColor: _neutral[700],
             //"&:hover": {
             //  background: lighten(_neutral[700], 0.1),
@@ -190,7 +190,7 @@ const appTheme = (brandColor: string, light = false) => {
         styleOverrides: {
           root: {
             "&[aria-disabled='true']": {
-             // color: _neutral[300],
+              // color: _neutral[300],
               opacity: 0.8,
               pointerEvents: "none",
             },
@@ -203,96 +203,96 @@ const appTheme = (brandColor: string, light = false) => {
         },
       },
     },
-      typography: {
-        allVariants: {
-          fontFamily: `"Lato", sans-serif`,
-        },
-        caption: {
-          margin: 0,
-          fontWeight: 400,
-          fontSize: "0.875rem",
-          lineHeight: 1.66,
-        },
-            caption2: {
-              margin: 0,
-              fontWeight: 400,
-              fontSize: "0.675rem",
-              lineHeight: 1.66,
-            },
-            caption3: {
-              margin: 0,
-              fontWeight: 400,
-              fontSize: "0.6rem",
-            },
-        h1: {
-          fontSize: "4rem",
-        },
-        h2: {
-          fontSize: "2rem",
-          fontWeight: "normal",
-        },
-        h3: {
-          fontSize: "1rem",
-          lineHeight: 1,
-          fontWeight: "normal",
-          //color: _neutral[200],
-          marginLeft: "8px",
-        },
-        h4: {
-          fontSize: "0.875rem",
-          lineHeight: 1,
-          fontWeight: "normal",
-          //color: _neutral[200],
-          marginLeft: "8px",
-        },
-        h6: {
-          fontWeight: "normal",
-          fontSize: "0.875rem",
-        },
+    typography: {
+      allVariants: {
+        fontFamily: `"Lato", sans-serif`,
       },
-    });
-  };
+      caption: {
+        margin: 0,
+        fontWeight: 400,
+        fontSize: "0.875rem",
+        lineHeight: 1.66,
+      },
+      caption2: {
+        margin: 0,
+        fontWeight: 400,
+        fontSize: "0.675rem",
+        lineHeight: 1.66,
+      },
+      caption3: {
+        margin: 0,
+        fontWeight: 400,
+        fontSize: "0.6rem",
+      },
+      h1: {
+        fontSize: "4rem",
+      },
+      h2: {
+        fontSize: "2rem",
+        fontWeight: "normal",
+      },
+      h3: {
+        fontSize: "1rem",
+        lineHeight: 1,
+        fontWeight: "normal",
+        //color: _neutral[200],
+        marginLeft: "8px",
+      },
+      h4: {
+        fontSize: "0.875rem",
+        lineHeight: 1,
+        fontWeight: "normal",
+        //color: _neutral[200],
+        marginLeft: "8px",
+      },
+      h6: {
+        fontWeight: "normal",
+        fontSize: "0.875rem",
+      },
+    },
+  });
+};
 
-  const theme = appTheme(brand.DEFAULT);
+const theme = appTheme(brand.DEFAULT);
 
-  export default theme;
+export default theme;
 
-  declare module "@mui/material/styles" {
-    interface TypeBackground {
-      light: string;
-    }
-  
-    interface TypographyVariants {
-      caption2: React.CSSProperties;
-      caption3: React.CSSProperties;
-    }
-  
-    // allow configuration using `createTheme`
-    interface TypographyVariantsOptions {
-      caption2?: React.CSSProperties;
-      caption3?: React.CSSProperties;
-    }
+declare module "@mui/material/styles" {
+  interface TypeBackground {
+    light: string;
   }
-  
-  declare module "@mui/material/Button" {
-    interface ButtonPropsVariantOverrides {
-      neutral: true;
-    }
+
+  interface TypographyVariants {
+    caption2: React.CSSProperties;
+    caption3: React.CSSProperties;
   }
-  
-  // Update the Typography's variant prop options
-  declare module "@mui/material/Typography" {
-    interface TypographyPropsVariantOverrides {
-      caption2: true;
-      caption3: true;
-    }
+
+  // allow configuration using `createTheme`
+  interface TypographyVariantsOptions {
+    caption2?: React.CSSProperties;
+    caption3?: React.CSSProperties;
   }
-  
-  export const interactive = {
-    transition: "filter 0.1s, background-color 0.1s",
-    ":hover": { filter: "brightness(110%)" },
-  };
-  
-  export const focused = {
-    boxShadow: "inset 0px 0px 0px 2px white",
-  };
+}
+
+declare module "@mui/material/Button" {
+  interface ButtonPropsVariantOverrides {
+    neutral: true;
+  }
+}
+
+// Update the Typography's variant prop options
+declare module "@mui/material/Typography" {
+  interface TypographyPropsVariantOverrides {
+    caption2: true;
+    caption3: true;
+  }
+}
+
+export const interactive = {
+  transition: "filter 0.1s, background-color 0.1s",
+  ":hover": { filter: "brightness(110%)" },
+};
+
+export const focused = {
+  boxShadow: "inset 0px 0px 0px 2px white",
+};

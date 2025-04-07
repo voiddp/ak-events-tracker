@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, Accordion, AccordionSummary, AccordionDetails, Button, Typography, Box, DialogActions, Stack, IconButton, TextField, Link, Tooltip, useTheme, useMediaQuery } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import {  EventsData, NamedEvent, SubmitEventProps } from '@/lib/events/types'
-import {WebEventsData, emptyWebEvent,WebEvent} from '@/lib/prtsWiki/types'
-import { usePrtsWiki } from '../utils/hooks/usePrtsWiki';
+import { EventsData, NamedEvent, SubmitEventProps } from '@/lib/events/types'
+import { WebEventsData, emptyWebEvent, WebEvent } from '@/lib/prtsWiki/types'
+import { usePrtsWiki } from '@/lib/prtsWiki/client';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import ItemBase from '@/components/ItemBase';
 import SubmitEventDialog from '@/components/SubmitEventDialog';
@@ -16,11 +16,12 @@ interface Props {
   open: boolean;
   onClose: () => void;
   eventsData: EventsData;
+  defaultList: WebEventsData;
   submitEvent: (submit: SubmitEventProps) => void;
 }
 
 const ScraperDialog = React.memo((props: Props) => {
-  const { open, onClose, eventsData, submitEvent } = props;
+  const { open, onClose, eventsData, submitEvent, defaultList } = props;
   const { webEvents, setWebEvents, error, loading, getEventList, getDataFromPage, ProgressElement } = usePrtsWiki();
 
   const theme = useTheme();
@@ -37,21 +38,23 @@ const ScraperDialog = React.memo((props: Props) => {
     if (!open) return;
     //use for release
     //setRawWebEvents(webEvents ?? {});
-
     //+remove for release;
-    setRawWebEvents((prev) => {
-      const _next = webEvents ?? {};
-      Object.keys(_next).forEach(key => {
-        const title = _next[key]?.title ?? "";
-        if (title) {
-          _next[key].name = title;
-          delete _next[key].title;
-        }
-      })
-      return _next
-    });
-    //-
-  }, [open, webEvents]
+    if (webEvents && Object.keys(webEvents).length > Object.keys(defaultList ?? {}).length) {
+      setRawWebEvents((prev) => {
+        const _next = webEvents ?? {};
+        Object.keys(_next).forEach(key => {
+          const title = _next[key]?.title ?? "";
+          if (title) {
+            _next[key].name = title;
+            delete _next[key].title;
+          }
+        })
+        return _next
+      });
+    } else {
+      setRawWebEvents(defaultList ?? {});
+    }
+  }, [open, webEvents, defaultList]
   );
 
 
@@ -122,7 +125,7 @@ const ScraperDialog = React.memo((props: Props) => {
         {loading["LIST"] && ProgressElement("LIST")}
         <DialogTitle justifyContent="space-between">
           <Stack direction="row" gap={1} mr={1}>
-            From prts.wiki:
+            {!fullScreen ? "From " : ""}prts.wiki:
             <TextField
               label="months"
               value={monthsAgo}
@@ -142,10 +145,11 @@ const ScraperDialog = React.memo((props: Props) => {
             <Button
               variant="contained"
               color="primary"
+              size={fullScreen ? "small" : "medium"}
               onClick={handleFetchEvents}
               disabled={loading["LIST"]}
-            >
-              Fetch Events
+              sx={{ minWidth: "fit-content", minHeight: "fit-content" }}
+            >Fetch Events
             </Button>
           </Stack>
           <IconButton onClick={handleClose} sx={{ display: { sm: "none" }, gridArea: "close" }}>
@@ -186,7 +190,14 @@ const ScraperDialog = React.memo((props: Props) => {
                     <AccordionSummary
                       expandIcon={<ExpandMoreIcon />}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch" pr={2}>
-                        {item.date && <Typography>{`(${(new Date(item.date)).toISOString().split('T')[0]}) ${item.name ?? item.pageName}`}</Typography>}
+                        <Stack direction="row" alignItems="center" gap={1}>
+                          <Link href={item.link} underline="always" alignSelf="left" noWrap fontSize={fullScreen ? "small" : "inherit"}>
+                            {item.date ? `(${(new Date(item.date).toISOString().split('T')[0])})` : "Page link"}
+                          </Link>
+                          <Typography textAlign="center" fontSize={fullScreen ? "small" : "inherit"}>
+                            {` ${item.name ?? item.pageName}`}
+                          </Typography>
+                        </Stack>
                         <Stack direction="row" gap={2}>
                           {(Object.keys(rawWebEvents[item.pageName]?.materials ?? {}).length > 0
                             || rawWebEvents[item.pageName]?.farms) && <Tooltip title="Add event to Tracker">
@@ -223,31 +234,30 @@ const ScraperDialog = React.memo((props: Props) => {
                       </Stack>
                     </AccordionSummary>
                     <AccordionDetails>
-                      <Link href={item.link} underline="always">
-                        {'Event page'}
-                      </Link><br />
-                      {rawWebEvents[item.pageName] && (
-                        <>
-                          {rawWebEvents[item.pageName].farms && (
-                            <Box>
-                              Tier 3 Farms: {(rawWebEvents[item.pageName].farms ?? []).map((id) => (
-                                <ItemBase key={`${id}-farms`} itemId={id} size={getItemBaseStyling('builder').itemBaseSize} />
-                              ))}
-                            </Box>
+                      <Stack direction="column" justifyContent="space-between" alignItems="center" gap={1}>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" width="100%">
+                          {rawWebEvents[item.pageName] && rawWebEvents[item.pageName].farms && (
+                            <Stack direction="row" alignItems="center" gap={0.5}>
+                              {(rawWebEvents[item.pageName].farms ?? []).map((id) => (
+                                <ItemBase key={`${id}-farms`} itemId={id} size={getItemBaseStyling('builder', fullScreen).itemBaseSize * 1.1} />
+                              ))} T3 Farms
+                            </Stack>
                           )}
-                          {rawWebEvents[item.pageName].materials && (
+                        </Stack>
+                        <Stack direction="row" alignItems="center" justifyContent="center" flexWrap="wrap">
+                          {rawWebEvents[item.pageName] && rawWebEvents[item.pageName].materials && (
                             <>
                               {Object.entries(rawWebEvents[item.pageName].materials ?? {})
                                 .sort(([idA], [idB]) => standardItemsSort(idA, idB))
                                 .map(([id, quantity], idx) => (
-                                  <ItemBase key={`${id}`} itemId={id} size={getItemBaseStyling('builder').itemBaseSize}>
-                                    <Typography {...getItemBaseStyling('builder').numberCSS}>{formatNumber(quantity)}</Typography>
+                                  <ItemBase key={`${id}`} itemId={id} size={getItemBaseStyling('builder', fullScreen).itemBaseSize}>
+                                    <Typography {...getItemBaseStyling('builder', fullScreen).numberCSS}>{formatNumber(quantity)}</Typography>
                                   </ItemBase>
                                 ))}
                             </>
                           )}
-                        </>
-                      )}
+                        </Stack>
+                      </Stack>
                     </AccordionDetails>
                   </Accordion>
                 </Box>
