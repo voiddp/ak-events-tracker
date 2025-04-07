@@ -4,11 +4,13 @@ import { createDefaultEventsData } from '@/lib/events/utils';
 import { putEventsInStorage } from '@/lib/redisUtils';
 import { nanoid } from 'nanoid';
 
+export const maxDuration = 60;
+
 export async function GET() {
   try {
     const session = { 
       sessionId: 'server-job-'+ nanoid(6),
-      rateLimit_s: 3,
+      rateLimit_s: 2,
       isServerJob: true, 
     };
     const webEventsData = await getEverythingAtOnce(session);

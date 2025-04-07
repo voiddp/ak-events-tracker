@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 import { getItemByCnName } from '@/utils/ItemUtils';
 import itemsJson from '@/data/items.json';
-import { argNames, dictionary } from './constants';
+import { argNames } from './constants';
 import { emptyWebEvent, WebEventsData } from './types';
 import { getUrl } from './api';
 import { applyDictionary, escapeRegExp, isMostlyEnglish, parseChineseNumber } from './utils';

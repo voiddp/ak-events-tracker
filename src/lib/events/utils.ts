@@ -41,7 +41,7 @@ const createMonthEvent = (month: number, year: number): NamedEvent => {
             day: 'numeric',
             month: 'long',
             year: 'numeric'
-          });
+        });
     return {
         name: monthEventName,
         index: month,
@@ -92,16 +92,20 @@ export const createDefaultEventsData = (webEvents: WebEventsData) => {
     /* const result = */
     //const _eventsData: EventsData = {};
     /* const _eventsData: EventsData = Object.fromEntries( */
-    const _eventsData = Object.entries(webEvents).map(([name, wEvent]) => {
-        let _wEvent = { ...wEvent };
-        if (_wEvent.date) {
-            const date = new Date(_wEvent.date);
-            //decrease web events date by 6 months to sort
-            date.setMonth(date.getMonth() + 6);
-            _wEvent.date = date;
-        }
-        return [name, _wEvent] as [string, WebEvent];
-    }) //concat with Months events to sort
+    const _eventsData = Object.entries(webEvents)
+        .filter(([_, wEvent]) =>
+            (wEvent.materials && Object.keys(wEvent.materials).length > 0)
+            || (wEvent.farms && wEvent.farms.length > 0))
+        .map(([name, wEvent]) => {
+            let _wEvent = { ...wEvent };
+            if (_wEvent.date) {
+                const date = new Date(_wEvent.date);
+                //decrease web events date by 6 months to sort
+                date.setMonth(date.getMonth() + 6);
+                _wEvent.date = date;
+            }
+            return [name, _wEvent] as [string, WebEvent];
+        }) //concat with Months events to sort
         .concat(
             Object.entries(nextMonthsEvents).map(([name, event]) => {
                 //name is May 2025, convert to last day of month date
