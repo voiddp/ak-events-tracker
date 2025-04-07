@@ -1,5 +1,5 @@
 import { getUrl } from './api';
-import { argNames, dictionary } from './constants';
+import { argNames, dictionary, moduleBox } from './constants';
 import { emptyWebEvent, WebEvent } from './types';
 
 export const isDateTextValid = (dateText: string): boolean => {
@@ -100,3 +100,9 @@ export const applyDictionary = (title: string | null): string | false => {
     });
     return _title;
 }
+
+export const addModuleBox = (number: number, result: Record<string, number>) => {    
+    Object.entries(moduleBox).forEach(([key, value]) => {
+        result[key] = (result[key] ?? 0) + value * number;
+    });
+};

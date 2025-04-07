@@ -268,16 +268,18 @@ export const getEverythingAtOnce = async (session: Session, setProgress?: Progre
     const entries = Object.entries(eventsList);
 
     for (const [i, [_, event]] of entries.entries()) {
-        try {
-          if (event.webDisable || Object.keys(event.materials ?? {}).length > 0) continue;
-
+      try {
+        let webEvent: WebEvent;
+        if (event.webDisable || Object.keys(event.materials ?? {}).length > 0) {
+          webEvent = { ...event };
+        } else {
           /* // Update progress
           setProgress?.({ current: i + 1, total: entries.length }); */
 
           const pageResult = await getDataFromPage(event.pageName, event.link, context);
           if (!pageResult) continue;
 
-          const webEvent: WebEvent = {
+          webEvent = {
             ...event,
             materials: pageResult?.items ?? {},
           };
@@ -288,11 +290,12 @@ export const getEverythingAtOnce = async (session: Session, setProgress?: Progre
           if (pageResult?.title) {
             webEvent.name = pageResult.title;
           }
-          results.push(webEvent);
-        } catch (err) {
-          console.error(`Failed to process ${event.pageName}:`, err);
         }
-      }    
+        results.push(webEvent);
+      } catch (err) {
+        console.error(`Failed to process ${event.pageName}:`, err);
+      }
+    }
     return results.reduce((acc, event) => {
       acc[event.pageName] = event;
       return acc;

@@ -22,10 +22,16 @@ export const argNames = {
     link: `link=`,
     themeUpdateHistory: '主题更新记录',
     totals: '报酬合计',
+    moduleBox: '模组数据整合箱',
 };
 
 export const dictionary = {
     '复刻': 'Rerun',
     'IN RETROSPECT': 'Rerun',
     '签到': 'Sign-in'
+}
+export const moduleBox = {
+    'mod_unlock_token': 12,
+    'mod_update_token_1': 60,
+    'mod_update_token_2': 20,
 }

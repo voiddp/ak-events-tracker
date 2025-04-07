@@ -4,7 +4,7 @@ import itemsJson from '@/data/items.json';
 import { argNames } from './constants';
 import { emptyWebEvent, WebEventsData } from './types';
 import { getUrl } from './api';
-import { applyDictionary, escapeRegExp, isMostlyEnglish, parseChineseNumber } from './utils';
+import { addModuleBox, applyDictionary, escapeRegExp, isMostlyEnglish, parseChineseNumber } from './utils';
 
 export const findENTitle = ($: cheerio.CheerioAPI): string | null => {
     let result: string | null = null;
@@ -126,14 +126,16 @@ export const parseListDivs = ($: cheerio.CheerioAPI, result: Record<string, numb
 
                 if (name && numText) {
                     const matchedItem = getItemByCnName(name);
+                    const match = numText.match(/^(\d+)[x×*]$/);
 
-                    if (matchedItem) {
-                        const id = matchedItem.id;
-                        const match = numText.match(/^(\d+)[x×*]$/);
-
-                        if (match) {
-                            const value = parseChineseNumber(match[1]) ?? 0;
-                            if (value > 0) {
+                    if (match) {
+                        const value = parseChineseNumber(match[1]) ?? 0;
+                        if (value > 0) {
+                            if (name === argNames.moduleBox) {
+                                addModuleBox(value, result);
+                            }
+                            if (matchedItem) {
+                                const id = matchedItem.id;
                                 result[id] = (result[id] || 0) + value;
                             }
                         }
@@ -187,10 +189,13 @@ export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, numbe
                 if (title) {
                     const matchedItem = getItemByCnName(title);
 
+                    const valueText = $div.find('span').text().trim();
+                    const value = parseChineseNumber(valueText) ?? 0;
+
+                    if (title === argNames.moduleBox) addModuleBox(value, result);
+
                     if (matchedItem) {
                         const id = matchedItem.id;
-                        const valueText = $div.find('span').text().trim();
-                        const value = parseChineseNumber(valueText) ?? 0;
 
                         if (value > 0) {
                             result[id] = (result[id] || 0) + value;
@@ -206,10 +211,13 @@ export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, numbe
             if (title) {
                 const matchedItem = getItemByCnName(title);
 
+                const valueText = $div.find('span').text().trim();
+                const value = parseChineseNumber(valueText) ?? 0;
+
+                if (title === argNames.moduleBox) addModuleBox(value, result);
+
                 if (matchedItem) {
                     const id = matchedItem.id;
-                    const valueText = $div.find('span').text().trim();
-                    const value = parseChineseNumber(valueText) ?? 0;
 
                     if (value > 0) {
                         result[id] = (result[id] || 0) + value;
