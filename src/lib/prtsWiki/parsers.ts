@@ -2,9 +2,9 @@ import * as cheerio from 'cheerio';
 import { getItemByCnName } from '@/utils/ItemUtils';
 import itemsJson from '@/data/items.json';
 import { argNames } from './constants';
-import { emptyWebEvent, WebEventsData } from './types';
+import { WebEventsData } from './types';
 import { getUrl } from './api';
-import { addModuleBox, applyDictionary, escapeRegExp, isMostlyEnglish, parseChineseNumber } from './utils';
+import { addModuleBox, applyDictionary, createEmptyWebEvent, escapeRegExp, isMostlyEnglish, parseChineseNumber } from './utils';
 
 export const findENTitle = ($: cheerio.CheerioAPI): string | null => {
     let result: string | null = null;
@@ -101,7 +101,7 @@ export const parseISMonthsTabber = (
                 result = parseListDivs(panel_$, result);
 
                 const webEvent = {
-                    ...emptyWebEvent,
+                    ...createEmptyWebEvent(),
                     pageName: name,
                     date: date,
                     link: getUrl(ISpage),

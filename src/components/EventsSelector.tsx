@@ -11,8 +11,9 @@ import {
     useMediaQuery
 } from '@mui/material';
 import ItemBase from "./ItemBase";
-import { Event, NamedEvent, EventsData, emptyEvent, emptyNamedEvent } from "../lib/events/types"
-import { getItemBaseStyling, customItemsSort, formatNumber } from "../utils/ItemUtils";
+import { Event, NamedEvent, EventsData } from "@/lib/events/types"
+import { getItemBaseStyling, customItemsSort, formatNumber } from "@/utils/ItemUtils";
+import { createEmptyEvent, createEmptyNamedEvent } from '@/lib/events/utils';
 
 interface EventsSelectorProps {
     variant: 'summary' | 'builder' | 'months';
@@ -63,13 +64,13 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
     const handleChange = (eventIndex: number) => {
         setIsSelectFinished(true);
         if (eventIndex === -1) {
-            onChange?.({ ...emptyNamedEvent });
+            onChange?.({ ...createEmptyNamedEvent() });
             return;
         }
         const foundEntry = Object.entries(eventsData).find(([, event]) => event.index === eventIndex);
         onChange?.({
             name: foundEntry ? foundEntry[0] : "",
-            ...(foundEntry ? foundEntry[1] : emptyEvent),
+            ...(foundEntry ? foundEntry[1] : createEmptyEvent()),
         });
         return;
     };

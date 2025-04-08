@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import useSettings from '@/utils/hooks/useSettings'
-import { EventsData, SubmitEventProps, emptyEvent } from "@/lib/events/types";
-import { createDefaultEventsData, reindexEvents } from "@/lib/events/utils"
+import { EventsData, SubmitEventProps } from "@/lib/events/types";
+import { createDefaultEventsData, createEmptyEvent, reindexEvents } from "@/lib/events/utils"
 import useLocalStorage from "@/utils/hooks/useLocalStorage";
 import { getNextMonthsData } from "@/lib/events/utils";
 import { WebEventsData } from "@/lib/prtsWiki/types";
@@ -48,13 +48,13 @@ function useEvents(): [
         if (index === -1) {
             return {
                 name: null,
-                eventData: { ...emptyEvent, index: 99 },
+                eventData: { ...createEmptyEvent(), index: 99 },
             };
         }
         const foundEntry = Object.entries(eventsData).find(([, event]) => event.index === index);
         return {
             name: foundEntry ? foundEntry[0] : null,
-            eventData: foundEntry ? foundEntry[1] : { ...emptyEvent, index: 99 },
+            eventData: foundEntry ? foundEntry[1] : { ...createEmptyEvent(), index: 99 },
         };
     }, [eventsData]
     );
@@ -119,9 +119,9 @@ function useEvents(): [
     }, [eventsData, _setEvents, getEventByIndex]);
 
     const clientCreateDefaultEventsData = (webEvents: WebEventsData): EventsData => {
-       return createDefaultEventsData(webEvents) ?? {};
+        return createDefaultEventsData(webEvents) ?? {};
     }
-      return [_eventsData, setEvents, submitEvent, getNextMonthsData, 
+    return [_eventsData, setEvents, submitEvent, getNextMonthsData,
         clientCreateDefaultEventsData]
 }
 export default useEvents;

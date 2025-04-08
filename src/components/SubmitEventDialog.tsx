@@ -1,11 +1,12 @@
 import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Stack, TextField } from "@mui/material";
 import React, { useEffect, useMemo, useCallback, useState } from "react";
-import { NamedEvent, EventsData, emptyEvent, SubmitEventProps, emptyNamedEvent } from "@/lib/events/types";
+import { NamedEvent, EventsData, SubmitEventProps } from "@/lib/events/types";
 import EventsSelector from "./EventsSelector";
 import { formatNumber, getWidthFromValue, standardItemsSort, getItemBaseStyling } from "../utils/ItemUtils"
 import ItemEditBox from "./ItemEditBox";
 import useEvents from "@/utils/hooks/useEvents";
 import { WebEvent } from "@/lib/prtsWiki/types";
+import { createEmptyEvent, createEmptyNamedEvent } from "@/lib/events/utils";
 
 interface Props {
     open: boolean;
@@ -13,13 +14,13 @@ interface Props {
     variant: "tracker" | "builder" | "months";
     onSubmit: (submit: SubmitEventProps) => void;
     eventsData: EventsData;
-    handledEvent: NamedEvent | WebEvent;
+    submitedEvent: NamedEvent | WebEvent;
     selectedEvent?: NamedEvent;
     onSelectorChange?: (namedEvent: NamedEvent) => void
 }
 
 const SubmitEventDialog = (props: Props) => {
-    const { open, onClose, variant, onSubmit, eventsData, handledEvent, selectedEvent, onSelectorChange } = props;
+    const { open, onClose, variant, onSubmit, eventsData, submitedEvent, selectedEvent, onSelectorChange } = props;
 
     const [rawMaterials, setRawMaterials] = useState<Record<string, number>>({});
     const [rawFarms, setRawFarms] = useState<string[]>([]);
@@ -30,12 +31,12 @@ const SubmitEventDialog = (props: Props) => {
 
     useEffect(() => {
         if (!open) return;
-        setRawMaterials(handledEvent.materials ?? {});
-        setRawFarms(handledEvent?.farms ?? []);
-        setRawName(handledEvent.name ?? "")
+        setRawMaterials(submitedEvent.materials ?? {});
+        setRawFarms(submitedEvent?.farms ?? []);
+        setRawName(submitedEvent.name ?? "")
         setisNumbersMatch(true);
         setFocused(false);
-    }, [open, handledEvent, variant]);
+    }, [open, submitedEvent, variant]);
 
     useEffect(() => {
         if (!open) return;
@@ -47,7 +48,7 @@ const SubmitEventDialog = (props: Props) => {
     )
 
     //+months variant/selector handling
-    const [selectedMonth, setSelectedMonth] = useState<NamedEvent>(emptyNamedEvent);
+    const [selectedMonth, setSelectedMonth] = useState<NamedEvent>(createEmptyNamedEvent());
     const [, , , getNextMonthsData] = useEvents();
 
     const monthsData = useMemo(() => {
@@ -55,8 +56,8 @@ const SubmitEventDialog = (props: Props) => {
     }, [variant, getNextMonthsData]);
 
     const materialsLimit = useMemo(() => {
-        return variant === "months" ? selectedMonth.materials : handledEvent.materials;
-    }, [variant, selectedMonth, handledEvent])
+        return variant === "months" ? selectedMonth.materials : submitedEvent.materials;
+    }, [variant, selectedMonth, submitedEvent])
 
     const handleMonthsSelectorChange = (month: NamedEvent) => {
         setSelectedMonth(month);
@@ -88,7 +89,7 @@ const SubmitEventDialog = (props: Props) => {
     const handleDialogClose = useCallback(() => {
         setRawMaterials({});
         setRawFarms([]);
-        setSelectedMonth(emptyNamedEvent);
+        setSelectedMonth(createEmptyNamedEvent());
         onClose();
     }, [onClose]);
 
@@ -101,7 +102,7 @@ const SubmitEventDialog = (props: Props) => {
             farms,
             replaceName
         }: SubmitEventProps = {
-            eventName: handledEvent.name ?? "",          // Default values
+            eventName: submitedEvent.name ?? "",          // Default values
             selectedEventIndex: selectedEvent?.index ?? -1,
             materialsToDepot: [],
             materialsToEvent: Object.fromEntries(
@@ -111,7 +112,7 @@ const SubmitEventDialog = (props: Props) => {
             replaceName: false
         };
 
-        /* eventName = handledEvent.name ?? "";
+        /* eventName = submitedEvent.name ?? "";
         selectedEventIndex = selectedEvent?.index ?? -1;
         materialsToDepot = [];
         materialsToEvent = Object.fromEntries(
@@ -124,7 +125,7 @@ const SubmitEventDialog = (props: Props) => {
                 materialsToDepot = Object.entries(rawMaterials).filter(([_, value]) => value > 0);
                 materialsToEvent = !isNumbersMatch
                     ? Object.fromEntries(
-                        Object.entries(handledEvent.materials ?? {})
+                        Object.entries(submitedEvent.materials ?? {})
                             .map(([id, quantity]) => ([id, quantity - (rawMaterials[id] ?? 0)] as [string, number]))
                             .filter(([_, quantity]) => quantity > 0))
                     : false;
@@ -156,7 +157,7 @@ const SubmitEventDialog = (props: Props) => {
             replaceName,
         });
         handleDialogClose();
-    }, [handleDialogClose, handledEvent, isNumbersMatch, onSubmit, rawFarms, rawMaterials, rawName, replace, selectedEvent, selectedMonth, variant]
+    }, [handleDialogClose, submitedEvent, isNumbersMatch, onSubmit, rawFarms, rawMaterials, rawName, replace, selectedEvent, selectedMonth, variant]
     );
 
     const isSubmitDisabled = Object.values(rawMaterials).every((value) => value === 0) || rawName === "";
@@ -197,7 +198,7 @@ const SubmitEventDialog = (props: Props) => {
                                 disabled={(variant !== "builder")}
                                 onChange={(e) => {
                                     setRawName(e.target.value);
-                                    if (rawName !== handledEvent.name && rawName !== '') {
+                                    if (rawName !== submitedEvent.name && rawName !== '') {
                                         setReplace(true);
                                     } else {
                                         setReplace(false);
@@ -256,7 +257,7 @@ const SubmitEventDialog = (props: Props) => {
                     && <EventsSelector
                         variant="builder"
                         eventsData={eventsData}
-                        selectedEvent={selectedEvent ?? emptyEvent}
+                        selectedEvent={selectedEvent ?? createEmptyEvent()}
                         onChange={handleEventsSelectorChange}
                     />
                 }

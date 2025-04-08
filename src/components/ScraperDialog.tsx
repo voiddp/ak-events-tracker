@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, Accordion, AccordionSummary, AccordionDetails, Button, Typography, Box, DialogActions, Stack, IconButton, TextField, Link, Tooltip, useTheme, useMediaQuery } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { EventsData, NamedEvent, SubmitEventProps } from '@/lib/events/types'
-import { WebEventsData, emptyWebEvent, WebEvent } from '@/lib/prtsWiki/types'
+import { WebEventsData, WebEvent } from '@/lib/prtsWiki/types'
 import { usePrtsWiki } from '@/lib/prtsWiki/client';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import ItemBase from '@/components/ItemBase';
@@ -10,6 +10,7 @@ import SubmitEventDialog from '@/components/SubmitEventDialog';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import { formatNumber, standardItemsSort, getItemBaseStyling, isMaterial } from '@/utils/ItemUtils'
 import { Close } from "@mui/icons-material";
+import { createEmptyWebEvent } from '@/lib/prtsWiki/utils';
 
 
 interface Props {
@@ -20,7 +21,7 @@ interface Props {
   submitEvent: (submit: SubmitEventProps) => void;
 }
 
-const ScraperDialog = React.memo((props: Props) => {
+const WebEventsDialog = React.memo((props: Props) => {
   const { open, onClose, eventsData, submitEvent, defaultList } = props;
   const { webEvents, setWebEvents, error, loading, getEventList, getDataFromPage, ProgressElement } = usePrtsWiki();
 
@@ -31,7 +32,7 @@ const ScraperDialog = React.memo((props: Props) => {
   const [monthsAgo, setMonthsAGo] = useState(6);
 
   const [submitEventDialogOpen, setSubmitEventDialogOpen] = useState<boolean>(false);
-  const [handledEvent, setHandledEvent] = useState({ ...emptyWebEvent });
+  const [submitedEvent, setSubmitedEvent] = useState(createEmptyWebEvent());
   const [selectedEvent, setSelectedEvent] = useState<NamedEvent>();
 
   useEffect(() => {
@@ -53,8 +54,9 @@ const ScraperDialog = React.memo((props: Props) => {
       });
     } else {
       setRawWebEvents(defaultList ?? {});
+      setWebEvents(defaultList ?? {});
     }
-  }, [open, webEvents, defaultList]
+  }, [open, webEvents, setWebEvents, defaultList]
   );
 
 
@@ -108,13 +110,23 @@ const ScraperDialog = React.memo((props: Props) => {
 
   const handleAddEventDialogOpen = (item: WebEvent) => {
     if (Object.keys(rawWebEvents[item.pageName]?.materials ?? {}).length === 0) return;
-    setHandledEvent({
+    setSubmitedEvent({
       ...item,
-      name: item.name,
+      name: item.name ?? item.pageName,
       materials: rawWebEvents[item.pageName].materials ?? {},
       farms: rawWebEvents[item.pageName].farms ?? []
     });
     setSubmitEventDialogOpen(true);
+  }
+
+  const getDateString = (date: Date) => {
+    if (!date) return "";
+    const _date = new Date(date);
+    const day = String(_date.getDate()).padStart(2, '0');
+    const month = String(_date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const year = _date.getFullYear();
+
+    return `${day}-${month}-${year}`;
   }
 
   return (
@@ -192,7 +204,7 @@ const ScraperDialog = React.memo((props: Props) => {
                       <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch" pr={2}>
                         <Stack direction="row" alignItems="center" gap={1}>
                           <Link href={item.link} underline="always" alignSelf="left" noWrap fontSize={fullScreen ? "small" : "inherit"}>
-                            {item.date ? `(${(new Date(item.date).toISOString().split('T')[0])})` : "Page link"}
+                            {item.date ? `(${getDateString(item.date)})` : "Page link"}
                           </Link>
                           <Typography textAlign="center" fontSize={fullScreen ? "small" : "inherit"}>
                             {` ${item.name ?? item.pageName}`}
@@ -273,7 +285,7 @@ const ScraperDialog = React.memo((props: Props) => {
         variant="builder"
         onSubmit={submitEvent}
         eventsData={eventsData}
-        handledEvent={handledEvent}
+        submitedEvent={submitedEvent}
         selectedEvent={selectedEvent}
         onSelectorChange={handleSelectorChange}
       />
@@ -281,5 +293,5 @@ const ScraperDialog = React.memo((props: Props) => {
   );
 });
 
-ScraperDialog.displayName = "ScraperDialog";
-export default ScraperDialog;
+WebEventsDialog.displayName = "WebEventsDialog";
+export default WebEventsDialog;

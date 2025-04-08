@@ -23,9 +23,6 @@ export type SubmitEventProps = {
     replaceName: string | false,
 }
 
-export const emptyEvent: Event = { index: -1, materials: {} }
-export const emptyNamedEvent: NamedEvent = { ...emptyEvent, name: "", farms: [] }
-
 export type eventSelectorProps = {
     variant: "summary" | "builder";
     disabled: boolean;

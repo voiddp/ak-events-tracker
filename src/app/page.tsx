@@ -2,11 +2,11 @@
 /* import Image from "next/image"; */
 import { Box, Button, colors, Divider, IconButton, List, ListItem, Paper, Stack, Tooltip, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { useCallback, useState } from "react";
-import ScraperDialog from "../components/ScraperDialog";
+import WebEventsDialog from "../components/WebEventsDialog";
 import EventsTracker from "@/components/EventsTrackerMain";
 import EventsTrackerDialog from "@/components/EventsTrackerDialog";
 import useEvents from "../utils/hooks/useEvents";
-import { emptyNamedEvent, NamedEvent, SubmitEventProps } from "@/lib/events/types";
+import { NamedEvent, SubmitEventProps } from "@/lib/events/types";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import Head from "./Head";
@@ -21,6 +21,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import StorageIcon from '@mui/icons-material/Storage';
 import UpdateIcon from '@mui/icons-material/Update';
 import { useEventsWebStorage } from "@/utils/hooks/useEventsWebStorage";
+import { createEmptyNamedEvent } from "@/lib/events/utils";
 
 export default function Home() {
 
@@ -33,7 +34,7 @@ export default function Home() {
   const [summaryOpen, setSummaryOpen] = useState(false);
 
   const [submitDialogOpen, setSubmitDialogOpen] = useState<boolean>(false);
-  const [handledEvent, setHandledEvent] = useState({ ...emptyNamedEvent });
+  const [submitedEvent, setSubmitedEvent] = useState({ ...createEmptyNamedEvent() });
   const [selectedEvent, setSelectedEvent] = useState<NamedEvent>();
   const [submitVariant, setSubmitVariant] = useState<"tracker" | "months">("months");
 
@@ -46,7 +47,7 @@ export default function Home() {
     setDrawerOpen((prev) => !prev);
   }
 
-  const [forceUpdate, setForceUpdate] = useState(false);  
+  const [forceUpdate, setForceUpdate] = useState(false);
 
   const handleAddItemsToDepot = (items: [string, number][]) => {
     console.log("adding to depot:", items);
@@ -81,7 +82,7 @@ export default function Home() {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
     const result = (diffHours > 0 ? `${diffHours}h`
-    : `${diffMinutes}m`) + (isMdUp ? " ago" : "");
+      : `${diffMinutes}m`) + (isMdUp ? " ago" : "");
 
     return result;
   }
@@ -91,10 +92,10 @@ export default function Home() {
       <Head
         onClick={handleDrawerOpen}
         menuButton={<MenuIcon sx={{ display: { xs: "unset", md: "none" } }} />}
-      > {lastUpdated && 
-          <Tooltip title={`parsed prts.wiki ${!isMdUp ? formatTimeAgo(lastUpdated)+ " ago" : ""}`}>
-           <Stack direction="row" alignItems="center" fontSize="small">{isMdUp  && formatTimeAgo(lastUpdated)}<UpdateIcon fontSize="small"/></Stack>
-          </Tooltip>}
+      > {lastUpdated &&
+        <Tooltip title={`parsed prts.wiki ${!isMdUp ? formatTimeAgo(lastUpdated) + " ago" : ""}`}>
+          <Stack direction="row" alignItems="center" fontSize="small">{isMdUp && formatTimeAgo(lastUpdated)}<UpdateIcon fontSize="small" /></Stack>
+        </Tooltip>}
       </Head>
       <CollapsibleDrawer
         open={drawerOpen}
@@ -112,7 +113,7 @@ export default function Home() {
           icon={<CalendarMonthIcon fontSize="large" />}
           text="Add months"
           onClick={() => {
-            setHandledEvent({ ...emptyNamedEvent });
+            setSubmitedEvent({ ...createEmptyNamedEvent() });
             setSubmitVariant('months');
             setSubmitDialogOpen(true);
           }}
@@ -167,7 +168,7 @@ export default function Home() {
                   size="small"
                   onClick={handleSetEventsFromDefaults}
                   disabled={loading}
-                  sx={{minWidth: "fit-content"}}
+                  sx={{ minWidth: "fit-content" }}
                 >Default&nbsp;List
                 </Button> 6 months of upcoming events from prts.wiki sorted by date, updated daily.</Stack></ListItem>
               <ListItem ><Stack direction="row" gap={2} alignItems="center">
@@ -179,7 +180,7 @@ export default function Home() {
                     setTrackerOpen(false);
                   }}
                   disabled={loading}
-                  sx={{minWidth: "fit-content"}}
+                  sx={{ minWidth: "fit-content" }}
                 >CN&nbsp;Builder
                 </Button>CN data and builder to add, combine or replace</Stack></ListItem>
             </List>
@@ -190,11 +191,12 @@ export default function Home() {
             onChange={setEvents}
             onClose={() => {
               setEventsKroosterOpen(false);
+              setForceUpdate(true);
             }}
             openSummary={setSummaryOpen}
             submitEvent={handleSubmitEvent}
           />
-          <ScraperDialog
+          <WebEventsDialog
             open={eventsOpen}
             onClose={() => {
               setEventsOpen(false);
@@ -212,7 +214,7 @@ export default function Home() {
             }}
             variant={submitVariant}
             onSubmit={handleSubmitEvent}
-            handledEvent={handledEvent}
+            submitedEvent={submitedEvent}
             eventsData={eventsData}
             selectedEvent={selectedEvent}
             onSelectorChange={setSelectedEvent}

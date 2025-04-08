@@ -2,6 +2,14 @@ import { AK_CALENDAR, AK_DAILY, AK_WEEKLY } from "@/utils/ItemUtils";
 import { EventsData, NamedEvent, Event } from "./types";
 import { WebEventsData, WebEvent } from "../prtsWiki/types";
 
+export const createEmptyEvent = () => {
+    return { index: -1, materials: {} } as Event;
+}
+
+export const createEmptyNamedEvent = () => {
+    return { ...createEmptyEvent(), name: "", farms: [] } as NamedEvent;
+}
+
 const createMonthEvent = (month: number, year: number): NamedEvent => {
 
     const daysInMonth = new Date(year, month, 0).getDate();

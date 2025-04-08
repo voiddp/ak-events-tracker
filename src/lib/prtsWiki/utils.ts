@@ -1,6 +1,10 @@
 import { getUrl } from './api';
 import { argNames, dictionary, moduleBox } from './constants';
-import { emptyWebEvent, WebEvent } from './types';
+import { WebEvent } from './types';
+
+export const createEmptyWebEvent = () => {
+    return { pageName: "", link: "" } as WebEvent;
+}
 
 export const isDateTextValid = (dateText: string): boolean => {
     const dateTextRegExp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?$/;
@@ -41,7 +45,7 @@ export const getAniEventsList = (data: Record<string, string>): WebEvent[] => {
         const title = data[eventKey];
         if (title) {
             events.push({
-                ...emptyWebEvent,
+                ...createEmptyWebEvent(),
                 date: new Date(currentDate),
                 pageName: title,
                 name: `Anihilation #${i}: ${title}`,
@@ -101,7 +105,7 @@ export const applyDictionary = (title: string | null): string | false => {
     return _title;
 }
 
-export const addModuleBox = (number: number, result: Record<string, number>) => {    
+export const addModuleBox = (number: number, result: Record<string, number>) => {
     Object.entries(moduleBox).forEach(([key, value]) => {
         result[key] = (result[key] ?? 0) + value * number;
     });

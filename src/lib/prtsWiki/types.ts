@@ -35,8 +35,6 @@ export type WebEventsData = {
     [pageName: string]: WebEvent
 }
 
-export const emptyWebEvent: WebEvent = { pageName: "", link: "" };
-
 export type ProgressUpdater = (key: string, value: number) => void;
 
 export type ApiContext = {

@@ -34,7 +34,7 @@ import itemsJson from '../data/items.json';
 import ItemBase from './ItemBase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { TransitionProps } from '@mui/material/transitions';
-import { emptyEvent, EventsData } from "../lib/events/types";
+import { EventsData, SubmitEventProps } from "@/lib/events/types";
 import InputIcon from '@mui/icons-material/Input';
 import ImportExportIcon from '@mui/icons-material/ImportExport';
 import AddIcon from "@mui/icons-material/Add";
@@ -49,8 +49,7 @@ import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import SubmitEventDialog from './SubmitEventDialog';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isMaterial, getDefaultEventMaterials } from '@/utils/ItemUtils'
-import { SubmitEventProps, emptyNamedEvent} from '@/lib/events/types';
-import { reindexEvents } from "@/lib/events/utils"
+import { createEmptyEvent, createEmptyNamedEvent, reindexEvents } from "@/lib/events/utils"
 import ItemEditBox from './ItemEditBox';
 
 const Transition = React.forwardRef(function Transition(
@@ -97,7 +96,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     const [focusedId, setFocusedId] = useState<{ id: string, name: string } | null>(null);
 
     const [addEventToDepotDialogOpen, setAddEventToDepotDialogOpen] = useState<boolean>(false);
-    const [handledEvent, setHandledEvent] = useState(emptyNamedEvent);
+    const [submitedEvent, setSubmitedEvent] = useState(createEmptyNamedEvent());
 
     const SUPPORTED_IMPORT_EXPORT_TYPES: DataShareInfo[] = [
         {
@@ -214,7 +213,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     };
 
     const handleIconClick = useCallback((eventName: string, id: string) => {
-        if (!isMaterial(id,3)) return;
+        if (!isMaterial(id, 3)) return;
 
         setRawEvents((prev) => {
             const _next = { ...prev };
@@ -259,7 +258,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
 
         setRawEvents((prev) => {
             const _next = { ...prev ?? {} };
-            const _newEvent = { ...emptyEvent };
+            const _newEvent = { ...createEmptyEvent() };
             _newEvent.index = Object.keys(_next).length
             _next[_name] = _newEvent;
             return _next;
@@ -280,17 +279,17 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     const handleSubmitEvent = useCallback((props: SubmitEventProps) => {
         const { materialsToEvent } = props;
         if (!materialsToEvent) {
-            handleDeleteEvent(handledEvent.name);
+            handleDeleteEvent(submitedEvent.name);
         } else {
             setRawEvents((prev) => {
                 const _next = { ...prev };
-                _next[handledEvent.name].materials = materialsToEvent;
+                _next[submitedEvent.name].materials = materialsToEvent;
                 return _next;
             });
         }
-        setHandledEvent({ ...emptyNamedEvent });
+        setSubmitedEvent({ ...createEmptyNamedEvent() });
         submitEvent(props);
-    }, [submitEvent, handleDeleteEvent, setRawEvents, setHandledEvent, handledEvent.name]);
+    }, [submitEvent, handleDeleteEvent, setRawEvents, setSubmitedEvent, submitedEvent.name]);
 
     const defaultEventMaterials = useMemo(() =>
         getDefaultEventMaterials(itemsJson),
@@ -303,7 +302,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 key={id}
                 itemId={id}
                 size={getItemBaseStyling("tracker").itemBaseSize}
-                clickable={isMaterial(id,3)}
+                clickable={isMaterial(id, 3)}
             />
         ));
     }, [defaultEventMaterials]);
@@ -324,9 +323,9 @@ const EventsTrackerDialog = React.memo((props: Props) => {
             }}>
                 <AccordionSummary>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch">
-                        <Stack direction="row" alignItems="center" flexWrap="nowrap">
-                            <DragIndicator sx={{ mr: 1 }}  onClick={(e) => e.stopPropagation()} />
-                            <Stack direction="row" alignItems="center" flexWrap="wrap">
+                        <Stack direction="row" alignItems="center" flexWrap="nowrap" flexGrow={1}>
+                            <DragIndicator sx={{ mr: 1 }} onClick={(e) => e.stopPropagation()} />
+                            <Stack direction="row" alignItems="center" flexWrap="wrap" flexGrow={1} justifyContent={{ xs: "center", md: "flex-start" }}>
                                 <TextField size="small" value={newEventNames[name] ?? name}
                                     sx={{
                                         mr: 2,
@@ -336,6 +335,10 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                         e.stopPropagation();
                                     }}
                                     onChange={(e) => handleEventNameChange(name, e.target.value)} />
+                                {!_eventData.farms
+                                    && Object.keys(_eventData.materials ?? {}).length === 0 &&
+                                    <Typography alignSelf="center" pt={{ xs: 2, md: 0 }} variant='caption'>expand to add materials</Typography>
+                                }
                                 {(_eventData.farms ?? []).map((id) => [id, 0] as [string, number])
                                     .concat(Object.entries(_eventData.materials ?? {})
                                         .sort(([idA], [idB]) => standardItemsSort(idA, idB)))
@@ -359,7 +362,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         if (Object.keys(_eventData.materials ?? {}).length === 0) return;
-                                        setHandledEvent({ name, index: _eventData.index, materials: _eventData.materials ?? {}, farms: _eventData.farms ?? [] });
+                                        setSubmitedEvent({ name, index: _eventData.index, materials: _eventData.materials ?? {}, farms: _eventData.farms ?? [] });
                                         setAddEventToDepotDialogOpen(true);
                                     }} />
                             </Tooltip>
@@ -775,7 +778,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 onClose={() => setAddEventToDepotDialogOpen(false)}
                 onSubmit={handleSubmitEvent}
                 variant="tracker"
-                handledEvent={handledEvent}
+                submitedEvent={submitedEvent}
                 eventsData={eventsData}
             />
         </>

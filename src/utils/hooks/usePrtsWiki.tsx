@@ -6,8 +6,9 @@ import { getItemByCnName } from '@/utils/ItemUtils';
 import { fetchHtml, fetchJson } from '@/lib/axios/axiosServer';
 import { LinearProgress } from '@mui/material';
 import { randomBytes } from 'crypto';
-import { WebEvent, WebEventsData, emptyWebEvent } from '@/lib/prtsWiki/types';
+import { WebEvent, WebEventsData } from '@/lib/prtsWiki/types';
 import useLocalStorage from './useLocalStorage';
+import { createEmptyWebEvent } from '@/lib/prtsWiki/utils';
 
 type PageResult = {
   title: string | null;
@@ -92,7 +93,7 @@ export const usePrtsWiki = () => {
       setError(null);
       try {
 
-        const html = await fetchHtml(getUrl(pageNames.events), {sessionId, rateLimit_s});
+        const html = await fetchHtml(getUrl(pageNames.events), { sessionId, rateLimit_s });
         const $ = cheerio.load(html);
 
         const eventsResult: WebEventsData = webEvents ?? {};
@@ -112,7 +113,7 @@ export const usePrtsWiki = () => {
               const title = titleElement.text().trim();
               const link = titleElement.attr('href') || '';
               eventsResult[title] = {
-                ...eventsResult[title] ?? emptyWebEvent,
+                ...eventsResult[title] ?? createEmptyWebEvent(),
                 pageName: title,
                 date: date,
                 link: `https://prts.wiki${link}`,
@@ -133,7 +134,7 @@ export const usePrtsWiki = () => {
   const getWikitextFromApiJson = async (pageName: string) => {
     setError(null);
     try {
-      const response = await fetchJson<MediaWikiApiResponse>(getApiUrl(pageName), {sessionId, rateLimit_s});
+      const response = await fetchJson<MediaWikiApiResponse>(getApiUrl(pageName), { sessionId, rateLimit_s });
       const page = Object.values(response.query.pages)[0];
       const wikitext = page.revisions?.[0]?.slots?.main?.['*'] || '';
       return wikitext;
@@ -217,7 +218,7 @@ export const usePrtsWiki = () => {
         if (date <= today && date > monthsAgoDate) {
           const pageName = `${sssArgs[argNames.sssMission]}`;
           const name = `SSS: ${sssArgs[argNames.sssMission]}`;
-          webEvents[pageName] = { ...(webEvents[pageName] ?? emptyWebEvent), pageName, name, link, date }
+          webEvents[pageName] = { ...(webEvents[pageName] ?? createEmptyWebEvent()), pageName, name, link, date }
         }
       }
       setProgress(prev => ({ ...prev ?? {}, "LIST": 30 }));
@@ -229,7 +230,7 @@ export const usePrtsWiki = () => {
         anniEventList.filter(event => event.date && (event.date >= monthsAgoDate && event.date <= today))
           .forEach(event => {
             webEvents[event.pageName] = {
-              ...webEvents[event.pageName] ?? emptyWebEvent,
+              ...webEvents[event.pageName] ?? createEmptyWebEvent(),
               pageName: event.pageName,
               name: event.name,
               link: event.link,
@@ -305,7 +306,7 @@ export const usePrtsWiki = () => {
         `, getUrl(`${ISpage}/${deepSubpage}`)); */
 
         setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"] + 10 }));
-        const html_main = await fetchHtml(getUrl(ISpage), {sessionId, rateLimit_s});
+        const html_main = await fetchHtml(getUrl(ISpage), { sessionId, rateLimit_s });
         const $_main = cheerio.load(html_main);
         const IShistoryDates = parseISHistoryTable($_main, squadsSubpage, deepSubpage);
         if (IShistoryDates && Object.keys(IShistoryDates).length > 0) {
@@ -320,7 +321,7 @@ export const usePrtsWiki = () => {
 
               //fetch squads page
               setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"] + 10 }));
-              const html_squads = await fetchHtml(getUrl(`${ISpage}/${squadsSubpage}`), {sessionId, rateLimit_s});
+              const html_squads = await fetchHtml(getUrl(`${ISpage}/${squadsSubpage}`), { sessionId, rateLimit_s });
               const $_squads = cheerio.load(html_squads);
 
               const squadsData = parseISSquadsPage($_squads, Object.keys(IShistoryDates));
@@ -328,7 +329,7 @@ export const usePrtsWiki = () => {
                 if (event.date && event.date >= monthsAgoDate) {
 
                   const _event = {
-                    ...emptyWebEvent,
+                    ...createEmptyWebEvent(),
                     ...event,
                     webDisable: true,
                   }
@@ -354,12 +355,12 @@ export const usePrtsWiki = () => {
         if (IShistoryDates[deepSubpage] >= monthsAgoDate) {
 
           setProgress(prev => ({ ...prev ?? {}, "LIST": prev["LIST"] + 10 }));
-          const html = await fetchHtml(getUrl(`${ISpage}/${deepSubpage}`), {sessionId, rateLimit_s});
+          const html = await fetchHtml(getUrl(`${ISpage}/${deepSubpage}`), { sessionId, rateLimit_s });
           const $ = cheerio.load(html);
           let deepResult: Record<string, number> = {};
           deepResult = parseNumDivs($, deepResult);
           const deepEvent = {
-            ...emptyWebEvent,
+            ...createEmptyWebEvent(),
             date: IShistoryDates[deepSubpage],
             materials: deepResult,
             pageName: `${ISpage}/${deepSubpage}`,
@@ -384,7 +385,7 @@ export const usePrtsWiki = () => {
     try {
       pageName
       setProgress(prev => ({ ...prev ?? {}, [pageName]: 90 }));
-      const html = await fetchHtml(page_link, {sessionId, rateLimit_s});
+      const html = await fetchHtml(page_link, { sessionId, rateLimit_s });
       const $ = cheerio.load(html);
 
       let result: Record<string, number> = {};
@@ -415,16 +416,15 @@ export const usePrtsWiki = () => {
 
       const arrayOfResults = await Promise.allSettled(
         Object.entries(eventsList).map(
-          async ([_,event]) => {
+          async ([_, event]) => {
             if (!event.webDisable) {
               const pageName = event.pageName;
               const page_link = event.link;
               const pageResult = await getDataFromPage(pageName, page_link);
               if (!pageResult) return;
-              
               const webEvent: WebEvent = {
                 ...event,
-                materials: pageResult.items,                
+                materials: pageResult.items,
               }
               if (pageResult.farms.length > 0) {
                 webEvent.farms = pageResult.farms;
@@ -432,7 +432,7 @@ export const usePrtsWiki = () => {
               if (pageResult.title) {
                 webEvent.name = pageResult.title;
               }
-              return webEvent;              
+              return webEvent;
             }
           }
         )
@@ -440,11 +440,11 @@ export const usePrtsWiki = () => {
 
       const webEventsData: WebEventsData =
         arrayOfResults.filter((result): result is PromiseFulfilledResult<WebEvent> => result.status === 'fulfilled' && result.value !== undefined)
-        .map((result) => result.value as WebEvent)
-        .reduce((acc, event) => {
-          acc[event.pageName] = event;
-          return acc
-        }, {} as WebEventsData);
+          .map((result) => result.value as WebEvent)
+          .reduce((acc, event) => {
+            acc[event.pageName] = event;
+            return acc
+          }, {} as WebEventsData);
 
       return webEventsData;
     } catch (err) {
@@ -584,7 +584,7 @@ const parseISMonthsTabber = (
         result = parseListDivs(panel_$, result);
 
         const webEvent = {
-          ...emptyWebEvent,
+          ...createEmptyWebEvent(),
           pageName: name,
           date: date,
           link: getUrl(ISpage),
@@ -880,7 +880,7 @@ const getAniEventsList = (data: Record<string, string>): WebEvent[] => {
     const title = data[eventKey];
     if (title) {
       events.push({
-        ...emptyWebEvent,
+        ...createEmptyWebEvent(),
         date: new Date(currentDate),
         pageName: title,
         name: `Anihilation #${i}: ${title}`,
