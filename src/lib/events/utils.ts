@@ -10,8 +10,7 @@ export const createEmptyNamedEvent = () => {
     return { ...createEmptyEvent(), name: "", farms: [] } as NamedEvent;
 }
 
-const createMonthEvent = (month: number, year: number): NamedEvent => {
-
+const createMonthEvent = (month: number, year: number, startDay: number = 1): NamedEvent => {
     const daysInMonth = new Date(year, month, 0).getDate();
     const firstDayNum = new Date(year, month - 1, 1).getDay();
     const lastDayNum = new Date(year, month - 1, daysInMonth).getDay();
@@ -20,25 +19,50 @@ const createMonthEvent = (month: number, year: number): NamedEvent => {
     const lastDay = (lastDayNum + 6) % 7;
 
     const materials: Record<string, number> = {};
+    const remainingDays = daysInMonth - startDay + 1;
 
-    //AK_CALENDAR
+    // AK_CALENDAR - only include days after startDay
     for (const [dayStr, items] of Object.entries(AK_CALENDAR)) {
         const day = parseInt(dayStr);
-        if (day <= daysInMonth) {
+        if (day >= startDay && day <= daysInMonth) {
             for (const [id, amount] of Object.entries(items)) {
                 materials[id] = (materials[id] || 0) + amount;
             }
         }
     }
-    //AK_DAILY
+
+    // AK_DAILY
     for (const [id, amount] of Object.entries(AK_DAILY)) {
-        materials[id] = (materials[id] || 0) + amount * daysInMonth;
+        materials[id] = (materials[id] || 0) + amount * remainingDays;
     }
 
-    //AK_WEEKLY
-    let fullWeeks = Math.floor(daysInMonth / 7);
-    if (firstDay <= 3) fullWeeks++;
-    if (lastDay >= 3) fullWeeks++;
+    // AK_WEEKLY - calculate partial weeks based on start day
+    let fullWeeks = 0;
+    if (startDay === 1) {
+        // Full month calculation edging weeks by Wednesday
+        fullWeeks = Math.floor(daysInMonth / 7);
+        if (firstDay <= 3) fullWeeks++;
+        if (lastDay >= 3) fullWeeks++;
+    } else {
+        // Partial month calculation
+        const startDayOfWeekNum = new Date(year, month - 1, startDay).getDay();
+        const startDayOfWeek = (startDayOfWeekNum + 6) % 7;
+        
+        // Calculate days remaining in first partial week
+        const daysInFirstWeek = Math.min(7 - startDayOfWeek, remainingDays);
+        
+        // Full weeks in the middle
+        const remainingDaysAfterFirstWeek = remainingDays - daysInFirstWeek;
+        const middleFullWeeks = Math.floor(remainingDaysAfterFirstWeek / 7);
+        
+        // Days in last partial week
+        const daysInLastWeek = remainingDaysAfterFirstWeek % 7;
+        
+        // Count weeks that include Wednesday
+        if (daysInFirstWeek >= 4 || startDayOfWeek <= 3) fullWeeks++;
+        fullWeeks += middleFullWeeks;
+        if (daysInLastWeek > 0 && (startDayOfWeek + remainingDays - 1) % 7 >= 3) fullWeeks++;
+    }
 
     for (const [id, amount] of Object.entries(AK_WEEKLY)) {
         materials[id] = (materials[id] || 0) + amount * fullWeeks;
@@ -60,13 +84,18 @@ const createMonthEvent = (month: number, year: number): NamedEvent => {
 export const getNextMonthsData = (months: number = 6): EventsData => {
     const nextMonthsData: EventsData = {};
     const currentDate = new Date();
+    const currentDay = currentDate.getDate();
     const currentMonth = currentDate.getMonth() + 1;
     const currentYear = currentDate.getFullYear();
 
-    for (let i = 1; i <= months; i++) {
+    for (let i = 0; i < months; i++) {
         const month = (currentMonth + i) % 12 || 12;
-        const year = currentYear + Math.floor((currentMonth + i) / 12);
-        const monthEvent = createMonthEvent(month, year);
+        const year = currentYear + Math.floor((currentMonth + i - 1) / 12);
+
+        const monthEvent = i === 0
+            ? createMonthEvent(month, year, currentDay)
+            : createMonthEvent(month, year);
+
         nextMonthsData[monthEvent.name] = monthEvent;
     }
     return nextMonthsData;
