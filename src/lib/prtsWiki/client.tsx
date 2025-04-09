@@ -19,6 +19,7 @@ export const usePrtsWiki = () => {
   const [error, setError] = useState<Error | null>(null);
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [rateLimit, setRateLimit] = useState<number>(0);
+  const [turnback, setTurnback] = useState(true);
 
   const handleProgress = useCallback((key: string, value: number) => {
     setProgress(prev => ({ ...prev ?? {}, [key]: value }));
@@ -41,6 +42,15 @@ export const usePrtsWiki = () => {
   }, [sessionId, handleProgress, handleError]);
 
   const clientGetEventList = useCallback(async (monthsAgo: number) => {
+
+    if (turnback) {
+      setError(new Error('"Preloaded 6m data probably wont change. To reload anyway, press again" '));
+      setTurnback(false);
+      return;
+    } else {
+      setError(null);
+    }
+
     setLoading(prev => ({ ...prev, LIST: true }));
     try {
       const session: Session = { sessionId, rateLimit_s: rateLimit };
@@ -54,7 +64,7 @@ export const usePrtsWiki = () => {
       setLoading(prev => ({ ...prev, LIST: false }));
       setProgress(prev => ({ ...prev, LIST: 100 }));
     }
-  }, [sessionId, rateLimit, handleProgress, handleError]);
+  }, [turnback, sessionId, rateLimit, handleProgress, handleError]);
 
   const clientGetDataFromPage = useCallback(async (pageName: string, page_link: string) => {
     setLoading(prev => ({ ...prev, [pageName]: true }));

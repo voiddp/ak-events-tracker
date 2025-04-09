@@ -122,23 +122,30 @@ const EventsTrackerMain = React.memo((props: Props) => {
                 The Event Tracker helps track free income from unreleased future events, including rewards, shops, and similar sources.
             </p>
             <ul>
-                <li>Default 6 months of sorted by date PRTS events and default tracker lists are updated daily</li>
                 <li>Events can be added manually by creating a new event, expanding it, and entering material amounts.</li>
                 <li>Up to three farmable Tier 3 materials per event can be selected by clicking on the item images within an expanded event.</li>
                 <li>Events can be reordered by dragging and dropping them in the event list.</li>
             </ul>
+            <h3>Event List Building:</h3>
             <ul>
-                <h3>Menu has some building functions:</h3>
-                <ul>
-                    <li><big><b>Build from prts</b></big>: Data is pulled and parsed from prts.wiki.</li>
-                    <li>Individual CN events download buttons pull/update income data for each event. Or just wait for next daily update.</li>
-                    <li><big><b>Add Months</b></big>: 6 next months income from dailies, weeklies, and monthlies as event data. Calculated based on calendar.</li>
-                    <li>Flexibility: Prts and Month events can be added as new, replace other events or combined into them.</li>
-                </ul>
+                <li><big><b>Build from PRTS:</b></big> Event data from the past six months on prts.wiki is available for use.</li>
+                <ul><li>Download buttons on individual event pages can retrieve or update income data for each event if needed.</li></ul>
+                <ul><li>A global queue system with a 2-second delay is implemented in all download functions.</li></ul>
+                <li><big><b>Add Months:</b></big> Income calendar calculation for ~six upcoming months, based on daily, weekly, and monthly rewards, can be added to the list.</li>
+                <li>Data from prts pages and monthly event estimates can be added as new entries, replace existing events, or be merged with them.</li>
             </ul>
+
+            <h3>Defaults and Updates:</h3>
             <ul>
-                <li>Supports export and import from other Arknights community data sources (like tracking sheets). Data should be compiled into the presented import formats.</li>
-                <li><h3>Supports import to Krooster planner, use in combination with new Summary to plan upcoming farming</h3></li>
+                <li>The tracker automatically preloads and parses six months of event data from prts.wiki on a daily basis.</li>
+                <li>Data from CN events, adjusted by six months, is combined with monthly estimates and sorted by date. These form the defaults used by the tracker.</li>
+                <li>The default order can be used as-is or adjusted as global updates occur.</li>
+            </ul>
+
+            <h3>Export/Import and Krooster:</h3>
+            <ul>
+                <li>CSV and JSON formats are available for exporting data. Defaults can be used as examples.</li>
+                <li><h3>Supports importing into the tracker in Krooster Planner, allowing integration with the Goals Summary feature to account for upcoming free rewards and Tier 3 farming plans.</h3></li>
             </ul>
         </>;
 

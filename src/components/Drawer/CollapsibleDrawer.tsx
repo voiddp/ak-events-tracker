@@ -32,7 +32,7 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
     zIndex: 1200,
     // Desktop - collapsed by default
     [theme.breakpoints.up("md")]: {
-      width: 56, // Icon-only width
+      width: 65, // Icon-only width
       "&:hover": {
         width: 250, // Expanded width
       },

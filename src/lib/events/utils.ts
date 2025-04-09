@@ -81,7 +81,7 @@ const createMonthEvent = (month: number, year: number, startDay: number = 1): Na
     }
 };
 
-export const getNextMonthsData = (months: number = 6): EventsData => {
+export const getNextMonthsData = (months: number = 7): EventsData => {
     const nextMonthsData: EventsData = {};
     const currentDate = new Date();
     const currentDay = currentDate.getDate();

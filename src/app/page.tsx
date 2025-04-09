@@ -22,6 +22,8 @@ import StorageIcon from '@mui/icons-material/Storage';
 import UpdateIcon from '@mui/icons-material/Update';
 import { useEventsWebStorage } from "@/utils/hooks/useEventsWebStorage";
 import { createEmptyNamedEvent } from "@/lib/events/utils";
+import AcknowledgementDialog from "@/components/AcknowledgementDialog";
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 
 export default function Home() {
 
@@ -40,6 +42,7 @@ export default function Home() {
 
   const [eventsData, setEvents, submitEvent, , createDefaultEventsData] = useEvents();
   const { dataDefaults, lastUpdated, loading, error, fetchEventsFromStorage } = useEventsWebStorage();
+  const [acknowledgementsOpen, setAcknowledgementsOpen] = useState(false);
   ///
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -108,6 +111,7 @@ export default function Home() {
             setEventsOpen(true);
             setTrackerOpen(false);
           }}
+          sx={{ minWidth: "fit-content" }}
         />
         <DrawerListItem
           icon={<CalendarMonthIcon fontSize="large" />}
@@ -117,19 +121,30 @@ export default function Home() {
             setSubmitVariant('months');
             setSubmitDialogOpen(true);
           }}
+          sx={{ minWidth: "fit-content" }}
         />
         <DrawerListItem
           icon={<StorageIcon fontSize="large" />}
           text="Set defaults"
           onClick={handleSetEventsFromDefaults}
+          sx={{ minWidth: "fit-content" }}
         />
+        <Divider />
+        <DrawerListItem
+          icon={<VolunteerActivismIcon fontSize="large" />}
+          text="Credits"
+          onClick={() => setAcknowledgementsOpen(true)}
+          sx={{ minWidth: "fit-content" }}
+        />
+
         <Divider />
         <DrawerListItem
           icon={<LogoDevIcon fontSize="large" />}
           text="Krooster test..."
           onClick={() => {
             setEventsKroosterOpen(true);
-          }} />
+          }}
+          sx={{ minWidth: "fit-content" }} />
         {/* <DrawerListItem
           icon={<LogoDevIcon fontSize="large" />}
           text="fetch all test..."
@@ -142,7 +157,7 @@ export default function Home() {
             setEvents({});
             setForceUpdate(true);
           }}
-          sx={{ color: "rgb(248, 112, 97) " }} />
+          sx={{ minWidth: "fit-content", color: "rgb(248, 112, 97) " }} />
 
         {/* 
                 <DrawerListItem icon={<SettingsIcon />} text="Settings" /> */}
@@ -182,7 +197,7 @@ export default function Home() {
                   disabled={loading}
                   sx={{ minWidth: "fit-content" }}
                 >CN&nbsp;Builder
-                </Button>CN data and builder to add, combine or replace</Stack></ListItem>
+                </Button>CN data and builder to add, combine or replace events in tracker list</Stack></ListItem>
             </List>
           </EventsTracker>
           <EventsTrackerDialog
@@ -218,6 +233,10 @@ export default function Home() {
             eventsData={eventsData}
             selectedEvent={selectedEvent}
             onSelectorChange={setSelectedEvent}
+          />
+          <AcknowledgementDialog
+            open={acknowledgementsOpen}
+            onClose={() => setAcknowledgementsOpen(false)}
           />
         </Paper>
       </Box>
