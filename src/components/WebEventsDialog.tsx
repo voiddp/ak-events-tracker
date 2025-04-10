@@ -56,7 +56,7 @@ const WebEventsDialog = React.memo((props: Props) => {
       setRawWebEvents(defaultList ?? {});
       setWebEvents(defaultList ?? {});
     }
-  }, [open, webEvents, setWebEvents, defaultList]
+  }, [open, defaultList]
   );
 
 
@@ -70,8 +70,21 @@ const WebEventsDialog = React.memo((props: Props) => {
     try {
       const data = await getEventList(monthsAgo);
       if (!data) return;
+      setRawWebEvents((prev) => {
+        //clean up old not fetched
+        const _next = Object.fromEntries(Object.entries({ ...prev ?? {} } )
+        .filter(([_, oldEvent]) => data[oldEvent.pageName]));
 
-      setRawWebEvents(data);
+        //add new from data
+        Object.values(data).forEach(webEvent => {
+          if (!_next[webEvent.pageName] || webEvent.webDisable) {
+            _next[webEvent.pageName] = { ...data[webEvent.pageName] };
+          }
+        });
+
+        return _next;
+      }
+      );
     } catch (err) {
       console.error('Failed to load events:', err);
     }
@@ -150,7 +163,7 @@ const WebEventsDialog = React.memo((props: Props) => {
                 }
               }}
               onChange={(e) => {
-                setMonthsAGo(Number(e.target.value) || 1);
+                setMonthsAGo((Number(e.target.value) || 1) > 12 ? 6 : (Number(e.target.value) || 1));
                 e.target.select();
               }}
             />

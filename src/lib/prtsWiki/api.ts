@@ -99,11 +99,11 @@ export const fetchEvents = async (monthsAgoDate: Date, context: ApiContext): Pro
 
 export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext): Promise<WebEventsData | null> => {
   try {
-    context.setProgress?.("LIST", 10);
+    context.setProgress?.("LIST", 50);
     const ISPages = await fetchArgumentsByName(pageNames.integratedStrategyList, argNames.link, context);
     if (!ISPages || ISPages.length < 2) return null;
 
-    context.setProgress?.("LIST", 20);
+    context.setProgress?.("LIST", 60);
     const NAV_wikiText = await getWikitextFromApiJson(pageNames.IS_navbox, context);
     if (!NAV_wikiText) return null;
 
@@ -123,7 +123,7 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
       if (matches.length < 2) continue;
       const [squadsSubpage, deepSubpage] = matches;
 
-      context.setProgress?.("LIST", 30);
+      context.setProgress?.("LIST", 70);
       const html_main = await fetchHtml(getUrl(ISpage), context.session);
       const $_main = cheerio.load(html_main);
       const IShistoryDates = parseISHistoryTable($_main, squadsSubpage, deepSubpage);
@@ -163,7 +163,7 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
       }
 
       if (IShistoryDates[deepSubpage] >= monthsAgoDate) {
-        context.setProgress?.("LIST", 50);
+        context.setProgress?.("LIST", 80);
         const html = await fetchHtml(getUrl(`${ISpage}/${deepSubpage}`), context.session);
         const $ = cheerio.load(html);
         const deepResult = parseNumDivs($, {});
