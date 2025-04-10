@@ -22,14 +22,13 @@ class AxiosServer {
   }
 
   private async checkServerJobActive(): Promise<boolean> {
-    const active = await redis.get(SERVER_JOB_LOCK_KEY);
-    return active === '1';
+    return (await redis.ttl(SERVER_JOB_LOCK_KEY)) > 0;
   }
 
   private async withLock<T>(fn: () => Promise<T>, session: Session): Promise<T> {
     const isServerJob = (session as any).isServerJob;
     const lockKey = isServerJob ? 'server-job:lock' : 'global:lock';
-    const lockTimeout = isServerJob ? 30000 : LOCK_TIMEOUT;
+    const lockTimeout = isServerJob ? 60000 : LOCK_TIMEOUT;
 
     try {
       const lockAcquired = await redis.set(lockKey, '1', {
@@ -70,14 +69,12 @@ class AxiosServer {
       console.log(url);
       // Set server job active flag if this is a server job
       if (isServerJob) {
-        await redis.set(SERVER_JOB_LOCK_KEY, '1', { EX: 120 }); // 2mins exouration
+        await redis.set(SERVER_JOB_LOCK_KEY, '1', { EX: 60 }); // 1mins lock
       }
 
       console.log(`[${sessionId}] Adding to queue...`);
       await redis.rPush(QUEUE_KEY, sessionId);
 
-      const fullQueue = await redis.lRange(QUEUE_KEY, 0, -1);
-      console.log(`Full queue contents:`, fullQueue);
 
       const startTime = Date.now();
       let isMyTurn = false;
@@ -99,6 +96,8 @@ class AxiosServer {
       if (!isMyTurn) {
         console.warn(`[${sessionId}] Timed out waiting in queue after ${maxWaitTime / 1000}s`);
         await redis.lRem(QUEUE_KEY, 0, sessionId);
+        const fullQueue = await redis.lRange(QUEUE_KEY, 0, -1);
+        console.log(`[${sessionId}], remove from queue:`, fullQueue);
         throw new Error(`Queue timeout (${maxWaitTime / 1000}s)`);
       }
 
@@ -114,20 +113,22 @@ class AxiosServer {
 
         console.log(`[${sessionId}] Fetching: <<<<<<<<<<<<`);
         const response: AxiosResponse<T> = await axios.get(url, userAgent);
-
         // Update last request time
         await redis.set('global:last_request', Date.now().toString(), { EX: 60 });
+
         if (response.status >= 200 && response.status < 300) {
           return response.data;
         } throw new Error(`Request failed with status ${response.status}`);
       }, session);
     } catch (error) {
+      const fullQueue = await redis.lRange(QUEUE_KEY, 0, -1);
+      console.log(`queue contents:`, fullQueue);
       console.error(`[${sessionId}] Error:`, error);
       throw error;
     } finally {
       console.log(`[${sessionId}] remove from query...`);
       await redis.lRem(QUEUE_KEY, 0, sessionId);
-      if (isServerJob) {
+      /* if (isServerJob) {
         // Only clear if no more server jobs in queue
         const queue = await redis.lRange(QUEUE_KEY, 0, -1);
         const hasServerJobs = queue.some(id => id.startsWith('server-job-'));
@@ -137,7 +138,7 @@ class AxiosServer {
         } else {
           console.log(`[${sessionId}] server jobs [${queue.length}] are still in queue`);
         }
-      }
+      } */
     }
   }
 }

@@ -210,6 +210,8 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
     const today = new Date();
     const monthsAgoDate = new Date();
     monthsAgoDate.setMonth(today.getMonth() - monthsAgo);
+    //correction by -7 days for server building list job to have ongoing events
+    if (context.session.isServerJob) monthsAgoDate.setDate(monthsAgoDate.getDate() - 7); 
 
     context.setProgress?.("LIST", 10);
     const webEvents = await fetchEvents(monthsAgoDate, context);
