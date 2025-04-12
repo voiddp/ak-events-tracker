@@ -112,14 +112,6 @@ const SubmitEventDialog = (props: Props) => {
             replaceName: false
         };
 
-        /* eventName = submitedEvent.name ?? "";
-        selectedEventIndex = selectedEvent?.index ?? -1;
-        materialsToDepot = [];
-        materialsToEvent = Object.fromEntries(
-            Object.entries(rawMaterials ?? {})
-                .filter(([_, quantity]) => quantity > 0));
-        farms = rawFarms; */
-
         switch (variant) {
             case "tracker":
                 materialsToDepot = Object.entries(rawMaterials).filter(([_, value]) => value > 0);
@@ -141,13 +133,6 @@ const SubmitEventDialog = (props: Props) => {
                 break;
             default:
         }
-        /* console.log("handling:",
-            eventName,
-            selectedEventIndex,
-            [...materialsToDepot],
-            { ...materialsToEvent },
-            [...farms],
-            replaceName); */
         onSubmit({
             eventName,
             selectedEventIndex,
@@ -184,6 +169,16 @@ const SubmitEventDialog = (props: Props) => {
         }
 
         return ""; // Fallback in case of unexpected variant
+    };
+
+    const handleClearAll = () => {
+        setRawMaterials(prev => {
+            const next = {} as typeof prev;
+            for (const id in prev) {
+              next[id] = 0;
+            }
+            return next;
+          });
     };
 
     return (
@@ -249,6 +244,11 @@ const SubmitEventDialog = (props: Props) => {
                                     }}
                                 />
                             ))}
+                        <Button
+                        variant="text"
+                        onClick={handleClearAll}>
+                            clear all
+                        </Button>
                     </Stack>
                 )}
             </DialogContent>
@@ -264,7 +264,7 @@ const SubmitEventDialog = (props: Props) => {
                 <Button disabled={isSubmitDisabled} onClick={handleSubmit} variant="contained">
                     Submit
                 </Button>
-                <Button onClick={handleDialogClose}>Cancel</Button>
+                <Button variant="outlined" color="secondary" onClick={handleDialogClose}>Cancel</Button>
             </DialogActions>
         </Dialog>
     );
