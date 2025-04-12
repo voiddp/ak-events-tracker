@@ -124,7 +124,7 @@ export const reindexEvents = (eventsData: EventsData | [string, Event][]): Event
 
 export const createDefaultEventsData = (webEvents: WebEventsData) => {
     if (!webEvents || Object.keys(webEvents).length === 0) return;
-    const nextMonthsEvents = getNextMonthsData(6);
+    const nextMonthsEvents = getNextMonthsData(7);
     if (!nextMonthsEvents || Object.keys(nextMonthsEvents).length === 0) return;
     /* const result = */
     //const _eventsData: EventsData = {};

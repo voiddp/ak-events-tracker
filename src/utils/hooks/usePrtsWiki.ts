@@ -6,10 +6,10 @@ import {
   getEverythingAtOnce,
   getEventList,
   getDataFromPage
-} from './api';
+} from '@/lib/prtsWiki/api';
 import { Session } from '@/lib/axios/types';
-import { WebEventsData } from './types';
-import { LinearProgress } from '@mui/material';
+import { WebEventsData } from '@/lib/prtsWiki/types';
+import ProgressBar from "@/components/webEvents/ProgressBar"
 
 export const usePrtsWiki = () => {
   const [webEvents, setWebEvents] = useLocalStorage<WebEventsData>("prtsWikiData", {});
@@ -81,11 +81,9 @@ export const usePrtsWiki = () => {
     }
   }, [sessionId, rateLimit, handleProgress, handleError]);
 
-  const ProgressElement = (pageName: string) => (
-    <div style={{ width: "100%" }}>
-      <LinearProgress variant="determinate" value={progress[pageName] ?? 0} />
-    </div>
-  );
+  const createProgressElement = (pageName: string) => {
+    return ProgressBar(pageName, progress);
+  }
 
   return {
     webEvents,
@@ -95,6 +93,6 @@ export const usePrtsWiki = () => {
     getEverythingAtOnce: clientGetEverythingAtOnce,
     error,
     loading,
-    ProgressElement,
+    ProgressElement : createProgressElement,
   };
 };

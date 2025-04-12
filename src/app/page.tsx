@@ -2,7 +2,7 @@
 /* import Image from "next/image"; */
 import { Box, Button, colors, Divider, IconButton, List, ListItem, Paper, Stack, Tooltip, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { useCallback, useState } from "react";
-import WebEventsDialog from "../components/WebEventsDialog";
+import WebEventsDialog from "../components/webEvents/WebEventsDialog";
 import EventsTracker from "@/components/EventsTrackerMain";
 import EventsTrackerDialog from "@/components/EventsTrackerDialog";
 import useEvents from "../utils/hooks/useEvents";
@@ -11,11 +11,11 @@ import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import Head from "./Head";
 import MenuIcon from '@mui/icons-material/Menu';
-import { CollapsibleDrawer } from "@/components/Drawer/CollapsibleDrawer";
-import { DrawerListItem } from "@/components/Drawer/DrawerListItem";
+import { CollapsibleDrawer } from "@/components/drawer/CollapsibleDrawer";
+import { DrawerListItem } from "@/components/drawer/DrawerListItem";
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 import LogoDevIcon from '@mui/icons-material/LogoDev';
-import SubmitEventDialog from "@/components/SubmitEventDialog";
+import SubmitEventDialog from "@/components/events/SubmitEventDialog";
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import DeleteIcon from '@mui/icons-material/Delete';
 import StorageIcon from '@mui/icons-material/Storage';

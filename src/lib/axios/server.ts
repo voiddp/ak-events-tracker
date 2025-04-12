@@ -1,13 +1,16 @@
 'use server'
 import { Session } from './types'
 import axios, { AxiosResponse } from 'axios';
-import { createClient } from 'redis';
+import { createClient } from 'redis'
+import redisClient from '@/lib/redis/client';
+import { isLockActive, setLock, removeLock, addToQueue, getQueueHead, removeFromQueue, getQueue, getKeyValue, setKeyValue } from '@/lib/redis/utils';
 
-const redis = createClient({
+/* const redis = createClient({
   url: process.env.REDIS_URL,
   socket: { reconnectStrategy: (retries) => Math.min(retries * 100, 5000) }
 });
-await redis.connect();
+await redis.connect(); */
+
 
 const RATE_LIMIT_MS = 2000;
 const QUEUE_KEY = 'request_queue';
@@ -22,7 +25,7 @@ class AxiosServer {
   }
 
   private async checkServerJobActive(): Promise<boolean> {
-    return (await redis.ttl(SERVER_JOB_LOCK_KEY)) > 0;
+    return await isLockActive(SERVER_JOB_LOCK_KEY);
   }
 
   private async withLock<T>(fn: () => Promise<T>, session: Session): Promise<T> {
@@ -31,14 +34,11 @@ class AxiosServer {
     const lockTimeout = isServerJob ? 60000 : LOCK_TIMEOUT;
 
     try {
-      const lockAcquired = await redis.set(lockKey, '1', {
-        NX: true,
-        EX: lockTimeout / 1000
-      });
+      const lockAcquired = await setLock(lockKey, lockTimeout);
       if (!lockAcquired) throw new Error('Could not acquire lock');
       return await fn();
     } finally {
-      await redis.del(lockKey);
+      await removeLock(lockKey);
     }
   }
 
@@ -57,11 +57,17 @@ class AxiosServer {
       : RATE_LIMIT_MS;
 
     const userAgent = {
-      headers: { 'User-Agent': `AKEventsTracker (in-built min ${RATE_LIMIT_MS / 1000}s delay)` }
+      headers: {
+        'User-Agent': `AKEventsTracker (${isServerJob ? 'cron' : 'user'})`,
+        'X-EventTracker-Info': JSON.stringify({
+          source: 'ak-event-tracker.vercel.app',
+          rate_limit: _rateLimit_MS,
+          update_type: isServerJob ? 'scheduled /24h' : 'interactive',
+        })
+      }
     };
-
     const maxWaitTime = isServerJob ? 60_000 : 10_000;
-
+    let fullQueue: string[] = [];
     try {
       // 1. Add to queue and wait for turn
       //timing in logs [${new Date().toISOString()}]
@@ -69,24 +75,21 @@ class AxiosServer {
       console.log(url);
       // Set server job active flag if this is a server job
       if (isServerJob) {
-        await redis.set(SERVER_JOB_LOCK_KEY, '1', { EX: 60 }); // 1mins lock
+        await setLock(SERVER_JOB_LOCK_KEY, 60_000); // 1mins lock
       }
 
-      console.log(`[${sessionId}] Adding to queue...`);
-      await redis.rPush(QUEUE_KEY, sessionId);
+      const numInQuery = await addToQueue(QUEUE_KEY, sessionId);
+      console.log(`[${sessionId}] added to queue: #${numInQuery}`);
 
 
       const startTime = Date.now();
       let isMyTurn = false;
 
       while (Date.now() - startTime < maxWaitTime) {
-        const [firstInQueue, queueLength] = await redis.multi()
-          .lIndex(QUEUE_KEY, 0)
-          .lLen(QUEUE_KEY)
-          .exec();
+        const { firstItem } = await getQueueHead(QUEUE_KEY)
 
         /* console.log(`Queue state - First: ${firstInQueue}, Length: ${queueLength}`); */
-        if (firstInQueue === sessionId) {
+        if (firstItem === sessionId) {
           isMyTurn = true;
           break;
         }
@@ -94,16 +97,14 @@ class AxiosServer {
       }
 
       if (!isMyTurn) {
-        console.warn(`[${sessionId}] Timed out waiting in queue after ${maxWaitTime / 1000}s`);
-        await redis.lRem(QUEUE_KEY, 0, sessionId);
-        const fullQueue = await redis.lRange(QUEUE_KEY, 0, -1);
-        console.log(`[${sessionId}], remove from queue:`, fullQueue);
+        const numRemoved = await removeFromQueue(QUEUE_KEY, sessionId);
+        console.warn(`[${sessionId}] x${numRemoved}. Timed out from queue ${maxWaitTime / 1000}s, removed`);
         throw new Error(`Queue timeout (${maxWaitTime / 1000}s)`);
       }
 
       // 2. Process with rate limiting
       return await this.withLock(async () => {
-        const lastRequestTime = await redis.get('global:last_request');
+        const lastRequestTime = await getKeyValue('global:last_request');
         const delay = Math.max(0, _rateLimit_MS - (Date.now() - parseInt(lastRequestTime || '0')));
 
         if (delay > 0) {
@@ -114,31 +115,19 @@ class AxiosServer {
         console.log(`[${sessionId}] Fetching: <<<<<<<<<<<<`);
         const response: AxiosResponse<T> = await axios.get(url, userAgent);
         // Update last request time
-        await redis.set('global:last_request', Date.now().toString(), { EX: 60 });
+        await setKeyValue('global:last_request', Date.now().toString(), 60_000);
 
         if (response.status >= 200 && response.status < 300) {
           return response.data;
         } throw new Error(`Request failed with status ${response.status}`);
       }, session);
     } catch (error) {
-      const fullQueue = await redis.lRange(QUEUE_KEY, 0, -1);
-      console.log(`queue contents:`, fullQueue);
+      fullQueue = await getQueue(QUEUE_KEY);
       console.error(`[${sessionId}] Error:`, error);
       throw error;
     } finally {
-      console.log(`[${sessionId}] remove from query...`);
-      await redis.lRem(QUEUE_KEY, 0, sessionId);
-      /* if (isServerJob) {
-        // Only clear if no more server jobs in queue
-        const queue = await redis.lRange(QUEUE_KEY, 0, -1);
-        const hasServerJobs = queue.some(id => id.startsWith('server-job-'));
-        if (!hasServerJobs) {
-          console.log(`[${sessionId}] removing server job lock...`);
-          await redis.del(SERVER_JOB_LOCK_KEY);
-        } else {
-          console.log(`[${sessionId}] server jobs [${queue.length}] are still in queue`);
-        }
-      } */
+      const numRemoved = await removeFromQueue(QUEUE_KEY, sessionId);
+      console.log(`[${sessionId}] x${numRemoved} removed from query: ${fullQueue}`);
     }
   }
 }

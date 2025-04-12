@@ -10,7 +10,7 @@ import {
     useTheme,
     useMediaQuery
 } from '@mui/material';
-import ItemBase from "./ItemBase";
+import ItemBase from "@/components/ItemBase";
 import { Event, NamedEvent, EventsData } from "@/lib/events/types"
 import { getItemBaseStyling, customItemsSort, formatNumber } from "@/utils/ItemUtils";
 import { createEmptyEvent, createEmptyNamedEvent } from '@/lib/events/utils';

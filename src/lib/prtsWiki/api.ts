@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { fetchHtml, fetchJson } from '@/lib/axios/axiosServer';
+import { fetchHtml, fetchJson } from '@/lib/axios/server';
 import { Session } from '@/lib/axios/types';
 import {
   PageResult,

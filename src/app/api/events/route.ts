@@ -1,21 +1,25 @@
 import { NextResponse } from 'next/server';
-import { getEventsFromStorage } from '@/lib/redisUtils';
+import { getFromStorage } from '@/lib/redis/utils';
 
 export async function GET() {
   try {
-    const { webEventsData, eventsData, eventsUpdated } = await getEventsFromStorage();
-    
+    const { webEventsData, eventsData, eventsUpdated } = await getFromStorage([
+      'webEventsData',
+      'eventsData',
+      'eventsUpdated',
+    ]);
+
     if (!webEventsData || !eventsData) {
       return NextResponse.json(
         { error: 'No data available' },
         { status: 404 }
       );
     }
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       webEventsData,
       eventsData,
-      eventsUpdated 
+      eventsUpdated
     });
   } catch (error) {
     console.error('Failed to fetch web events:', error);

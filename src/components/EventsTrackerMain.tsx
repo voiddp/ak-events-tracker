@@ -42,12 +42,12 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { Close } from "@mui/icons-material";
 import { debounce, set } from 'lodash';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
-import SubmitEventDialog from './SubmitEventDialog';
+import SubmitEventDialog from '@/components/events/SubmitEventDialog';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, getItemBaseStyling, isMaterial, getDefaultEventMaterials, standardItemsSort } from '@/utils/ItemUtils'
 import { createEmptyEvent, createEmptyNamedEvent, reindexEvents } from "@/lib/events/utils"
 
-import ItemEditBox from './ItemEditBox';
+import ItemEditBox from '@/components/events/ItemEditBox';
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {

@@ -3,10 +3,10 @@ import { Dialog, DialogTitle, DialogContent, Accordion, AccordionSummary, Accord
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { EventsData, NamedEvent, SubmitEventProps } from '@/lib/events/types'
 import { WebEventsData, WebEvent } from '@/lib/prtsWiki/types'
-import { usePrtsWiki } from '@/lib/prtsWiki/client';
+import { usePrtsWiki } from '@/utils/hooks/usePrtsWiki';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import ItemBase from '@/components/ItemBase';
-import SubmitEventDialog from '@/components/SubmitEventDialog';
+import SubmitEventDialog from '@/components/events//SubmitEventDialog';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import { formatNumber, standardItemsSort, getItemBaseStyling, isMaterial } from '@/utils/ItemUtils'
 import { Close } from "@mui/icons-material";

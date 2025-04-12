@@ -1,4 +1,4 @@
-import { createClient } from 'redis';
+/* import { createClient } from 'redis';
 
 const redisClient = createClient({
     url: process.env.REDIS_URL,
@@ -35,4 +35,4 @@ export async function getEventsFromStorage() {
         eventsData: eventsData ? JSON.parse(eventsData) : null,
         eventsUpdated: timestamp
     };
-}
+} */

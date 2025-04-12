@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack, TextField, TextFieldProps, StackProps } from '@mui/material';
-import ItemBase from './ItemBase';
+import ItemBase from '@/components/ItemBase';
 
 interface ItemEditBoxProps {
     itemId: string;

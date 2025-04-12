@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getEverythingAtOnce } from '@/lib/prtsWiki/api';
 import { createDefaultEventsData } from '@/lib/events/utils';
-import { putEventsInStorage } from '@/lib/redisUtils';
+import { putToStorage } from '@/lib/redis/utils';
 import { nanoid } from 'nanoid';
 
 export const maxDuration = 60;
@@ -22,11 +22,17 @@ export async function GET() {
     };
     const eventsData = createDefaultEventsData(webEventsData);
     if (eventsData) {
-      const timestamp = await putEventsInStorage(webEventsData, eventsData);
+      const eventsUpdated = new Date().toISOString();
+      await putToStorage({
+        webEventsData,
+        eventsData,
+        eventsUpdated,
+      });
+      /* const timestamp = await putEventsInStorage(webEventsData, eventsData); */
 
       return NextResponse.json({
         success: true,
-        eventsUpdated: timestamp
+        eventsUpdated
       });
     }
   } catch (error) {

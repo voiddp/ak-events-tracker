@@ -46,11 +46,11 @@ interface DataShareInfo {
 }
 import { debounce } from 'lodash';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
-import SubmitEventDialog from './SubmitEventDialog';
+import SubmitEventDialog from '@/components/events/SubmitEventDialog';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isMaterial, getDefaultEventMaterials } from '@/utils/ItemUtils'
 import { createEmptyEvent, createEmptyNamedEvent, reindexEvents } from "@/lib/events/utils"
-import ItemEditBox from './ItemEditBox';
+import ItemEditBox from '@/components/events/ItemEditBox';
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {

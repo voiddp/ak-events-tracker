@@ -2,7 +2,7 @@ import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Fo
 import React, { useEffect, useMemo, useCallback, useState } from "react";
 import { NamedEvent, EventsData, SubmitEventProps } from "@/lib/events/types";
 import EventsSelector from "./EventsSelector";
-import { formatNumber, getWidthFromValue, standardItemsSort, getItemBaseStyling } from "../utils/ItemUtils"
+import { formatNumber, getWidthFromValue, standardItemsSort, getItemBaseStyling } from "@/utils/ItemUtils"
 import ItemEditBox from "./ItemEditBox";
 import useEvents from "@/utils/hooks/useEvents";
 import { WebEvent } from "@/lib/prtsWiki/types";
