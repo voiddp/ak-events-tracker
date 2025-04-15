@@ -20,7 +20,7 @@ export const AK_CALENDAR = {
     13: { "3301": 10 },
     20: { "3302": 5 },
     27: { "3303": 6 },
-    28: { "4006": 1 }
+    28: { "32001": 1 }
 };
 
 export const AK_DAILY = {
@@ -93,6 +93,18 @@ export const getItemBaseStyling = (variant: "tracker" | "summary" | "builder" | 
     })
 };
 
+export const getFarmCSS = (variant: "round" | "box", highlighted: boolean = true) => {
+    const color = highlighted ? "primary.main" : undefined;
+    let radius = variant === "round" ? "20px" : "6px";
+
+    return ({
+            backgroundColor: color,
+            borderRadius: radius,
+    })
+
+};
+
+
 export const isMaterial = (id: string, tier?: number) => {
     return (Number(id) > 30000 && Number(id) < 32000 && (tier ? (itemsJson[id as keyof typeof itemsJson].tier === tier) : true))
 };
@@ -107,6 +119,7 @@ const summarySortId: [string, number][] = [
     ["chip", 2],
     ["Chip", 2],
     ["Data", 4],
+    ["Record", 5],
 ];
 
 export const customItemsSort = (idA: string, idB: string, lowTierFirst: boolean = false, variant?: string) => {
