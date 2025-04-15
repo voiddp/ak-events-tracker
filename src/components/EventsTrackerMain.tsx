@@ -95,10 +95,8 @@ const EventsTrackerMain = React.memo((props: Props) => {
     const [focusedId, setFocusedId] = useState<{ id: string, name: string } | null>(null);
 
     const [submitDialogOpen, setSubmitDialogOpen] = useState<boolean>(false);
-    const [submitedEvent, setSubmitedEvent] = useState({ ...createEmptyNamedEvent() });
-
+    const [submitedEvent, setSubmitedEvent] = useState(createEmptyNamedEvent());
     const [selectedEvent, setSelectedEvent] = useState<NamedEvent>();
-    const [submitVariant, setSubmitVariant] = useState<"tracker" | "months">("tracker");
 
     interface DataShareInfo {
         format: string;
@@ -332,26 +330,10 @@ const EventsTrackerMain = React.memo((props: Props) => {
 
     const handleSubmitEvent = useCallback((props: SubmitEventProps) => {
 
-        if (submitVariant === "months") {
-            submitEvent(props);
-            return;
-        }
-
-        const { materialsToEvent } = props;
-
-        if (!materialsToEvent) {
-            handleDeleteEvent(submitedEvent.name);
-        } else {
-            setRawEvents((prev) => {
-                const _next = { ...prev };
-                if (submitedEvent.index >= 0)
-                    _next[submitedEvent.name].materials = materialsToEvent;
-                return _next;
-            });
-        }
         setSubmitedEvent({ ...createEmptyNamedEvent() });
+        submitEvent(props);
 
-    }, [submitVariant, submitedEvent, submitEvent, handleDeleteEvent, setRawEvents, setSubmitedEvent,]);
+    }, [submitEvent, setSubmitedEvent,]);
 
     const defaultEventMaterials = useMemo(() =>
         getDefaultEventMaterials(itemsJson),

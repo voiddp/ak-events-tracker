@@ -89,7 +89,7 @@ const SubmitEventDialog = (props: Props) => {
         }
         switchSource(_source);
 
-    }, [open, allowedSources, submitedEvent, switchSource, setFormToSubmited]);
+    }, [open]);
 
     useEffect(() => {
         const _modes: SubmitEventProps['action'][] = [];
@@ -107,7 +107,6 @@ const SubmitEventDialog = (props: Props) => {
         }
         setModesList(_modes);
         setMode(_modes[0]);
-
     }, [open, selectedEvent, selectedFrom, source, submitedEvent]
     );
 
