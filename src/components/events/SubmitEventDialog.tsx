@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField } from "@mui/material";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from "@mui/material";
 import React, { useEffect, useMemo, useCallback, useState } from "react";
 import { NamedEvent, EventsData, SubmitEventProps, EventsSelectorProps } from "@/lib/events/types";
 import EventsSelector from "./EventsSelector";
@@ -126,6 +126,7 @@ const SubmitEventDialog = (props: Props) => {
     const handleFromSelectorChange = (event: NamedEvent) => {
         setSelectedFrom(event);
         setRawMaterials(event.materials);
+        setRawFarms(event.farms ?? [])
         setRawName(event.name);
     };
     //-
@@ -148,7 +149,7 @@ const SubmitEventDialog = (props: Props) => {
         });
     };
 
-    //hooks 
+    //stale data hooks 
     const [, , , getNextMonthsData] = useEvents();
     const { dataDefaults } = useEventsWebStorage();
 
@@ -165,11 +166,11 @@ const SubmitEventDialog = (props: Props) => {
     const getSourceName = (source: Source) => {
         switch (source) {
             case "current": return "Current event";
-            case "currentWeb": return "Picked web event";
-            case "events": return "Tracked events";
+            case "currentWeb": return "Selected web event";
+            case "events": return "Events in Tracker";
             case "months": return "Months generator";
-            case "defaults": return "Daily defaut event list";
-            case "web": return "Web data";
+            case "defaults": return "Defaut event list";
+            case "web": return "Web data only";
             default: return '';
         }
     }
@@ -209,9 +210,11 @@ const SubmitEventDialog = (props: Props) => {
                 .filter(([_, quantity]) => quantity > 0)
             : false;
 
+        targetName = rawName !== "" ? rawName : targetName;
+
         switch (mode) {
             case "create": {
-                targetName = rawName !== "" ? rawName : targetName;
+                /* targetName = rawName !== "" ? rawName : targetName; */
                 materialsToEvent = Object.fromEntries(_submitedMaterialsArray);
             }
                 break;
@@ -220,7 +223,7 @@ const SubmitEventDialog = (props: Props) => {
             }
                 break;
             case "modify": {
-                if (source === 'current') {//case of event to depot
+                if (source === 'current' && ((selectedEvent?.index ?? -1) === -1)) {//case of event to depot
                     materialsToDepot = _submitedMaterialsArray;
                     materialsToEvent = _materialsLeftArray ? Object.fromEntries(_materialsLeftArray) : _materialsLeftArray;
                 }
@@ -229,14 +232,16 @@ const SubmitEventDialog = (props: Props) => {
                     //target = targetEventIndex
                     sourceName = selectedFrom.index !== -1 ? selectedFrom.name : (submitedEvent?.name ?? null);
                 }
+                setSelectedFrom(createEmptyNamedEvent);
             }
                 break;
             case "replace": {// replacing is only into selectedIntex
                 materialsToEvent = Object.fromEntries(_submitedMaterialsArray);
                 //target = targetEventIndex
                 //source to remove - selectedFrom or submited event
-                targetName = selectedFrom.index !== -1 ? selectedFrom.name : (submitedEvent?.name ?? "");
+                targetName = selectedFrom.index !== -1 ? selectedFrom.name : targetName;
                 /* sourceName = (selectedEvent?.name ?? "");  */
+                setSelectedFrom(createEmptyNamedEvent);
             }
                 break;
         }
@@ -254,13 +259,20 @@ const SubmitEventDialog = (props: Props) => {
     }, [handleDialogClose, mode, source, submitedEvent, isNumbersMatch, onSubmit, rawFarms, rawMaterials, rawName, selectedEvent, selectedFrom]
     );
 
-    const isSubmitDisabled = Object.values(rawMaterials).every((value) => value === 0) || rawName === "";
+    const isMaterialsEmpty = Object.values(rawMaterials).every((value) => value === 0);
+    const isSubmitDisabled = isMaterialsEmpty || rawName === "";
 
     const handleClearAll = () => {
         setRawMaterials(prev => {
             const next = {} as typeof prev;
-            for (const id in prev) {
-                next[id] = 0;
+            if (!isMaterialsEmpty) {
+                for (const id in prev) {
+                    next[id] = 0;
+                }
+            } else {
+                for (const id in prev) {
+                    next[id] = materialsLimit?.[id] ?? 0;
+                }
             }
             return next;
         });
@@ -268,14 +280,14 @@ const SubmitEventDialog = (props: Props) => {
 
     return (
         <Dialog open={open} onClose={handleDialogClose}>
-            <DialogTitle>
-                <Stack direction="column" width="100%" gap={1}>
+            <DialogTitle p={1} minHeight="170px">
+                <Stack direction="column" width="100%" gap={1} /* alignItems="flex-start" */>
                     {/* {getTitle(variant, selectedEvent, replace, isNumbersMatch, rawFarms)} */}
                     <Stack direction="row">
-                        From <Button
+                        From: <Button
                             variant="text"
                             onClick={() => switchSource()}
-                        >{getSourceName(source)}</Button>
+                        ><Typography variant="caption">{getSourceName(source)}</Typography></Button>
                     </Stack>
                     <Stack direction="row" alignItems="stretch">
                         {(source === "current" || source === "currentWeb")
@@ -342,7 +354,7 @@ const SubmitEventDialog = (props: Props) => {
                         <Button
                             variant="text"
                             onClick={handleClearAll}>
-                            clear all
+                            {isMaterialsEmpty ? "return all" : "clear all"}
                         </Button>
                     </Stack>
                 )}

@@ -51,7 +51,7 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
         }
     };
 
-    const [isSelectFinished, setIsSelectFinished] = useState(false);
+    const [isSelectFinished, setIsSelectFinished] = useState(true);
 
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -73,6 +73,10 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
         return;
     };
 
+    const handleOnClick = () => {
+        setIsSelectFinished(true);
+    }
+
     return (<FormControl sx={{ flexGrow: 1, width: "100%" }}>
         <InputLabel>{label}</InputLabel>
         <Select
@@ -89,7 +93,7 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
             <Divider component="li" />
             {eventsList
                 .map(([name, event]) => (
-                    <MenuItem value={event.index} key={event.index} className="no-underline">
+                    <MenuItem value={event.index} key={event.index} className="no-underline" onClick={handleOnClick}>
                         <Stack direction="row" justifyContent="flex-end" alignItems="center" width="stretch" flexWrap="wrap">
                             <Typography sx={{ mr: "auto", whiteSpace: "wrap" }}>{`${event.index}: ${name} `}</Typography> {!isSelectFinished ? (
                                 <Stack direction="row">
