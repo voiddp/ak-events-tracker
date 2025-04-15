@@ -11,21 +11,14 @@ import {
     useMediaQuery
 } from '@mui/material';
 import ItemBase from "@/components/ItemBase";
-import { Event, NamedEvent, EventsData } from "@/lib/events/types"
-import { getItemBaseStyling, customItemsSort, formatNumber } from "@/utils/ItemUtils";
+import { EventsSelectorProps } from "@/lib/events/types"
+import { getItemBaseStyling, customItemsSort, formatNumber, getFarmCSS } from "@/utils/ItemUtils";
 import { createEmptyEvent, createEmptyNamedEvent } from '@/lib/events/utils';
-
-interface EventsSelectorProps {
-    variant: 'summary' | 'builder' | 'months';
-    disabled?: boolean;
-    eventsData: EventsData;
-    selectedEvent?: Event | null;
-    onChange?: (namedEvent: NamedEvent) => void;
-}
 
 export const EventsSelector = React.memo((props: EventsSelectorProps) => {
     const {
-        variant,
+        dataType,
+        emptyItem,
         disabled = false,
         eventsData,
         selectedEvent,
@@ -33,22 +26,27 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
     } = props;
 
     let label: string;
-    let emptyOption: string;
+    const emptyOption = emptyItem ? emptyItem : "no selection";
 
-    switch (variant) {
-        case 'builder': {
-            label = "Select event to modify";
-            emptyOption = "Add new event";
-            break;
-        }
-        case 'months': {
-            label = "Select month";
-            emptyOption = "no month selected";
-            break;
-        }
+    switch (dataType) {
         case 'summary': {
             label = "Select future event";
-            emptyOption = "without event";
+            break;
+        }
+        case 'events': {
+            label = emptyItem ? "put materials in" : "Select event";
+            break;
+        }
+        case 'months': { //source only
+            label = "Select month";
+            break;
+        }
+        case 'defaults': { //source only
+            label = "Select from defaults";
+            break;
+        }
+        case 'web': { //source only
+            label = "Select from web data";
             break;
         }
     };
@@ -75,7 +73,7 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
         return;
     };
 
-    return (<FormControl sx={{ flexGrow: 1 }}>
+    return (<FormControl sx={{ flexGrow: 1, width: "100%" }}>
         <InputLabel>{label}</InputLabel>
         <Select
             disabled={disabled}
@@ -92,15 +90,16 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
             {eventsList
                 .map(([name, event]) => (
                     <MenuItem value={event.index} key={event.index} className="no-underline">
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch">
-                            {`${event.index}: ${name} `} {!isSelectFinished ? (
+                        <Stack direction="row" justifyContent="flex-end" alignItems="center" width="stretch" flexWrap="wrap">
+                            <Typography sx={{ mr: "auto", whiteSpace: "wrap" }}>{`${event.index}: ${name} `}</Typography> {!isSelectFinished ? (
                                 <Stack direction="row">
                                     {(event.farms ?? []).map((id) => [id, 0] as [string, number])
                                         .concat(Object.entries(event.materials)
                                             .sort(([itemIdA], [itemIdB]) => customItemsSort(itemIdA, itemIdB)))
-                                        .slice(0, fullScreen ? 4 : 10)
+                                        .slice(0, fullScreen ? 8 : 10)
                                         .map(([id, quantity], idx) => (
-                                            <ItemBase key={`${id}${quantity === 0 && "-farm"} `} itemId={id} size={itemBaseSize}>
+                                            <ItemBase key={`${id}${quantity === 0 && "-farm"} `} itemId={id} size={itemBaseSize}
+                                                {...quantity === 0 && getFarmCSS("round")}>
                                                 <Typography {...numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
                                             </ItemBase>
                                         ))}

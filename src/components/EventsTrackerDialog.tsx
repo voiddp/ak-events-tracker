@@ -48,7 +48,7 @@ import { debounce } from 'lodash';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import SubmitEventDialog from '@/components/events/SubmitEventDialog';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isMaterial, getDefaultEventMaterials } from '@/utils/ItemUtils'
+import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isMaterial, getDefaultEventMaterials, getFarmCSS } from '@/utils/ItemUtils'
 import { createEmptyEvent, createEmptyNamedEvent, reindexEvents } from "@/lib/events/utils"
 import ItemEditBox from '@/components/events/ItemEditBox';
 
@@ -95,8 +95,9 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     const [expandedAccordtition, setExpandedAccordtition] = useState<string | false>(false);
     const [focusedId, setFocusedId] = useState<{ id: string, name: string } | null>(null);
 
-    const [addEventToDepotDialogOpen, setAddEventToDepotDialogOpen] = useState<boolean>(false);
+    const [submitDialogOpen, setSubmitDialogOpen] = useState<boolean>(false);
     const [submitedEvent, setSubmitedEvent] = useState(createEmptyNamedEvent());
+    const [selectedEvent, setSelectedEvent] = useState(createEmptyNamedEvent());
 
     const SUPPORTED_IMPORT_EXPORT_TYPES: DataShareInfo[] = [
         {
@@ -277,7 +278,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     );
 
     const handleSubmitEvent = useCallback((props: SubmitEventProps) => {
-        const { materialsToEvent } = props;
+        /* const { materialsToEvent, action } = props;
         if (!materialsToEvent) {
             handleDeleteEvent(submitedEvent.name);
         } else {
@@ -286,10 +287,10 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 _next[submitedEvent.name].materials = materialsToEvent;
                 return _next;
             });
-        }
+        } */
         setSubmitedEvent({ ...createEmptyNamedEvent() });
         submitEvent(props);
-    }, [submitEvent, handleDeleteEvent, setRawEvents, setSubmitedEvent, submitedEvent.name]);
+    }, [submitEvent, setSubmitedEvent, /* submitedEvent.name, handleDeleteEvent, setRawEvents, */]);
 
     const defaultEventMaterials = useMemo(() =>
         getDefaultEventMaterials(itemsJson),
@@ -325,11 +326,12 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                     <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch">
                         <Stack direction="row" alignItems="center" flexWrap="nowrap" flexGrow={1}>
                             <DragIndicator sx={{ mr: 1 }} onClick={(e) => e.stopPropagation()} />
-                            <Stack direction="row" alignItems="center" flexWrap="wrap" flexGrow={1} justifyContent={{ xs: "center", md: "flex-start" }}>
+                            <Stack direction="row" alignItems="center" flexWrap="wrap" flexGrow={1} justifyContent={{ xs: "center", md: "flex-end" }}>
                                 <TextField size="small" value={newEventNames[name] ?? name}
                                     sx={{
-                                        mr: 2,
-                                        width: { md: getWidthFromValue(newEventNames[name] ?? name, '20ch'), xs: '100%' }
+                                        mr: {xs: "unset", md: "auto"},
+                                        mb: 0.5,
+                                        width: { xs: '100%', md: getWidthFromValue(newEventNames[name] ?? name, '20ch') }
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -343,14 +345,17 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                     .concat(Object.entries(_eventData.materials ?? {})
                                         .sort(([idA], [idB]) => standardItemsSort(idA, idB)))
                                     .map(([id, quantity], idx) => (
-                                        <ItemBase key={`${id}${quantity === 0 && "-farm"}`} itemId={id} size={getItemBaseStyling("tracker").itemBaseSize}>
+                                        <ItemBase
+                                            key={`${id}${quantity === 0 && "-farm"}`}
+                                            itemId={id} size={getItemBaseStyling("tracker").itemBaseSize}
+                                            {...quantity === 0 && getFarmCSS("round")}>
                                             <Typography {...getItemBaseStyling("tracker").numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
                                         </ItemBase>
                                     ))}
                             </Stack>
                         </Stack>
-                        <Stack direction="row" gap={2}>
-                            <Tooltip title="Select materials to add to depot">
+                        <Stack direction={{xs: "column", md: "row"}} gap={{xs: 4, md: 2}}>
+                            <Tooltip title="Add to Depot & Builder">
                                 <MoveToInboxIcon
                                     fontSize="large"
                                     sx={{
@@ -361,9 +366,9 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        if (Object.keys(_eventData.materials ?? {}).length === 0) return;
+                                        /* if (Object.keys(_eventData.materials ?? {}).length === 0) return; */
                                         setSubmitedEvent({ name, index: _eventData.index, materials: _eventData.materials ?? {}, farms: _eventData.farms ?? [] });
-                                        setAddEventToDepotDialogOpen(true);
+                                        setSubmitDialogOpen(true);
                                     }} />
                             </Tooltip>
                             <DeleteIcon
@@ -380,7 +385,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 </AccordionSummary>
                 {expandedAccordtition === name && (
                     <AccordionDetails style={{ display: 'flex', gap: 8 }}>
-                        <Stack direction="row" style={{ width: '100%', flexWrap: 'wrap', gap: 8 }}>
+                        <Stack direction="row" style={{ width: '100%', flexWrap: 'wrap', gap: 8, justifyContent: "center" }}>
                             {memoizedDetails.map((element) => {/*cloning existing elements for speed*/
                                 const id = element.props.itemId;
                                 if (!id) return null;
@@ -595,7 +600,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                             <Button startIcon={<AddIcon />}
                                 variant="contained" color="primary"
                                 disabled={rawName.length === 0}
-                                onClick={() => addNewEvent(rawName.trim())}>New Event</Button>
+                                onClick={() => addNewEvent(rawName.trim())}>New{!fullScreen ? " Event" :""}</Button>
                         </Stack>
                     </Box>
                     <Box display={tab === 'importExport' ? "unset" : "none"}>
@@ -774,12 +779,14 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 </Alert>
             </Snackbar>
             <SubmitEventDialog
-                open={addEventToDepotDialogOpen}
-                onClose={() => setAddEventToDepotDialogOpen(false)}
+                open={submitDialogOpen}
+                onClose={() => setSubmitDialogOpen(false)}
+                allowedSources={["current","events","defaults","months","web"]}
                 onSubmit={handleSubmitEvent}
-                variant="tracker"
                 submitedEvent={submitedEvent}
                 eventsData={eventsData}
+                selectedEvent={selectedEvent}
+                onSelectorChange={setSelectedEvent}
             />
         </>
     );

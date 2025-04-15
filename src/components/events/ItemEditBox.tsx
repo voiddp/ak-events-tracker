@@ -1,6 +1,7 @@
 import React from 'react';
 import { Stack, TextField, TextFieldProps, StackProps } from '@mui/material';
 import ItemBase from '@/components/ItemBase';
+import { getFarmCSS } from '@/utils/ItemUtils';
 
 interface ItemEditBoxProps {
     itemId: string;
@@ -77,15 +78,14 @@ const ItemEditBox = React.memo(({
                 direction="row"
                 onClick={handleIconClick}
                 sx={{
-                    borderRadius: "6px",
                     zIndex: 2,
-                    backgroundColor: highlighted ? "primary.main" : undefined,
                     ...(clickable && {
                         transition: "opacity 0.1s",
                         "&:focus, &:hover": {
                             opacity: 0.5,
                         },
                     }),
+                    ...getFarmCSS('box', highlighted),
                     ...(stackProps?.sx || {}),
                 }}
             >

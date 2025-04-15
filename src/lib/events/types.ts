@@ -15,15 +15,20 @@ export type EventsData = {
 }
 
 export type SubmitEventProps = {
-    eventName: string,
-    selectedEventIndex: number,
+    targetName: string,
+    sourceName: string | null,
+    targetEventIndex: number,
     materialsToDepot: [string, number][],
     materialsToEvent: Record<string, number> | false,
     farms: string[],
-    replaceName: string | false,
+    action: 'create' | 'modify' | 'replace' | 'remove',
 }
 
-export type eventSelectorProps = {
-    variant: "summary" | "builder";
-    disabled: boolean;
-};
+export interface EventsSelectorProps {
+    dataType: 'events' | 'months' | 'defaults' | 'web' | 'summary';
+    emptyItem?: string;
+    disabled?: boolean;
+    eventsData: EventsData;
+    selectedEvent?: Event | null;
+    onChange?: (namedEvent: NamedEvent) => void;
+}

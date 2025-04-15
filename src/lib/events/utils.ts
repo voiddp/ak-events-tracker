@@ -1,6 +1,7 @@
 import { AK_CALENDAR, AK_DAILY, AK_WEEKLY } from "@/utils/ItemUtils";
 import { EventsData, NamedEvent, Event } from "./types";
 import { WebEventsData, WebEvent } from "../prtsWiki/types";
+import { getDateString } from "../prtsWiki/utils";
 
 export const createEmptyEvent = () => {
     return { index: -1, materials: {} } as Event;
@@ -47,17 +48,17 @@ const createMonthEvent = (month: number, year: number, startDay: number = 1): Na
         // Partial month calculation
         const startDayOfWeekNum = new Date(year, month - 1, startDay).getDay();
         const startDayOfWeek = (startDayOfWeekNum + 6) % 7;
-        
+
         // Calculate days remaining in first partial week
         const daysInFirstWeek = Math.min(7 - startDayOfWeek, remainingDays);
-        
+
         // Full weeks in the middle
         const remainingDaysAfterFirstWeek = remainingDays - daysInFirstWeek;
         const middleFullWeeks = Math.floor(remainingDaysAfterFirstWeek / 7);
-        
+
         // Days in last partial week
         const daysInLastWeek = remainingDaysAfterFirstWeek % 7;
-        
+
         // Count weeks that include Wednesday
         if (daysInFirstWeek >= 4 || startDayOfWeek <= 3) fullWeeks++;
         fullWeeks += middleFullWeeks;
@@ -178,3 +179,25 @@ export const createDefaultEventsData = (webEvents: WebEventsData) => {
     return _eventsData;
 }
 
+export const getEventsFromWebEvents = (webEvents: WebEventsData): EventsData => {
+    return Object.entries(webEvents)
+        .filter(([_, wEvent]) =>
+            (wEvent.materials && Object.keys(wEvent.materials).length > 0)
+            || (wEvent.farms && wEvent.farms.length > 0))
+        .sort(([, a], [, b]) => {
+            if (!a.date) return 1;
+            if (!b.date) return -1;
+            return new Date(b.date).getTime() - new Date(a.date).getTime();
+        })
+        .reduce((acc, [_, item], idx) => {
+            const _name = `(${getDateString(item.date ?? new Date())}) ${item.name ?? item.pageName}`;
+            acc[_name] = {
+                index: idx,
+                materials: item.materials ?? {},
+            }
+            if (item.farms) {
+                acc[_name].farms = item.farms;
+            }
+            return acc
+        }, {} as EventsData)
+}

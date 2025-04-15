@@ -9,7 +9,7 @@ import { WebEventsData } from "@/lib/prtsWiki/types";
 function useEvents(): [
     EventsData,
     (newEventsData: EventsData) => void,
-    (submit: SubmitEventProps) => false | [string, number][],
+    (submit: SubmitEventProps) => null | [string, number][],
     (months?: number) => EventsData,
     (webEvents: WebEventsData) => EventsData,
 ] {
@@ -73,49 +73,74 @@ function useEvents(): [
         return _items;
     };
 
-    const submitEvent = useCallback((props: SubmitEventProps): false | [string, number][] => {
-        const { eventName, selectedEventIndex, materialsToDepot, materialsToEvent, farms, replaceName } = props;
+    const submitEvent = useCallback((props: SubmitEventProps): null | [string, number][] => {
+        const { targetName, sourceName, targetEventIndex, materialsToDepot, materialsToEvent, action, farms } = props;
         const _eventsData = { ...eventsData };
 
-        let result: [string, number][] | false = false;
+        //find target data by index or start new object
+        const { name, eventData } = getEventByIndex(targetEventIndex);
+        const _event = { ...eventData };
+        //event name-key, either use found or submited
+        //target event name-key
+        /* const _submitName = replaceName ? replaceName : eventName; */
+        let _targetName = targetName;
+        if (action !== "replace" && name)
+            _targetName = name ? name : targetName;
 
-        //handle tracker to depot && update/remove event
-        if (materialsToDepot.length > 0) {
-            result = materialsToDepot;
-            if (!materialsToEvent && farms.length === 0) {
-                delete eventsData[eventName];
-            } else if (materialsToEvent && _eventsData[eventName]) {
-                _eventsData[eventName].materials = materialsToEvent;
-            }
-        } else {
-            //handle builder - find event by index        
-            //find by index and use, or build new
-            const { name, eventData } = getEventByIndex(selectedEventIndex);
-            const _name = name ? name : eventName;
-            const _event = { ...eventData };
-
-            //replace mats or add mats
-            if (materialsToEvent) {
-                if (!replaceName) {
-                    _event.materials = addItemsToEvent(_event.materials, materialsToEvent);
-                } else {
+        switch (action) {
+            case "create": {
+                if (materialsToEvent)
                     _event.materials = materialsToEvent;
+                if (farms.length > 0)
+                    _event.farms = farms;
+                if (_eventsData[_targetName]) _event.index = _eventsData[_targetName].index;
+                _eventsData[_targetName] = _event;
+                console.log("created event:", { _targetName, data: { ..._eventsData[_targetName] } })
+            }
+                break;
+            case "replace": {
+                if (materialsToEvent)
+                    _event.materials = materialsToEvent;
+                if (farms.length > 0)
+                    _event.farms = farms;
+
+                _eventsData[_targetName] = _event;
+                console.log("delete check: ", name, name ? _eventsData[name] : 'noName');
+                if (name && name !== _targetName && _eventsData[name]) {
+                    delete _eventsData[name];
+                    console.log(" deleting: ", name);
                 }
-            };
-            //add/delete farms
-            if (farms.length > 0) {
-                _event.farms = [...farms];
-            };
-            //handle name change if new name is set.
-            if (!replaceName || _name === replaceName) {
-                _eventsData[_name] = _event;
-            } else {
-                delete _eventsData[_name];
-                _eventsData[replaceName] = _event;
-            };
+                console.log("replacing:", { _targetName, data: { ..._eventsData[_targetName] } });
+            }
+                break;
+            case "modify": {
+                if (materialsToEvent)
+                    _event.materials = addItemsToEvent(_event.materials, materialsToEvent);
+                if (farms.length > 0)
+                    _event.farms = farms;
+
+                if (_eventsData[_targetName]) _event.index = _eventsData[_targetName].index;
+
+                _eventsData[_targetName] = _event;
+                if (sourceName && sourceName !== _targetName && _eventsData[sourceName]) {
+                    delete _eventsData[sourceName];
+                    console.log(" deleting: ", sourceName);
+                }
+                console.log("adding to:", { _targetName, data: { ..._eventsData[_targetName] } });
+            }
+                break;
+            case "remove": {
+                delete _eventsData[_targetName];
+                console.log("removing", _targetName);
+            }
+                break;
         }
+
         _setEvents(reindexEvents(_eventsData));
-        return result;
+
+        //pipe out materialsToDepot 
+        return (materialsToDepot && materialsToDepot.length > 0) ? materialsToDepot : null;
+
     }, [eventsData, _setEvents, getEventByIndex]);
 
     const clientCreateDefaultEventsData = (webEvents: WebEventsData): EventsData => {

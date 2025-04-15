@@ -8,9 +8,9 @@ import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import ItemBase from '@/components/ItemBase';
 import SubmitEventDialog from '@/components/events//SubmitEventDialog';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
-import { formatNumber, standardItemsSort, getItemBaseStyling, isMaterial } from '@/utils/ItemUtils'
+import { formatNumber, standardItemsSort, getItemBaseStyling } from '@/utils/ItemUtils'
 import { Close } from "@mui/icons-material";
-import { createEmptyWebEvent } from '@/lib/prtsWiki/utils';
+import { createEmptyWebEvent, getDateString } from '@/lib/prtsWiki/utils';
 
 
 interface Props {
@@ -72,8 +72,8 @@ const WebEventsDialog = React.memo((props: Props) => {
       if (!data) return;
       setRawWebEvents((prev) => {
         //clean up old not fetched
-        const _next = Object.fromEntries(Object.entries({ ...prev ?? {} } )
-        .filter(([_, oldEvent]) => data[oldEvent.pageName]));
+        const _next = Object.fromEntries(Object.entries({ ...prev ?? {} })
+          .filter(([_, oldEvent]) => data[oldEvent.pageName]));
 
         //add new from data
         Object.values(data).forEach(webEvent => {
@@ -132,16 +132,6 @@ const WebEventsDialog = React.memo((props: Props) => {
     setSubmitEventDialogOpen(true);
   }
 
-  const getDateString = (date: Date) => {
-    if (!date) return "";
-    const _date = new Date(date);
-    const day = String(_date.getDate()).padStart(2, '0');
-    const month = String(_date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
-    const year = _date.getFullYear();
-
-    return `${day}-${month}-${year}`;
-  }
-
   return (
     <>
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md"
@@ -174,7 +164,7 @@ const WebEventsDialog = React.memo((props: Props) => {
               onClick={handleFetchEvents}
               disabled={loading["LIST"]}
               sx={{ minWidth: "fit-content", minHeight: "fit-content" }}
-            >Fetch Events
+            >Fetch{!fullScreen ? " Events" : ""}
             </Button>
           </Stack>
           <IconButton onClick={handleClose} sx={{ display: { sm: "none" }, gridArea: "close" }}>
@@ -295,7 +285,6 @@ const WebEventsDialog = React.memo((props: Props) => {
       <SubmitEventDialog
         open={submitEventDialogOpen}
         onClose={() => setSubmitEventDialogOpen(false)}
-        variant="builder"
         onSubmit={submitEvent}
         eventsData={eventsData}
         submitedEvent={submitedEvent}

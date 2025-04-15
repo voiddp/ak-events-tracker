@@ -1,17 +1,20 @@
-import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Stack, TextField } from "@mui/material";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField } from "@mui/material";
 import React, { useEffect, useMemo, useCallback, useState } from "react";
-import { NamedEvent, EventsData, SubmitEventProps } from "@/lib/events/types";
+import { NamedEvent, EventsData, SubmitEventProps, EventsSelectorProps } from "@/lib/events/types";
 import EventsSelector from "./EventsSelector";
 import { formatNumber, getWidthFromValue, standardItemsSort, getItemBaseStyling } from "@/utils/ItemUtils"
 import ItemEditBox from "./ItemEditBox";
 import useEvents from "@/utils/hooks/useEvents";
 import { WebEvent } from "@/lib/prtsWiki/types";
-import { createEmptyEvent, createEmptyNamedEvent } from "@/lib/events/utils";
+import { createEmptyEvent, createEmptyNamedEvent, getEventsFromWebEvents } from "@/lib/events/utils";
+import { useEventsWebStorage } from "@/utils/hooks/useEventsWebStorage";
+
+type Source = EventsSelectorProps['dataType'] | 'current' | 'currentWeb'
 
 interface Props {
     open: boolean;
     onClose: () => void;
-    variant: "tracker" | "builder" | "months";
+    allowedSources?: (EventsSelectorProps['dataType'] | 'current' | 'currentWeb')[];
     onSubmit: (submit: SubmitEventProps) => void;
     eventsData: EventsData;
     submitedEvent: NamedEvent | WebEvent;
@@ -20,55 +23,115 @@ interface Props {
 }
 
 const SubmitEventDialog = (props: Props) => {
-    const { open, onClose, variant, onSubmit, eventsData, submitedEvent, selectedEvent, onSelectorChange } = props;
+    const { open, onClose, allowedSources, onSubmit, eventsData, submitedEvent, selectedEvent, onSelectorChange } = props;
 
     const [rawMaterials, setRawMaterials] = useState<Record<string, number>>({});
     const [rawFarms, setRawFarms] = useState<string[]>([]);
     const [rawName, setRawName] = useState<string>('');
-    const [isNumbersMatch, setisNumbersMatch] = useState<boolean>(true);
-    const [replace, setReplace] = useState(false);
+    const [isNumbersMatch, setIsNumbersMatch] = useState<boolean>(true);
     const [focused, setFocused] = useState<string | false>(false);
+    const [modesList, setModesList] = useState<SubmitEventProps['action'][]>([]);
+    const [mode, setMode] = useState<SubmitEventProps['action']>();
+    const [source, setSource] = useState<EventsSelectorProps['dataType'] | 'current' | 'currentWeb'>('current');
 
-    useEffect(() => {
-        if (!open) return;
+    const [selectedFrom, setSelectedFrom] = useState<NamedEvent>(createEmptyNamedEvent());
+
+    const resetFormOnUnselected = () => {
+        setSelectedFrom(createEmptyNamedEvent());
+        setRawMaterials({});
+        setRawFarms([]);
+        setRawName('')
+        setIsNumbersMatch(false);
+        setFocused(false);
+    }
+
+    const setFormToSubmited = useCallback(() => {
         setRawMaterials(submitedEvent.materials ?? {});
         setRawFarms(submitedEvent?.farms ?? []);
-        setRawName(submitedEvent.name ?? "")
-        setisNumbersMatch(true);
+        setRawName(submitedEvent?.name ?? '');
+        setIsNumbersMatch(true);
         setFocused(false);
-    }, [open, submitedEvent, variant]);
+    }, [submitedEvent]
+    );
+
+    const switchSource = useCallback((next?: Source) => {
+
+        if (next !== undefined) {
+            setSource(next);
+            return;
+        }
+        if (!allowedSources || allowedSources.length === 1) return;
+
+        const list = allowedSources;
+        setSource((prev) => {
+            let result: Source;
+
+            const idx = list.indexOf(prev) + 1;
+            result = idx < list.length ? list[idx] : list[0];
+
+            if (!result.includes("current"))
+                resetFormOnUnselected();
+            else
+                setFormToSubmited();
+            return result;
+        })
+    }, [allowedSources, setFormToSubmited]
+    );
 
     useEffect(() => {
         if (!open) return;
-        if (selectedEvent && selectedEvent.index !== -1)
-            setReplace(true);
-        else
-            setReplace(false);
-    }, [open, selectedEvent]
-    )
+        setFormToSubmited();
+        let _source = allowedSources?.[0];
+        if (!_source) {
+            _source = ('pageName' in submitedEvent)
+                ? 'currentWeb'
+                : 'current';
+        }
+        switchSource(_source);
 
-    //+months variant/selector handling
-    const [selectedMonth, setSelectedMonth] = useState<NamedEvent>(createEmptyNamedEvent());
-    const [, , , getNextMonthsData] = useEvents();
+    }, [open, allowedSources, submitedEvent, switchSource, setFormToSubmited]);
 
-    const monthsData = useMemo(() => {
-        return variant === "months" ? getNextMonthsData() : {};
-    }, [variant, getNextMonthsData]);
+    useEffect(() => {
+        const _modes: SubmitEventProps['action'][] = [];
+        if (!open) return;
+        if ((selectedEvent?.index ?? -1) === -1) {
+            /* if (selectedFrom.index === -1) { */
+            if ('pageName' in submitedEvent || !source.includes("current"))
+                _modes.push("create");
+            else
+                _modes.push("modify", "remove");
+            /* } */
+        } else {
+            _modes.push("modify", "replace");
+
+        }
+        setModesList(_modes);
+        setMode(_modes[0]);
+
+    }, [open, selectedEvent, selectedFrom, source, submitedEvent]
+    );
+
+    const switchMode = () => {
+        setMode((prev) => {
+            const idx = prev ? modesList.indexOf(prev) + 1 : 0;
+            const next = idx < modesList.length ? modesList[idx] : modesList[0];
+            if (!next) return prev;
+            return next;
+        })
+    }
 
     const materialsLimit = useMemo(() => {
-        return variant === "months" ? selectedMonth.materials : submitedEvent.materials;
-    }, [variant, selectedMonth, submitedEvent])
+        return source === "months" ? selectedFrom.materials : submitedEvent.materials;
+    }, [source, selectedFrom, submitedEvent])
 
-    const handleMonthsSelectorChange = (month: NamedEvent) => {
-        setSelectedMonth(month);
-        setRawMaterials(month.materials);
-        setRawName(month.name);
+    const handleFromSelectorChange = (event: NamedEvent) => {
+        setSelectedFrom(event);
+        setRawMaterials(event.materials);
+        setRawName(event.name);
     };
-    //-months
+    //-
 
     const handleEventsSelectorChange = (event: NamedEvent) => {
-        if (event.index === -1)
-            setReplace(false);
         onSelectorChange?.(event);
     }
 
@@ -81,123 +144,152 @@ const SubmitEventDialog = (props: Props) => {
             const allValuesMatch = Object.entries(updated).every(
                 ([key, val]) => val === (materialsLimit?.[key] ?? 0)
             );
-            setisNumbersMatch(allValuesMatch);
+            setIsNumbersMatch(allValuesMatch);
             return updated;
         });
     };
 
+    //hooks 
+    const [, , , getNextMonthsData] = useEvents();
+    const { dataDefaults } = useEventsWebStorage();
+
+    const getSourceData = (source: string): EventsData => {
+        switch (source) {
+            case 'months': return getNextMonthsData();
+            case 'events': return eventsData;
+            case 'defaults': return dataDefaults.eventsData ?? {};
+            case 'web': return getEventsFromWebEvents(dataDefaults.webEventsData ?? {});
+            default: return eventsData;
+        }
+    }
+
+    const getSourceName = (source: Source) => {
+        switch (source) {
+            case "current": return "Current event";
+            case "currentWeb": return "Picked web event";
+            case "events": return "Tracked events";
+            case "months": return "Months generator";
+            case "defaults": return "Daily defaut event list";
+            case "web": return "Web data";
+            default: return '';
+        }
+    }
+
     const handleDialogClose = useCallback(() => {
-        setRawMaterials({});
-        setRawFarms([]);
-        setSelectedMonth(createEmptyNamedEvent());
+        resetFormOnUnselected();
         onClose();
-    }, [onClose]);
+    }, [onClose]
+    );
 
     const handleSubmit = useCallback(() => {
         let {
-            eventName,
-            selectedEventIndex,
+            targetName,
+            sourceName,
+            targetEventIndex,
             materialsToDepot,
             materialsToEvent,
             farms,
-            replaceName
+            action
         }: SubmitEventProps = {
-            eventName: submitedEvent.name ?? "",          // Default values
-            selectedEventIndex: selectedEvent?.index ?? -1,
+            targetName: submitedEvent.name ?? "",
+            sourceName: null,
+            targetEventIndex: selectedEvent?.index ?? -1,
             materialsToDepot: [],
-            materialsToEvent: Object.fromEntries(
-                Object.entries(rawMaterials ?? {})
-                    .filter(([_, quantity]) => quantity > 0)),
+            materialsToEvent: false,
             farms: rawFarms,
-            replaceName: false
+            action: mode ? mode : "replace",
         };
 
-        switch (variant) {
-            case "tracker":
-                materialsToDepot = Object.entries(rawMaterials).filter(([_, value]) => value > 0);
-                materialsToEvent = !isNumbersMatch
-                    ? Object.fromEntries(
-                        Object.entries(submitedEvent.materials ?? {})
-                            .map(([id, quantity]) => ([id, quantity - (rawMaterials[id] ?? 0)] as [string, number]))
-                            .filter(([_, quantity]) => quantity > 0))
-                    : false;
-                break;
+        const _submitedMaterialsArray =
+            Object.entries(rawMaterials ?? {})
+                .filter(([_, quantity]) => quantity > 0);
 
-            case "builder":
-                replaceName = replace ? rawName : false;
-                break;
+        const _materialsLeftArray = (!isNumbersMatch && submitedEvent.materials)
+            ? Object.entries(submitedEvent.materials)
+                .map(([id, quantity]) => ([id, quantity - (rawMaterials[id] ?? 0)] as [string, number]))
+                .filter(([_, quantity]) => quantity > 0)
+            : false;
 
-            case "months":
-                eventName = selectedMonth.name;
-                replaceName = replace ? selectedMonth.name : false;
+        switch (mode) {
+            case "create": {
+                targetName = rawName !== "" ? rawName : targetName;
+                materialsToEvent = Object.fromEntries(_submitedMaterialsArray);
+            }
                 break;
-            default:
+            case "remove": {//case of event to depot 
+                materialsToDepot = _submitedMaterialsArray;
+            }
+                break;
+            case "modify": {
+                if (source === 'current') {//case of event to depot
+                    materialsToDepot = _submitedMaterialsArray;
+                    materialsToEvent = _materialsLeftArray ? Object.fromEntries(_materialsLeftArray) : _materialsLeftArray;
+                }
+                else {//any other case into target event
+                    materialsToEvent = Object.fromEntries(_submitedMaterialsArray);
+                    //target = targetEventIndex
+                    sourceName = selectedFrom.index !== -1 ? selectedFrom.name : (submitedEvent?.name ?? null);
+                }
+            }
+                break;
+            case "replace": {// replacing is only into selectedIntex
+                materialsToEvent = Object.fromEntries(_submitedMaterialsArray);
+                //target = targetEventIndex
+                //source to remove - selectedFrom or submited event
+                targetName = selectedFrom.index !== -1 ? selectedFrom.name : (submitedEvent?.name ?? "");
+                /* sourceName = (selectedEvent?.name ?? "");  */
+            }
+                break;
         }
+
         onSubmit({
-            eventName,
-            selectedEventIndex,
+            targetName,
+            sourceName,
+            targetEventIndex,
             materialsToDepot,
             materialsToEvent,
             farms,
-            replaceName,
+            action,
         });
         handleDialogClose();
-    }, [handleDialogClose, submitedEvent, isNumbersMatch, onSubmit, rawFarms, rawMaterials, rawName, replace, selectedEvent, selectedMonth, variant]
+    }, [handleDialogClose, mode, source, submitedEvent, isNumbersMatch, onSubmit, rawFarms, rawMaterials, rawName, selectedEvent, selectedFrom]
     );
 
     const isSubmitDisabled = Object.values(rawMaterials).every((value) => value === 0) || rawName === "";
-
-    const getTitle = (
-        variant: Props["variant"],
-        selectedEvent: Props["selectedEvent"],
-        replace: boolean,
-        isNumbersMatch: boolean,
-        rawFarms: string[]
-    ): string => {
-        if (["builder", "months"].includes(variant)) {
-            const baseTitle = "Event in Tracker";
-            const optional = (selectedEvent?.index ?? -1) === -1
-                ? "add/update"
-                : replace ? "replace" : "add to";
-            return [baseTitle, optional].filter(Boolean).join(" (") + (optional ? ")" : "");
-        }
-
-        if (variant === "tracker") {
-            const baseTitle = "Add to Depot";
-            const optional = `remove ${isNumbersMatch && rawFarms.length === 0 ? "" : "from "}Event`
-            return [baseTitle, optional].filter(Boolean).join(" (") + (optional ? ")" : "");
-        }
-
-        return ""; // Fallback in case of unexpected variant
-    };
 
     const handleClearAll = () => {
         setRawMaterials(prev => {
             const next = {} as typeof prev;
             for (const id in prev) {
-              next[id] = 0;
+                next[id] = 0;
             }
             return next;
-          });
+        });
     };
 
     return (
         <Dialog open={open} onClose={handleDialogClose}>
             <DialogTitle>
                 <Stack direction="column" width="100%" gap={1}>
-                    {getTitle(variant, selectedEvent, replace, isNumbersMatch, rawFarms)}
+                    {/* {getTitle(variant, selectedEvent, replace, isNumbersMatch, rawFarms)} */}
+                    <Stack direction="row">
+                        From <Button
+                            variant="text"
+                            onClick={() => switchSource()}
+                        >{getSourceName(source)}</Button>
+                    </Stack>
                     <Stack direction="row" alignItems="stretch">
-                        {variant !== 'months'
+                        {(source === "current" || source === "currentWeb")
                             ? <TextField
                                 value={rawName}
-                                disabled={(variant !== "builder")}
+                                /* disabled={(variant !== "builder")} */
                                 onChange={(e) => {
                                     setRawName(e.target.value);
-                                    if (rawName !== submitedEvent.name && rawName !== '') {
+                                    /* if (rawName !== submitedEvent.name && rawName !== '') {
                                         setReplace(true);
                                     } else {
                                         setReplace(false);
-                                    }
+                                    } */
                                 }}
                                 onFocus={(e) => e.target.select()}
                                 size="small"
@@ -205,27 +297,31 @@ const SubmitEventDialog = (props: Props) => {
                                 type="text"
                             />
                             : <EventsSelector
-                                variant={variant}
-                                eventsData={monthsData}
-                                selectedEvent={selectedMonth}
-                                onChange={handleMonthsSelectorChange}
+                                dataType={source}
+                                eventsData={getSourceData(source)}
+                                selectedEvent={selectedFrom}
+                                onChange={handleFromSelectorChange}
                             />}
-                        {variant !== "tracker"
-                            && <Checkbox
-                                disabled={selectedEvent?.index === -1}
-                                checked={replace}
-                                onChange={() => setReplace(!replace)} />
-                        }
+                        {mode && (<Button
+                            variant="text"
+                            onClick={switchMode}
+                            sx={{ whiteSpace: "nowrap" }}
+                        >
+                            {mode}
+                        </Button>
+                        )}
                     </Stack>
                 </Stack>
             </DialogTitle>
             <DialogContent sx={{
                 display: "flex",
                 flexDirection: "row",
-                flexWrap: "wrap"
+                flexWrap: "wrap",
+                minHeight: "200px",
+                alignItems: "flex-start",
             }}>
                 {Object.keys(rawMaterials).length > 0 && (
-                    <Stack direction="row" gap={0.7} flexWrap="wrap">
+                    <Stack direction="row" gap={0.7} flexWrap="wrap" justifyContent="center">
                         {Object.entries(rawMaterials)
                             .sort(([a], [b]) => standardItemsSort(a, b))
                             .map(([id, quantity]) => (
@@ -245,26 +341,27 @@ const SubmitEventDialog = (props: Props) => {
                                 />
                             ))}
                         <Button
-                        variant="text"
-                        onClick={handleClearAll}>
+                            variant="text"
+                            onClick={handleClearAll}>
                             clear all
                         </Button>
                     </Stack>
                 )}
             </DialogContent>
-            <DialogActions sx={{ gap: 1 }}>
-                {(variant !== "tracker")
-                    && <EventsSelector
-                        variant="builder"
-                        eventsData={eventsData}
-                        selectedEvent={selectedEvent ?? createEmptyEvent()}
-                        onChange={handleEventsSelectorChange}
-                    />
-                }
-                <Button disabled={isSubmitDisabled} onClick={handleSubmit} variant="contained">
-                    Submit
-                </Button>
-                <Button variant="outlined" color="secondary" onClick={handleDialogClose}>Cancel</Button>
+            <DialogActions sx={{ flexDirection: { xs: "column", md: "row" }, gap: 1 }}>
+                <EventsSelector
+                    emptyItem={source === 'current' ? "Depot" : "New event"}
+                    dataType={'events'}
+                    eventsData={eventsData}
+                    selectedEvent={selectedEvent ?? createEmptyEvent()}
+                    onChange={handleEventsSelectorChange}
+                />
+                <Stack direction="row" gap={1}>
+                    <Button disabled={isSubmitDisabled} onClick={handleSubmit} variant="contained">
+                        Submit
+                    </Button>
+                    <Button variant="outlined" color="secondary" onClick={handleDialogClose}>Cancel</Button>
+                </Stack>
             </DialogActions>
         </Dialog>
     );

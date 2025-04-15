@@ -40,11 +40,11 @@ import ImportExportIcon from '@mui/icons-material/ImportExport';
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Close } from "@mui/icons-material";
-import { debounce, set } from 'lodash';
+import { debounce } from 'lodash';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import SubmitEventDialog from '@/components/events/SubmitEventDialog';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, getItemBaseStyling, isMaterial, getDefaultEventMaterials, standardItemsSort } from '@/utils/ItemUtils'
+import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, getItemBaseStyling, isMaterial, getDefaultEventMaterials, standardItemsSort, getFarmCSS } from '@/utils/ItemUtils'
 import { createEmptyEvent, createEmptyNamedEvent, reindexEvents } from "@/lib/events/utils"
 
 import ItemEditBox from '@/components/events/ItemEditBox';
@@ -387,11 +387,12 @@ const EventsTrackerMain = React.memo((props: Props) => {
                     <Stack direction="row" justifyContent="space-between" alignItems="center" width="stretch">
                         <Stack direction="row" alignItems="center" flexWrap="nowrap" flexGrow={1}>
                             <DragIndicator sx={{ mr: 1 }} onClick={(e) => e.stopPropagation()} />
-                            <Stack direction="row" alignItems="center" flexWrap="wrap" flexGrow={1} justifyContent={{ xs: "center", md: "flex-start" }}>
+                            <Stack direction="row" alignItems="center" flexWrap="wrap" flexGrow={1} justifyContent={{ xs: "center", md: "flex-end" }}>
                                 <TextField size="small" value={newEventNames[name] ?? name}
                                     sx={{
-                                        mr: 2,
-                                        width: { md: getWidthFromValue(newEventNames[name] ?? name, '20ch'), xs: '100%' }
+                                        mr: { xs: "unset", md: "auto", },
+                                        mb: { xs: 0.5, md: 0 },
+                                        width: { xs: '100%', md: getWidthFromValue(newEventNames[name] ?? name, '20ch') }
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -405,14 +406,18 @@ const EventsTrackerMain = React.memo((props: Props) => {
                                     .concat(Object.entries(_eventData.materials ?? {})
                                         .sort(([idA], [idB]) => standardItemsSort(idA, idB)))
                                     .map(([id, quantity], idx) => (
-                                        <ItemBase key={`${id}${quantity === 0 && "-farm"}`} itemId={id} size={getItemBaseStyling("tracker").itemBaseSize}>
+                                        <ItemBase
+                                            key={`${id}${quantity === 0 && "-farm"}`}
+                                            itemId={id}
+                                            size={getItemBaseStyling("tracker").itemBaseSize}
+                                            {...quantity === 0 && getFarmCSS("round")}>
                                             <Typography {...getItemBaseStyling("tracker").numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
                                         </ItemBase>
                                     ))}
                             </Stack>
                         </Stack>
                         <Stack direction="row" gap={2}>
-                            {/* <Tooltip title="Select materials to add to depot">
+                            <Tooltip title="Add to Depot & Builder">
                                 <MoveToInboxIcon
                                     fontSize="large"
                                     sx={{
@@ -423,11 +428,11 @@ const EventsTrackerMain = React.memo((props: Props) => {
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        if (Object.keys(_eventData.materials ?? {}).length === 0) return;
+                                        /* if (Object.keys(_eventData.materials ?? {}).length === 0) return; */
                                         setSubmitedEvent({ name, index: _eventData.index, materials: _eventData.materials ?? {}, farms: _eventData.farms ?? [] });
                                         setSubmitDialogOpen(true);
                                     }} />
-                            </Tooltip> */}
+                            </Tooltip>
                             <DeleteIcon
                                 fontSize="large"
                                 sx={{
@@ -442,7 +447,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
                 </AccordionSummary>
                 {expandedAccordtition === name && (
                     <AccordionDetails style={{ display: 'flex', gap: 8 }}>
-                        <Stack direction="row" style={{ width: '100%', flexWrap: 'wrap', gap: 8 }}>
+                        <Stack direction="row" style={{ width: '100%', flexWrap: 'wrap', gap: 8, justifyContent: "center" }}>
                             {memoizedDetails.map((element) => {/*cloning existing elements for speed*/
                                 const id = element.props.itemId;
                                 if (!id) return null;
@@ -849,11 +854,8 @@ const EventsTrackerMain = React.memo((props: Props) => {
             </Snackbar>
             <SubmitEventDialog
                 open={submitDialogOpen}
-                onClose={() => {
-                    setSubmitDialogOpen(false)
-                    setSubmitVariant('tracker');
-                }}
-                variant={submitVariant}
+                onClose={() => setSubmitDialogOpen(false)}
+                allowedSources={["current", "events", "defaults", "months", "web"]}
                 onSubmit={handleSubmitEvent}
                 submitedEvent={submitedEvent}
                 eventsData={eventsData}

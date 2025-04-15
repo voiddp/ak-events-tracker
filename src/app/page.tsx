@@ -6,7 +6,7 @@ import WebEventsDialog from "../components/webEvents/WebEventsDialog";
 import EventsTracker from "@/components/EventsTrackerMain";
 import EventsTrackerDialog from "@/components/EventsTrackerDialog";
 import useEvents from "../utils/hooks/useEvents";
-import { NamedEvent, SubmitEventProps } from "@/lib/events/types";
+import { EventsSelectorProps, NamedEvent, SubmitEventProps } from "@/lib/events/types";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import Head from "./Head";
@@ -38,10 +38,10 @@ export default function Home() {
   const [submitDialogOpen, setSubmitDialogOpen] = useState<boolean>(false);
   const [submitedEvent, setSubmitedEvent] = useState({ ...createEmptyNamedEvent() });
   const [selectedEvent, setSelectedEvent] = useState<NamedEvent>();
-  const [submitVariant, setSubmitVariant] = useState<"tracker" | "months">("months");
+  const [submitSources, setSubmitSources] = useState<(EventsSelectorProps['dataType'])[]>(["months"]);
 
   const [eventsData, setEvents, submitEvent, , createDefaultEventsData] = useEvents();
-  const { dataDefaults, lastUpdated, loading, error, fetchEventsFromStorage } = useEventsWebStorage();
+  const { dataDefaults, loading, error, fetchEventsFromStorage } = useEventsWebStorage();
   const [acknowledgementsOpen, setAcknowledgementsOpen] = useState(false);
   ///
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -95,9 +95,9 @@ export default function Home() {
       <Head
         onClick={handleDrawerOpen}
         menuButton={<MenuIcon sx={{ display: { xs: "unset", md: "none" } }} />}
-      > {lastUpdated &&
-        <Tooltip title={`parsed prts.wiki ${!isMdUp ? formatTimeAgo(lastUpdated) + " ago" : ""}`}>
-          <Stack direction="row" alignItems="center" fontSize="small">{isMdUp && formatTimeAgo(lastUpdated)}<UpdateIcon fontSize="small" /></Stack>
+      > {dataDefaults.lastUpdated &&
+        <Tooltip title={`parsed prts.wiki ${!isMdUp ? formatTimeAgo(dataDefaults.lastUpdated) + " ago" : ""}`}>
+          <Stack direction="row" alignItems="center" fontSize="small">{isMdUp && formatTimeAgo(dataDefaults.lastUpdated)}<UpdateIcon fontSize="small" /></Stack>
         </Tooltip>}
       </Head>
       <CollapsibleDrawer
@@ -118,7 +118,7 @@ export default function Home() {
           text="Add months"
           onClick={() => {
             setSubmitedEvent({ ...createEmptyNamedEvent() });
-            setSubmitVariant('months');
+            setSubmitSources(['months']);
             setSubmitDialogOpen(true);
           }}
           sx={{ minWidth: "fit-content" }}
@@ -223,11 +223,10 @@ export default function Home() {
           />
           <SubmitEventDialog
             open={submitDialogOpen}
+            allowedSources={submitSources}
             onClose={() => {
               setSubmitDialogOpen(false)
-              setSubmitVariant('months');
             }}
-            variant={submitVariant}
             onSubmit={handleSubmitEvent}
             submitedEvent={submitedEvent}
             eventsData={eventsData}
