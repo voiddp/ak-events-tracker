@@ -11,12 +11,22 @@ export async function GET(request: Request) {
     // Check the request origin
     const origin = request.headers.get('origin');
 
+    const referer = request.headers.get('referer'); // Log where the request came from
+    const url = new URL(request.url);
+
+    console.log('--- Incoming Request ---');
+    console.log('Origin:', origin);
+    console.log('Referer:', referer);
+    console.log('Path:', url.pathname);
+
     // Set CORS headers if the origin is allowed
     const headers = new Headers();
     if (origin && allowedOrigins.includes(origin)) {
       headers.set('Access-Control-Allow-Origin', origin);
       headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
       headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    } else {
+      console.warn('⚠️ Blocked origin:', origin); // Log unauthorized origins
     };
 
     const { webEventsData, eventsData, eventsUpdated } = await getFromStorage([
