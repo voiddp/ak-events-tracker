@@ -1,33 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getFromStorage } from '@/lib/redis/utils';
 
-const allowedOrigins = [
-  'https://www.krooster.com',
-  'http://localhost:3000',
-];
-
-export async function GET(/* request: Request */) {
+export async function GET(request: Request) {
   try {
-/*     // Check the request origin
     const origin = request.headers.get('origin');
-
-    const referer = request.headers.get('referer'); // Log where the request came from
-    const url = new URL(request.url);
-
-    console.log('--- Incoming Request ---');
-    console.log('Origin:', origin);
-    console.log('Referer:', referer);
-    console.log('Path:', url.pathname);
-
-    // Set CORS headers if the origin is allowed
-    const headers = new Headers();
-    if (origin && allowedOrigins.includes(origin)) {
-      headers.set('Access-Control-Allow-Origin', origin);
-      headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-      headers.set('Access-Control-Allow-Headers', 'Content-Type');
-    } else {
-      console.warn('⚠️ Blocked origin:', origin); // Log unauthorized origins
-    }; */
+    console.log('/api/events request by :', origin);
 
     const { webEventsData, eventsData, eventsUpdated } = await getFromStorage([
       'webEventsData',
@@ -55,14 +32,5 @@ export async function GET(/* request: Request */) {
     );
   }
 }
-
-/* // Handle OPTIONS requests for CORS preflight
-export async function OPTIONS() {
-  const headers = new Headers();
-  headers.set('Access-Control-Allow-Origin', '*'); // Allow preflight from any origin
-  headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  headers.set('Access-Control-Allow-Headers', 'Content-Type');
-  return new NextResponse(null, { status: 204, headers });
-} */
 
 export const dynamic = 'force-dynamic';
