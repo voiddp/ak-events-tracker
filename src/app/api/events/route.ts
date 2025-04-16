@@ -10,7 +10,7 @@ const allowedOrigins = [
 export async function GET(request: NextRequest) {
   const origin = request.headers.get('origin') || '';
   if (origin !== '')
-    console.log('/api/events request by :', origin);
+    console.log(origin);
 
   let responseData: any;
   let status = 200;
