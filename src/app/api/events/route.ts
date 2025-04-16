@@ -6,9 +6,9 @@ const allowedOrigins = [
   'http://localhost:3000',
 ];
 
-export async function GET(request: Request) {
+export async function GET(/* request: Request */) {
   try {
-    // Check the request origin
+/*     // Check the request origin
     const origin = request.headers.get('origin');
 
     const referer = request.headers.get('referer'); // Log where the request came from
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
       headers.set('Access-Control-Allow-Headers', 'Content-Type');
     } else {
       console.warn('⚠️ Blocked origin:', origin); // Log unauthorized origins
-    };
+    }; */
 
     const { webEventsData, eventsData, eventsUpdated } = await getFromStorage([
       'webEventsData',
@@ -56,13 +56,13 @@ export async function GET(request: Request) {
   }
 }
 
-// Handle OPTIONS requests for CORS preflight
+/* // Handle OPTIONS requests for CORS preflight
 export async function OPTIONS() {
   const headers = new Headers();
   headers.set('Access-Control-Allow-Origin', '*'); // Allow preflight from any origin
   headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
   headers.set('Access-Control-Allow-Headers', 'Content-Type');
   return new NextResponse(null, { status: 204, headers });
-}
+} */
 
 export const dynamic = 'force-dynamic';

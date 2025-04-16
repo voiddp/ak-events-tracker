@@ -15,4 +15,15 @@
       "schedule": "0 18 * * *"
     }
   ]
+  ,"headers": [
+    {
+      "source": "/api/events",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "http://localhost:3000" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" },
+        { "key": "Vary", "value": "Origin" }
+      ]
+    }
+  ]
 }
