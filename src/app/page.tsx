@@ -40,7 +40,7 @@ export default function Home() {
   const [selectedEvent, setSelectedEvent] = useState<NamedEvent>();
   const [submitSources, setSubmitSources] = useState<(EventsSelectorProps['dataType'])[]>(["months"]);
 
-  const [eventsData, setEvents, submitEvent, , createDefaultEventsData] = useEvents();
+  const { eventsData, setEvents, submitEvent, createDefaultEventsData } = useEvents();
   const { dataDefaults, loading, error, fetchEventsFromStorage } = useEventsWebStorage();
   const [acknowledgementsOpen, setAcknowledgementsOpen] = useState(false);
   ///

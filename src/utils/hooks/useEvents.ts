@@ -6,13 +6,13 @@ import useLocalStorage from "@/utils/hooks/useLocalStorage";
 import { getNextMonthsData } from "@/lib/events/utils";
 import { WebEventsData } from "@/lib/prtsWiki/types";
 
-function useEvents(): [
-    EventsData,
-    (newEventsData: EventsData) => void,
-    (submit: SubmitEventProps) => null | [string, number][],
-    (months?: number) => EventsData,
-    (webEvents: WebEventsData) => EventsData,
-] {
+function useEvents(): {
+    eventsData: EventsData,
+    setEvents: (newEventsData: EventsData) => void,
+    submitEvent: (submit: SubmitEventProps) => null | [string, number][],
+    getNextMonthsData: (months?: number) => EventsData,
+    createDefaultEventsData: (webEvents: WebEventsData) => EventsData,
+} {
     const [eventsData, _setEvents] = useLocalStorage<EventsData>("eventsTracker", {});
     const [settings, setSettings] = useSettings();
 
@@ -146,7 +146,7 @@ function useEvents(): [
     const clientCreateDefaultEventsData = (webEvents: WebEventsData): EventsData => {
         return createDefaultEventsData(webEvents) ?? {};
     }
-    return [_eventsData, setEvents, submitEvent, getNextMonthsData,
-        clientCreateDefaultEventsData]
+    return {eventsData:_eventsData, setEvents, submitEvent, getNextMonthsData,
+        createDefaultEventsData: clientCreateDefaultEventsData}
 }
 export default useEvents;

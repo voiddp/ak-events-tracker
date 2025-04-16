@@ -1,7 +1,6 @@
 import { AK_CALENDAR, AK_DAILY, AK_WEEKLY } from "@/utils/ItemUtils";
 import { EventsData, NamedEvent, Event } from "./types";
 import { WebEventsData, WebEvent } from "../prtsWiki/types";
-import { getDateString } from "../prtsWiki/utils";
 
 export const createEmptyEvent = () => {
     return { index: -1, materials: {} } as Event;
@@ -200,4 +199,14 @@ export const getEventsFromWebEvents = (webEvents: WebEventsData): EventsData => 
             }
             return acc
         }, {} as EventsData)
+}
+
+export const getDateString = (date: Date) => {
+    if (!date) return "";
+    const _date = new Date(date);
+    const day = String(_date.getDate()).padStart(2, '0');
+    const month = String(_date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const year = _date.getFullYear();
+
+    return `${day}-${month}-${year}`;
 }

@@ -150,7 +150,7 @@ const SubmitEventDialog = (props: Props) => {
     };
 
     //stale data hooks 
-    const [, , , getNextMonthsData] = useEvents();
+    const { getNextMonthsData } = useEvents();
     const { dataDefaults } = useEventsWebStorage();
 
     const getSourceData = (source: string): EventsData => {

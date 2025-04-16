@@ -10,7 +10,8 @@ import SubmitEventDialog from '@/components/events//SubmitEventDialog';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import { formatNumber, standardItemsSort, getItemBaseStyling } from '@/utils/ItemUtils'
 import { Close } from "@mui/icons-material";
-import { createEmptyWebEvent, getDateString } from '@/lib/prtsWiki/utils';
+import { createEmptyWebEvent } from '@/lib/prtsWiki/utils';
+import { getDateString } from '@/lib/events/utils';
 
 
 interface Props {
