@@ -1,11 +1,21 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getFromStorage } from '@/lib/redis/utils';
 
-export async function GET(request: Request) {
-  try {
-    const origin = request.headers.get('origin');
+const allowedOrigins = [
+  'https://krooster.com',
+  'https://www.krooster.com',
+  'http://localhost:3000',
+];
+
+export async function GET(request: NextRequest) {
+  const origin = request.headers.get('origin') || '';
+  if (origin !== '')
     console.log('/api/events request by :', origin);
 
+  let responseData: any;
+  let status = 200;
+
+  try {
     const { webEventsData, eventsData, eventsUpdated } = await getFromStorage([
       'webEventsData',
       'eventsData',
@@ -13,24 +23,49 @@ export async function GET(request: Request) {
     ]);
 
     if (!webEventsData || !eventsData) {
-      return NextResponse.json(
-        { error: 'No data available' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      webEventsData,
-      eventsData,
-      eventsUpdated
-    });
+      responseData = { error: 'No data available' };
+      status = 404;
+    } else
+      responseData = {
+        webEventsData,
+        eventsData,
+        eventsUpdated
+      };
   } catch (error) {
     console.error('Failed to fetch web events:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch data' },
-      { status: 500 }
-    );
+    responseData = { error: 'Failed to fetch data' };
+    status = 500;
+
   }
+  const response = NextResponse.json(responseData, { status });
+
+  // Set CORS headers
+  if (allowedOrigins.includes(origin)) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+  }
+
+  response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  response.headers.set('Vary', 'Origin');
+
+  return response;
+
+}
+
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') || '';
+
+  const response = new NextResponse(null, { status: 204 });
+
+  if (allowedOrigins.includes(origin)) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+  }
+
+  response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  response.headers.set('Vary', 'Origin');
+
+  return response;
 }
 
 export const dynamic = 'force-dynamic';
