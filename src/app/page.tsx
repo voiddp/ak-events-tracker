@@ -179,6 +179,7 @@ export default function Home() {
             eventsData={eventsData}
             onChange={setEvents}
             submitEvent={handleSubmitEvent}
+            trackerDefaults={trackerDefaults}
           >
             <List>
               <ListItem>Input future events, using sidebar menu options, import, or manually.</ListItem>

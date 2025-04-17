@@ -34,7 +34,7 @@ import itemsJson from '../data/items.json';
 import ItemBase from './ItemBase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { TransitionProps } from '@mui/material/transitions';
-import { EventsData, NamedEvent, SubmitEventProps } from '@/lib/events/types';
+import { EventsData, NamedEvent, SubmitEventProps, TrackerDefaults } from '@/lib/events/types';
 import InputIcon from '@mui/icons-material/Input';
 import ImportExportIcon from '@mui/icons-material/ImportExport';
 import AddIcon from "@mui/icons-material/Add";
@@ -67,10 +67,11 @@ interface Props {
     onChange: (data: EventsData) => void;
     submitEvent: (submit: SubmitEventProps) => void,
     children?: React.ReactNode;
+    trackerDefaults: TrackerDefaults;
 }
 
 const EventsTrackerMain = React.memo((props: Props) => {
-    const { forceUpdate, forceUpdateCallback, open, onClose, eventsData, onChange, submitEvent, children } = props;
+    const { forceUpdate, forceUpdateCallback, open, onClose, eventsData, onChange, submitEvent, children, trackerDefaults } = props;
 
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -837,12 +838,13 @@ const EventsTrackerMain = React.memo((props: Props) => {
             <SubmitEventDialog
                 open={submitDialogOpen}
                 onClose={() => setSubmitDialogOpen(false)}
-                allowedSources={["current", "events", "defaults", "months", "web"]}
+                allowedSources={["current", "events", "defaults", "months", "currentWeb"]}
                 onSubmit={handleSubmitEvent}
                 submitedEvent={submitedEvent}
                 eventsData={eventsData}
                 selectedEvent={selectedEvent}
                 onSelectorChange={setSelectedEvent}
+                trackerDefaults={trackerDefaults}
             />
         </>
     );
