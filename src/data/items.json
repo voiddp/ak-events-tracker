@@ -483,7 +483,7 @@
     "cnName": "源岩",
     "iconId": "MTL_SL_G1",
     "tier": 1,
-    "sortId": 100033
+    "sortId": 100036
   },
   "30012": {
     "id": "30012",
@@ -491,7 +491,7 @@
     "cnName": "固源岩",
     "iconId": "MTL_SL_G2",
     "tier": 2,
-    "sortId": 100032,
+    "sortId": 100035,
     "ingredients": [
       {
         "id": "4001",
@@ -510,7 +510,7 @@
     "cnName": "固源岩组",
     "iconId": "MTL_SL_G3",
     "tier": 3,
-    "sortId": 100031,
+    "sortId": 100034,
     "ingredients": [
       {
         "id": "4001",
@@ -529,7 +529,7 @@
     "cnName": "提纯源岩",
     "iconId": "MTL_SL_G4",
     "tier": 4,
-    "sortId": 100030,
+    "sortId": 100033,
     "ingredients": [
       {
         "id": "4001",
@@ -548,7 +548,7 @@
     "cnName": "代糖",
     "iconId": "MTL_SL_STRG1",
     "tier": 1,
-    "sortId": 100045
+    "sortId": 100048
   },
   "30022": {
     "id": "30022",
@@ -556,7 +556,7 @@
     "cnName": "糖",
     "iconId": "MTL_SL_STRG2",
     "tier": 2,
-    "sortId": 100044,
+    "sortId": 100047,
     "ingredients": [
       {
         "id": "4001",
@@ -575,7 +575,7 @@
     "cnName": "糖组",
     "iconId": "MTL_SL_STRG3",
     "tier": 3,
-    "sortId": 100043,
+    "sortId": 100046,
     "ingredients": [
       {
         "id": "4001",
@@ -594,7 +594,7 @@
     "cnName": "糖聚块",
     "iconId": "MTL_SL_STRG4",
     "tier": 4,
-    "sortId": 100042,
+    "sortId": 100045,
     "ingredients": [
       {
         "id": "4001",
@@ -621,7 +621,7 @@
     "cnName": "酯原料",
     "iconId": "MTL_SL_RUSH1",
     "tier": 1,
-    "sortId": 100041
+    "sortId": 100044
   },
   "30032": {
     "id": "30032",
@@ -629,7 +629,7 @@
     "cnName": "聚酸酯",
     "iconId": "MTL_SL_RUSH2",
     "tier": 2,
-    "sortId": 100040,
+    "sortId": 100043,
     "ingredients": [
       {
         "id": "4001",
@@ -648,7 +648,7 @@
     "cnName": "聚酸酯组",
     "iconId": "MTL_SL_RUSH3",
     "tier": 3,
-    "sortId": 100039,
+    "sortId": 100042,
     "ingredients": [
       {
         "id": "4001",
@@ -667,7 +667,7 @@
     "cnName": "聚酸酯块",
     "iconId": "MTL_SL_RUSH4",
     "tier": 4,
-    "sortId": 100038,
+    "sortId": 100041,
     "ingredients": [
       {
         "id": "4001",
@@ -694,7 +694,7 @@
     "cnName": "异铁碎片",
     "iconId": "MTL_SL_IRON1",
     "tier": 1,
-    "sortId": 100049
+    "sortId": 100052
   },
   "30042": {
     "id": "30042",
@@ -702,7 +702,7 @@
     "cnName": "异铁",
     "iconId": "MTL_SL_IRON2",
     "tier": 2,
-    "sortId": 100048,
+    "sortId": 100051,
     "ingredients": [
       {
         "id": "4001",
@@ -721,7 +721,7 @@
     "cnName": "异铁组",
     "iconId": "MTL_SL_IRON3",
     "tier": 3,
-    "sortId": 100047,
+    "sortId": 100050,
     "ingredients": [
       {
         "id": "4001",
@@ -740,7 +740,7 @@
     "cnName": "异铁块",
     "iconId": "MTL_SL_IRON4",
     "tier": 4,
-    "sortId": 100046,
+    "sortId": 100049,
     "ingredients": [
       {
         "id": "4001",
@@ -767,7 +767,7 @@
     "cnName": "双酮",
     "iconId": "MTL_SL_KETONE1",
     "tier": 1,
-    "sortId": 100053
+    "sortId": 100056
   },
   "30052": {
     "id": "30052",
@@ -775,7 +775,7 @@
     "cnName": "酮凝集",
     "iconId": "MTL_SL_KETONE2",
     "tier": 2,
-    "sortId": 100052,
+    "sortId": 100055,
     "ingredients": [
       {
         "id": "4001",
@@ -794,7 +794,7 @@
     "cnName": "酮凝集组",
     "iconId": "MTL_SL_KETONE3",
     "tier": 3,
-    "sortId": 100051,
+    "sortId": 100054,
     "ingredients": [
       {
         "id": "4001",
@@ -813,7 +813,7 @@
     "cnName": "酮阵列",
     "iconId": "MTL_SL_KETONE4",
     "tier": 4,
-    "sortId": 100050,
+    "sortId": 100053,
     "ingredients": [
       {
         "id": "4001",
@@ -840,7 +840,7 @@
     "cnName": "破损装置",
     "iconId": "MTL_SL_BOSS1",
     "tier": 1,
-    "sortId": 100037
+    "sortId": 100040
   },
   "30062": {
     "id": "30062",
@@ -848,7 +848,7 @@
     "cnName": "装置",
     "iconId": "MTL_SL_BOSS2",
     "tier": 2,
-    "sortId": 100036,
+    "sortId": 100039,
     "ingredients": [
       {
         "id": "4001",
@@ -867,7 +867,7 @@
     "cnName": "全新装置",
     "iconId": "MTL_SL_BOSS3",
     "tier": 3,
-    "sortId": 100035,
+    "sortId": 100038,
     "ingredients": [
       {
         "id": "4001",
@@ -886,7 +886,7 @@
     "cnName": "改量装置",
     "iconId": "MTL_SL_BOSS4",
     "tier": 4,
-    "sortId": 100034,
+    "sortId": 100037,
     "ingredients": [
       {
         "id": "4001",
@@ -913,7 +913,7 @@
     "cnName": "扭转醇",
     "iconId": "MTL_SL_ALCOHOL1",
     "tier": 3,
-    "sortId": 100023
+    "sortId": 100026
   },
   "30074": {
     "id": "30074",
@@ -921,7 +921,7 @@
     "cnName": "白马醇",
     "iconId": "MTL_SL_ALCOHOL2",
     "tier": 4,
-    "sortId": 100022,
+    "sortId": 100025,
     "ingredients": [
       {
         "id": "4001",
@@ -948,7 +948,7 @@
     "cnName": "轻锰矿",
     "iconId": "MTL_SL_MANGANESE1",
     "tier": 3,
-    "sortId": 100025
+    "sortId": 100028
   },
   "30084": {
     "id": "30084",
@@ -956,7 +956,7 @@
     "cnName": "三水锰矿",
     "iconId": "MTL_SL_MANGANESE2",
     "tier": 4,
-    "sortId": 100024,
+    "sortId": 100027,
     "ingredients": [
       {
         "id": "4001",
@@ -983,7 +983,7 @@
     "cnName": "研磨石",
     "iconId": "MTL_SL_PG1",
     "tier": 3,
-    "sortId": 100027
+    "sortId": 100030
   },
   "30094": {
     "id": "30094",
@@ -991,7 +991,7 @@
     "cnName": "五水研磨石",
     "iconId": "MTL_SL_PG2",
     "tier": 4,
-    "sortId": 100026,
+    "sortId": 100029,
     "ingredients": [
       {
         "id": "4001",
@@ -1018,7 +1018,7 @@
     "cnName": "RMA70-12",
     "iconId": "MTL_SL_RMA7012",
     "tier": 3,
-    "sortId": 100029
+    "sortId": 100032
   },
   "30104": {
     "id": "30104",
@@ -1026,7 +1026,7 @@
     "cnName": "RMA70-24",
     "iconId": "MTL_SL_RMA7024",
     "tier": 4,
-    "sortId": 100028,
+    "sortId": 100031,
     "ingredients": [
       {
         "id": "4001",
@@ -1053,7 +1053,7 @@
     "cnName": "聚合剂",
     "iconId": "MTL_SL_PP",
     "tier": 5,
-    "sortId": 100005,
+    "sortId": 100006,
     "ingredients": [
       {
         "id": "4001",
@@ -1080,7 +1080,7 @@
     "cnName": "双极纳米片",
     "iconId": "MTL_SL_BN",
     "tier": 5,
-    "sortId": 100004,
+    "sortId": 100005,
     "ingredients": [
       {
         "id": "4001",
@@ -1103,7 +1103,7 @@
     "cnName": "D32钢",
     "iconId": "MTL_SL_DS",
     "tier": 5,
-    "sortId": 100003,
+    "sortId": 100004,
     "ingredients": [
       {
         "id": "4001",
@@ -1130,7 +1130,7 @@
     "cnName": "晶体电子单元",
     "iconId": "MTL_SL_OEU",
     "tier": 5,
-    "sortId": 100002,
+    "sortId": 100003,
     "ingredients": [
       {
         "id": "4001",
@@ -1157,7 +1157,7 @@
     "cnName": "烧结核凝晶",
     "iconId": "MTL_SL_SHJ",
     "tier": 5,
-    "sortId": 100001,
+    "sortId": 100002,
     "ingredients": [
       {
         "id": "4001",
@@ -1178,13 +1178,40 @@
     ],
     "yield": 1
   },
+  "30165": {
+    "id": "30165",
+    "name": "重相位对映体",
+    "cnName": "重相位对映体",
+    "iconId": "MTL_SL_DYT",
+    "tier": 5,
+    "sortId": 100001,
+    "ingredients": [
+      {
+        "id": "4001",
+        "quantity": 400
+      },
+      {
+        "id": "31094",
+        "quantity": 2
+      },
+      {
+        "id": "31084",
+        "quantity": 1
+      },
+      {
+        "id": "31074",
+        "quantity": 1
+      }
+    ],
+    "yield": 1
+  },
   "31013": {
     "id": "31013",
     "name": "Coagulating Gel",
     "cnName": "凝胶",
     "iconId": "MTL_SL_PGEL3",
     "tier": 3,
-    "sortId": 100021
+    "sortId": 100024
   },
   "31014": {
     "id": "31014",
@@ -1192,7 +1219,7 @@
     "cnName": "聚合凝胶",
     "iconId": "MTL_SL_PGEL4",
     "tier": 4,
-    "sortId": 100020,
+    "sortId": 100023,
     "ingredients": [
       {
         "id": "4001",
@@ -1219,7 +1246,7 @@
     "cnName": "炽合金",
     "iconId": "MTL_SL_IAM3",
     "tier": 3,
-    "sortId": 100019
+    "sortId": 100022
   },
   "31024": {
     "id": "31024",
@@ -1227,7 +1254,7 @@
     "cnName": "炽合金块",
     "iconId": "MTL_SL_IAM4",
     "tier": 4,
-    "sortId": 100018,
+    "sortId": 100021,
     "ingredients": [
       {
         "id": "4001",
@@ -1254,7 +1281,7 @@
     "cnName": "晶体元件",
     "iconId": "MTL_SL_OC3",
     "tier": 3,
-    "sortId": 100017
+    "sortId": 100020
   },
   "31034": {
     "id": "31034",
@@ -1262,7 +1289,7 @@
     "cnName": "晶体电路",
     "iconId": "MTL_SL_OC4",
     "tier": 4,
-    "sortId": 100016,
+    "sortId": 100019,
     "ingredients": [
       {
         "id": "4001",
@@ -1289,7 +1316,7 @@
     "cnName": "半自然溶剂",
     "iconId": "MTL_SL_SS",
     "tier": 3,
-    "sortId": 100015
+    "sortId": 100018
   },
   "31044": {
     "id": "31044",
@@ -1297,7 +1324,7 @@
     "cnName": "精炼溶剂",
     "iconId": "MTL_SL_RS",
     "tier": 4,
-    "sortId": 100014,
+    "sortId": 100017,
     "ingredients": [
       {
         "id": "4001",
@@ -1324,7 +1351,7 @@
     "cnName": "化合切削液",
     "iconId": "MTL_SL_CCF",
     "tier": 3,
-    "sortId": 100013
+    "sortId": 100016
   },
   "31054": {
     "id": "31054",
@@ -1332,7 +1359,7 @@
     "cnName": "切削原液",
     "iconId": "MTL_SL_PLCF",
     "tier": 4,
-    "sortId": 100012,
+    "sortId": 100015,
     "ingredients": [
       {
         "id": "4001",
@@ -1359,7 +1386,7 @@
     "cnName": "转质盐组",
     "iconId": "MTL_SL_ZY",
     "tier": 3,
-    "sortId": 100011
+    "sortId": 100014
   },
   "31064": {
     "id": "31064",
@@ -1367,7 +1394,7 @@
     "cnName": "转质盐聚块",
     "iconId": "MTL_SL_ZYK",
     "tier": 4,
-    "sortId": 100010,
+    "sortId": 100013,
     "ingredients": [
       {
         "id": "4001",
@@ -1394,7 +1421,7 @@
     "cnName": "褐素纤维",
     "iconId": "MTL_SL_XW",
     "tier": 3,
-    "sortId": 100009
+    "sortId": 100012
   },
   "31074": {
     "id": "31074",
@@ -1402,7 +1429,7 @@
     "cnName": "固化纤维板",
     "iconId": "MTL_SL_XWB",
     "tier": 4,
-    "sortId": 100008,
+    "sortId": 100011,
     "ingredients": [
       {
         "id": "4001",
@@ -1429,7 +1456,7 @@
     "cnName": "环烃聚质",
     "iconId": "MTL_SL_HT",
     "tier": 3,
-    "sortId": 100007
+    "sortId": 100010
   },
   "31084": {
     "id": "31084",
@@ -1437,7 +1464,7 @@
     "cnName": "环烃预制体",
     "iconId": "MTL_SL_HTT",
     "tier": 4,
-    "sortId": 100006,
+    "sortId": 100009,
     "ingredients": [
       {
         "id": "4001",
@@ -1453,6 +1480,41 @@
       },
       {
         "id": "31063",
+        "quantity": 1
+      }
+    ],
+    "yield": 1
+  },
+  "31093": {
+    "id": "31093",
+    "name": "类凝结核",
+    "cnName": "类凝结核",
+    "iconId": "MTL_SL_JH",
+    "tier": 3,
+    "sortId": 100008
+  },
+  "31094": {
+    "id": "31094",
+    "name": "手性屈光体",
+    "cnName": "手性屈光体",
+    "iconId": "MTL_SL_QGT",
+    "tier": 4,
+    "sortId": 100007,
+    "ingredients": [
+      {
+        "id": "4001",
+        "quantity": 300
+      },
+      {
+        "id": "31093",
+        "quantity": 1
+      },
+      {
+        "id": "31083",
+        "quantity": 1
+      },
+      {
+        "id": "30023",
         "quantity": 1
       }
     ],
