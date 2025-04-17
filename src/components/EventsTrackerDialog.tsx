@@ -37,7 +37,7 @@ import itemsJson from '../data/items.json';
 import ItemBase from './ItemBase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { TransitionProps } from '@mui/material/transitions';
-import { EventsData, SubmitEventProps, SubmitSource } from "@/lib/events/types";
+import { EventsData, SubmitEventProps, SubmitSource, TrackerDefaults } from "@/lib/events/types";
 import InputIcon from '@mui/icons-material/Input';
 import ImportExportIcon from '@mui/icons-material/ImportExport';
 import AddIcon from "@mui/icons-material/Add";
@@ -72,10 +72,11 @@ interface Props {
     onChange: (data: EventsData) => void;
     openSummary: (state: boolean) => void;
     submitEvent: (submit: SubmitEventProps) => void;
+    trackerDefaults: TrackerDefaults;
 }
 
 const EventsTrackerDialog = React.memo((props: Props) => {
-    const { open, onClose, eventsData, onChange, openSummary, submitEvent } = props;
+    const { open, onClose, eventsData, onChange, openSummary, submitEvent, trackerDefaults } = props;
 
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -104,8 +105,6 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     const [selectedEvent, setSelectedEvent] = useState(createEmptyNamedEvent());
     const [submitSources, setSubmitSources] = useState<SubmitSource[]>(["defaults", "defaultsWeb", "months"]);
 
-    const { trackerDefaults, loading, fetchDefaults } = useEventsDefaults();
-
     const SUPPORTED_IMPORT_EXPORT_TYPES: DataShareInfo[] = [
         {
             format: "CSV",
@@ -129,7 +128,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
             </ul>
             <h3>Builder</h3>
             <ul>
-                <li>Used to put income &ldquo;From&ldquo; source event on top, into target event at bottom.</li>
+                <li>Used to put income `From` source event on top, into target event at bottom.</li>
                 <li>Action switch to pick what to do with target event: either modify-merge mats, or directly replace</li>
                 <li>Sources of data can be switched to pick from defaults, months, or current events list</li>
                 <li>If called with button on the event will let to fully or partially move materials from event to Depot</li>
@@ -145,12 +144,6 @@ const EventsTrackerDialog = React.memo((props: Props) => {
 
     const EXPORT_IMPORT_INFORMATIOn =
         <Typography variant='caption'>Supports export and import from other Arknights community data sources (like tracking sheets). Data should be compiled into the presented import formats.</Typography>;
-
-    useEffect(() => {
-        //only try to fetch defaults if tracker was opened.
-        if (open)
-            fetchDefaults();
-    }, [open]);
 
     useEffect(() => {
         if (open) {
@@ -593,7 +586,6 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 setSubmitSources(['defaults', 'months', 'events', 'defaultsWeb'])
                 setSubmitDialogOpen(true);
             }}
-            disabled={loading}
             sx={{ minWidth: "fit-content", whiteSpace: "nowrap" }}
         >Builder
         </Button>)
@@ -604,7 +596,6 @@ const EventsTrackerDialog = React.memo((props: Props) => {
             variant="contained"
             size="small"
             onClick={handleSetEventsFromDefaults}
-            disabled={loading}
             sx={{ minWidth: "fit-content", whiteSpace: "nowrap" }}
         >Defaults
         </Button>)

@@ -215,6 +215,7 @@ export default function Home() {
             }}
             openSummary={setSummaryOpen}
             submitEvent={handleSubmitEvent}
+            trackerDefaults={trackerDefaults}
           />
           <WebEventsDialog
             open={eventsOpen}
