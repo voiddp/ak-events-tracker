@@ -14,7 +14,7 @@ interface Props {
     allowedSources?: (EventsSelectorProps['dataType'] | 'current' | 'currentWeb')[];
     onSubmit: (submit: SubmitEventProps) => void;
     eventsData: EventsData;
-    trackerDefaults: TrackerDefaults;
+    trackerDefaults?: TrackerDefaults;
     submitedEvent: NamedEvent | WebEvent;
     selectedEvent?: NamedEvent;
     onSelectorChange?: (namedEvent: NamedEvent) => void
@@ -154,8 +154,8 @@ const SubmitEventDialog = (props: Props) => {
         switch (source) {
             case 'months': return getNextMonthsData();
             case 'events': return eventsData;
-            case 'defaults': return trackerDefaults.eventsData ?? {};
-            case 'defaultsWeb': return getEventsFromWebEvents(trackerDefaults.webEventsData ?? {});
+            case 'defaults': return trackerDefaults?.eventsData ?? {};
+            case 'defaultsWeb': return getEventsFromWebEvents(trackerDefaults?.webEventsData ?? {});
             default: return eventsData;
         }
     }
