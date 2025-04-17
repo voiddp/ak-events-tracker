@@ -1,20 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import useLocalStorage from './useLocalStorage';
 import { WebEventsData } from '@/lib/prtsWiki/types';
-import { EventsData } from '@/lib/events/types';
+import { EventsData, TrackerDefaults } from '@/lib/events/types';
 
-interface DefaultEvents {
-  lastUpdated?: string;
-  webEventsData?: WebEventsData;
-  eventsData?: EventsData;
-}
-
-export function useEventsWebStorage() {
-  const [dataDefaults, setDataDefaults] = useState<DefaultEvents>({});
+export function useEventsDefaults() {
+  const [dataDefaults, setDataDefaults] = useState<TrackerDefaults>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [_dataDefaults, setDefaults] = useLocalStorage<DefaultEvents>("defaultEvents", {});
+  const [trackerDefaults, setDefaults] = useLocalStorage<TrackerDefaults>("trackerDefaults", {});
 
   const putDefaults = (updateTime: any, webEventsData: any, eventsData: any,) => {
 
@@ -36,9 +30,8 @@ export function useEventsWebStorage() {
         eventsData,
         eventsUpdated
       } = await response.json();
-      /* setDataDefaults({ webEventsData, eventsData });
-      setLastUpdated(eventsUpdated); */
       putDefaults(eventsUpdated, webEventsData, eventsData);
+      setDataDefaults({ lastUpdated: eventsUpdated, webEventsData, eventsData });
       if (returnData) return { data: { webEventsData, eventsData } }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -53,14 +46,13 @@ export function useEventsWebStorage() {
         //only pull defaults if no-data or data is one+ day old
         const dayAgo = new Date();
         dayAgo.setDate(dayAgo.getDate() - 1);
-        if (_dataDefaults.lastUpdated && new Date(_dataDefaults.lastUpdated) > dayAgo) {
-          setDataDefaults(_dataDefaults)
+        if (trackerDefaults.lastUpdated && new Date(trackerDefaults.lastUpdated) > dayAgo) {
+          setDataDefaults(trackerDefaults)
           return;
         }
 
         console.log("Fetching defaults from storage");
         await fetchEventsFromStorage();
-
 
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -72,5 +64,5 @@ export function useEventsWebStorage() {
   }, []
   );
 
-  return { dataDefaults, loading, error, fetchEventsFromStorage };
+  return { trackerDefaults: dataDefaults, loading, error, fetchDefaults: fetchEventsFromStorage, };
 }

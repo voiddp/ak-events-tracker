@@ -1,6 +1,8 @@
 import itemsJson from '../data/items.json';
 import { Item } from '@/types/item';
 
+export const EXP = ["2001", "2002", "2003", "2004"];
+
 export const MAX_SAFE_INTEGER = 2147483647;
 
 export const AK_CALENDAR = {
@@ -42,7 +44,10 @@ export const AK_WEEKLY = {
     "mod_unlock_token": 1
 }
 
-export const getItemBaseStyling = (variant: "tracker" | "summary" | "builder" | "selector" | "submit" | number, smaller: boolean = false) => {
+export const getItemBaseStyling = (variant: "tracker"
+    | "summary" | "summary_craft" | "summary_totals"
+    | "builder" | "selector" | "submit"
+    | number, smaller: boolean = false) => {
 
     let size: number;
     let textAdjust = 12;
@@ -63,6 +68,15 @@ export const getItemBaseStyling = (variant: "tracker" | "summary" | "builder" | 
             break;
         case "selector": {
             size = !smaller ? 32 : 28;
+            textAdjust = 10;
+        }
+            break;
+        case "summary_craft": {
+            size = (!smaller ? 64 : 56) * 0.75;
+        }
+            break;
+        case "summary_totals": {
+            size = (!smaller ? 64 : 56) * 0.6;
             textAdjust = 10;
         }
             break;
@@ -98,8 +112,8 @@ export const getFarmCSS = (variant: "round" | "box", highlighted: boolean = true
     let radius = variant === "round" ? "20px" : "6px";
 
     return ({
-            backgroundColor: color,
-            borderRadius: radius,
+        backgroundColor: color,
+        borderRadius: radius,
     })
 
 };
@@ -122,18 +136,16 @@ const summarySortId: [string, number][] = [
     ["Record", 5],
 ];
 
-export const customItemsSort = (idA: string, idB: string, lowTierFirst: boolean = false, variant?: string) => {
-    const customSortId = summarySortId; //change for variants later
+export const farmItemsSort = (idA: string, idB: string) => {
+    const customSortId = summarySortId;
 
     const itemA = itemsJson[idA as keyof typeof itemsJson];
     const itemB = itemsJson[idB as keyof typeof itemsJson];
     const itemAlocalSortID = customSortId.find(keyword => itemA.name.includes(keyword[0]))?.[1] ?? 0;
     const itemBlocalSortID = customSortId.find(keyword => itemB.name.includes(keyword[0]))?.[1] ?? 0;
     return (
-        (itemAlocalSortID - itemBlocalSortID) ||
-        (!lowTierFirst ? (itemB.tier - itemA.tier) : (itemA.tier - itemB.tier)) ||
-        (itemB.sortId - itemA.sortId)
-    )
+        (itemAlocalSortID - itemBlocalSortID)
+    );
 };
 
 export const standardItemsSort = (idA: string, idB: string, reverse: boolean = false) => {
@@ -144,6 +156,16 @@ export const standardItemsSort = (idA: string, idB: string, reverse: boolean = f
         : sortIdB - sortIdA)
 };
 
+export const customItemsSort = (idA: string, idB: string, lowTierFirst: boolean = false, variant?: string) => {
+    const itemA = itemsJson[idA as keyof typeof itemsJson];
+    const itemB = itemsJson[idB as keyof typeof itemsJson];
+    return (
+        (farmItemsSort(idA, idB)) ||
+        (!lowTierFirst ? (itemB.tier - itemA.tier) : (itemA.tier - itemB.tier)) ||
+        (standardItemsSort(idA, idB, true))
+    )
+};
+
 export const formatNumber = (num: number) => {
     return num < 1000
         ? num
@@ -151,7 +173,6 @@ export const formatNumber = (num: number) => {
             ? `${num % 1000 === 0 ? `${num / 1000}` : (num / 1000).toFixed(1)}K`
             : `${num % 1000000 === 0 ? `${num / 1000000}` : (num / 1000000).toFixed(2)}M`;
 };
-
 
 export const getWidthFromValue = (value: string | number, defaultSizeInCh: string = "4ch"): string => {
 

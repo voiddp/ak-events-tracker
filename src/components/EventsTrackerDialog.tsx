@@ -26,7 +26,10 @@ import {
     InputAdornment,
     Alert,
     Snackbar,
-    DialogActions
+    DialogActions,
+    Link,
+    ListItem,
+    List
 } from '@mui/material';
 import Grid from "@mui/material/Grid2";
 import { ContentCopy, DragIndicator, FileUpload, InfoOutlined } from '@mui/icons-material';
@@ -34,7 +37,7 @@ import itemsJson from '../data/items.json';
 import ItemBase from './ItemBase';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { TransitionProps } from '@mui/material/transitions';
-import { EventsData, SubmitEventProps } from "@/lib/events/types";
+import { EventsData, SubmitEventProps, SubmitSource } from "@/lib/events/types";
 import InputIcon from '@mui/icons-material/Input';
 import ImportExportIcon from '@mui/icons-material/ImportExport';
 import AddIcon from "@mui/icons-material/Add";
@@ -49,8 +52,9 @@ import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import SubmitEventDialog from '@/components/events/SubmitEventDialog';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isMaterial, getDefaultEventMaterials, getFarmCSS } from '@/utils/ItemUtils'
-import { createEmptyEvent, createEmptyNamedEvent, reindexEvents } from "@/lib/events/utils"
+import { createEmptyEvent, createEmptyNamedEvent, getDateString, reindexEvents } from "@/lib/events/utils"
 import ItemEditBox from '@/components/events/ItemEditBox';
+import { useEventsDefaults } from '@/utils/hooks/useEventsDefaults';
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
@@ -98,6 +102,9 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     const [submitDialogOpen, setSubmitDialogOpen] = useState<boolean>(false);
     const [submitedEvent, setSubmitedEvent] = useState(createEmptyNamedEvent());
     const [selectedEvent, setSelectedEvent] = useState(createEmptyNamedEvent());
+    const [submitSources, setSubmitSources] = useState<SubmitSource[]>(["defaults", "defaultsWeb", "months"]);
+
+    const { trackerDefaults, loading, fetchDefaults } = useEventsDefaults();
 
     const SUPPORTED_IMPORT_EXPORT_TYPES: DataShareInfo[] = [
         {
@@ -119,18 +126,37 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 <li>Events can be added manually by creating a new event, expanding it, and entering material amounts.</li>
                 <li>Up to three farmable Tier 3 materials per event can be selected by clicking on the item images within an expanded event.</li>
                 <li>Events can be reordered by dragging and dropping them in the event list.</li>
-                <li>Materials from an event can be fully or partially added to the depot using the `&quot;`Add to Depot`&quot;` button on the event.</li>
             </ul>
+            <h3>Builder</h3>
             <ul>
-                <li>Supports export and import from other Arknights community data sources (like tracking sheets). Data should be compiled into the presented import formats.</li>
+                <li>Used to put income &ldquo;From&ldquo; source event on top, into target event at bottom.</li>
+                <li>Action switch to pick what to do with target event: either modify-merge mats, or directly replace</li>
+                <li>Sources of data can be switched to pick from defaults, months, or current events list</li>
+                <li>If called with button on the event will let to fully or partially move materials from event to Depot</li>
+            </ul>
+            <h3>Defaults: </h3>
+            {trackerDefaults.lastUpdated ? `Updated ${getDateString(trackerDefaults.lastUpdated)}` : ""}
+            <ul>
+                <li>Provided by <Link href="https://ak-events-tracker.vercel.app/" underline="always">ak-events-tracker</Link>.</li>
+                <li>Data from CN prts.wiki events, adjusted by six months, is combined with monthly estimates and sorted by date. These are defaults used by the tracker.</li>
+                <li>The default order can be used as-is or adjusted as global updates occur.</li>
             </ul>
         </>;
+
+    const EXPORT_IMPORT_INFORMATIOn =
+        <Typography variant='caption'>Supports export and import from other Arknights community data sources (like tracking sheets). Data should be compiled into the presented import formats.</Typography>;
+
+    useEffect(() => {
+        //only try to fetch defaults if tracker was opened.
+        if (open)
+            fetchDefaults();
+    }, [open]);
 
     useEffect(() => {
         if (open) {
             setRawEvents(eventsData ?? {});
         }
-    }, [open, eventsData])
+    }, [open, eventsData]);
 
     const handleToggleChange = (event: React.MouseEvent<HTMLElement>, nextTab: string) => {
         let toTab = nextTab;
@@ -155,6 +181,9 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     const handleClose = () => {
         setTab('input');
         onChange(rawEvents);
+        setRawName("");
+        setExpandedAccordtition(false);
+        setFocusedId(null);
 
         cleanImportExport();
         onClose();
@@ -278,19 +307,13 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     );
 
     const handleSubmitEvent = useCallback((props: SubmitEventProps) => {
-        /* const { materialsToEvent, action } = props;
-        if (!materialsToEvent) {
-            handleDeleteEvent(submitedEvent.name);
-        } else {
-            setRawEvents((prev) => {
-                const _next = { ...prev };
-                _next[submitedEvent.name].materials = materialsToEvent;
-                return _next;
-            });
-        } */
         setSubmitedEvent({ ...createEmptyNamedEvent() });
         submitEvent(props);
-    }, [submitEvent, setSubmitedEvent, /* submitedEvent.name, handleDeleteEvent, setRawEvents, */]);
+
+        setExpandedAccordtition(false);
+        setFocusedId(null);
+
+    }, [submitEvent, setSubmitedEvent]);
 
     const defaultEventMaterials = useMemo(() =>
         getDefaultEventMaterials(itemsJson),
@@ -329,7 +352,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                             <Stack direction="row" alignItems="center" flexWrap="wrap" flexGrow={1} justifyContent={{ xs: "center", md: "flex-end" }}>
                                 <TextField size="small" value={newEventNames[name] ?? name}
                                     sx={{
-                                        mr: {xs: "unset", md: "auto"},
+                                        mr: { xs: "unset", md: "auto" },
                                         mb: 0.5,
                                         width: { xs: '100%', md: getWidthFromValue(newEventNames[name] ?? name, '20ch') }
                                     }}
@@ -354,7 +377,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                     ))}
                             </Stack>
                         </Stack>
-                        <Stack direction={{xs: "column", md: "row"}} gap={{xs: 4, md: 2}}>
+                        <Stack direction={{ xs: "column", md: "row" }} gap={{ xs: 4, md: 2 }}>
                             <Tooltip title="Add to Depot & Builder">
                                 <MoveToInboxIcon
                                     fontSize="large"
@@ -366,7 +389,8 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        /* if (Object.keys(_eventData.materials ?? {}).length === 0) return; */
+                                        onChange(rawEvents);
+                                        setSubmitSources(["current", "events", "defaults", "defaultsWeb", "months"])
                                         setSubmitedEvent({ name, index: _eventData.index, materials: _eventData.materials ?? {}, farms: _eventData.farms ?? [] });
                                         setSubmitDialogOpen(true);
                                     }} />
@@ -551,6 +575,41 @@ const EventsTrackerDialog = React.memo((props: Props) => {
         }
     };
 
+    const handleSetEventsFromDefaults = useCallback(() => {
+        if (trackerDefaults && trackerDefaults.eventsData
+            && Object.keys(trackerDefaults.eventsData).length > 0) {
+
+            setRawEvents(trackerDefaults.eventsData);
+            onChange(trackerDefaults.eventsData);
+        }
+    }, [trackerDefaults, onChange, setRawEvents]
+    )
+
+    const getBuilderButton = () => {
+        return (<Button
+            variant="contained"
+            size="small"
+            onClick={() => {
+                setSubmitSources(['defaults', 'months', 'events', 'defaultsWeb'])
+                setSubmitDialogOpen(true);
+            }}
+            disabled={loading}
+            sx={{ minWidth: "fit-content", whiteSpace: "nowrap" }}
+        >Builder
+        </Button>)
+    };
+
+    const getDefaultsButton = () => {
+        return (<Button
+            variant="contained"
+            size="small"
+            onClick={handleSetEventsFromDefaults}
+            disabled={loading}
+            sx={{ minWidth: "fit-content", whiteSpace: "nowrap" }}
+        >Defaults
+        </Button>)
+    };
+
     return (
         <>
             <Dialog
@@ -593,6 +652,14 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                     sx={{ height: { sm: '500px', xl: '700px' } }}
                     ref={containerRef}>
                     <Box sx={{ display: (tab === "input") ? "unset" : "none" }}>
+                        {Object.keys(rawEvents ?? {}).length === 0 && <List>
+                            <ListItem>Input future events, using import, manually or from defaults.</ListItem>
+                            <ListItem ><Stack direction="row" gap={2} alignItems="center">
+                                {getDefaultsButton()} 6 months of upcoming events from prts.wiki sorted by date, updated daily.</Stack></ListItem>
+                            <ListItem ><Stack direction="row" gap={2} alignItems="center">
+                                {getBuilderButton()}
+                                Add new or merge from available sources</Stack></ListItem>
+                        </List>}
                         {renderedEvents}
                         <Stack direction="row" gap={2} ml={2} mt={2} justifyContent="flex-start">
                             <TextField size="small" label="New Event Name" value={rawName} /* style={{ marginLeft: 'auto' }} */
@@ -600,7 +667,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                             <Button startIcon={<AddIcon />}
                                 variant="contained" color="primary"
                                 disabled={rawName.length === 0}
-                                onClick={() => addNewEvent(rawName.trim())}>New{!fullScreen ? " Event" :""}</Button>
+                                onClick={() => addNewEvent(rawName.trim())}>New{!fullScreen ? " Event" : ""}</Button>
                         </Stack>
                     </Box>
                     <Box display={tab === 'importExport' ? "unset" : "none"}>
@@ -726,6 +793,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                 ></TextField>
                             </Grid>
                         </Grid>
+                        {EXPORT_IMPORT_INFORMATIOn}
                     </Box>
                     <Box display={tab === 'help' ? "unset" : "none"}>
                         {HELP_INFORMATION}
@@ -743,13 +811,21 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                         color="primary">
                         Open Summary
                     </Button>
-                    <Button onClick={resetEventsList}
-                        startIcon={<DeleteIcon />}
-                        variant="contained"
-                        disabled={tab === "input" ? false : true}
-                        color="primary">
-                        Reset
-                    </Button>
+                    <Stack direction="row" gap={{ xs: 1, md: 2 }}>
+                        {Object.keys(rawEvents).length > 0 && (
+                            <>
+                                {getBuilderButton()}
+                                {getDefaultsButton()}
+                            </>
+                        )}
+                        <Button onClick={resetEventsList}
+                            startIcon={<DeleteIcon />}
+                            variant="contained"
+                            disabled={tab === "input" ? false : true}
+                            color="primary">
+                            Reset
+                        </Button>
+                    </Stack>
                 </DialogActions>
             </Dialog>
             <Snackbar
@@ -781,10 +857,11 @@ const EventsTrackerDialog = React.memo((props: Props) => {
             <SubmitEventDialog
                 open={submitDialogOpen}
                 onClose={() => setSubmitDialogOpen(false)}
-                allowedSources={["current","events","defaults","months","web"]}
+                allowedSources={submitSources}
                 onSubmit={handleSubmitEvent}
                 submitedEvent={submitedEvent}
                 eventsData={eventsData}
+                trackerDefaults={trackerDefaults}
                 selectedEvent={selectedEvent}
                 onSelectorChange={setSelectedEvent}
             />

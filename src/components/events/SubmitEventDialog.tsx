@@ -1,15 +1,12 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from "@mui/material";
 import React, { useEffect, useMemo, useCallback, useState } from "react";
-import { NamedEvent, EventsData, SubmitEventProps, EventsSelectorProps } from "@/lib/events/types";
+import { NamedEvent, EventsData, SubmitEventProps, EventsSelectorProps, TrackerDefaults, SubmitSource } from "@/lib/events/types";
 import EventsSelector from "./EventsSelector";
 import { formatNumber, getWidthFromValue, standardItemsSort, getItemBaseStyling } from "@/utils/ItemUtils"
 import ItemEditBox from "./ItemEditBox";
 import useEvents from "@/utils/hooks/useEvents";
 import { WebEvent } from "@/lib/prtsWiki/types";
 import { createEmptyEvent, createEmptyNamedEvent, getEventsFromWebEvents } from "@/lib/events/utils";
-import { useEventsWebStorage } from "@/utils/hooks/useEventsWebStorage";
-
-type Source = EventsSelectorProps['dataType'] | 'current' | 'currentWeb'
 
 interface Props {
     open: boolean;
@@ -17,13 +14,14 @@ interface Props {
     allowedSources?: (EventsSelectorProps['dataType'] | 'current' | 'currentWeb')[];
     onSubmit: (submit: SubmitEventProps) => void;
     eventsData: EventsData;
+    trackerDefaults: TrackerDefaults;
     submitedEvent: NamedEvent | WebEvent;
     selectedEvent?: NamedEvent;
     onSelectorChange?: (namedEvent: NamedEvent) => void
 }
 
 const SubmitEventDialog = (props: Props) => {
-    const { open, onClose, allowedSources, onSubmit, eventsData, submitedEvent, selectedEvent, onSelectorChange } = props;
+    const { open, onClose, allowedSources, onSubmit, eventsData, trackerDefaults, submitedEvent, selectedEvent, onSelectorChange } = props;
 
     const [rawMaterials, setRawMaterials] = useState<Record<string, number>>({});
     const [rawFarms, setRawFarms] = useState<string[]>([]);
@@ -54,7 +52,7 @@ const SubmitEventDialog = (props: Props) => {
     }, [submitedEvent]
     );
 
-    const switchSource = useCallback((next?: Source) => {
+    const switchSource = useCallback((next?: SubmitSource) => {
 
         if (next !== undefined) {
             setSource(next);
@@ -64,7 +62,7 @@ const SubmitEventDialog = (props: Props) => {
 
         const list = allowedSources;
         setSource((prev) => {
-            let result: Source;
+            let result: SubmitSource;
 
             const idx = list.indexOf(prev) + 1;
             result = idx < list.length ? list[idx] : list[0];
@@ -120,7 +118,7 @@ const SubmitEventDialog = (props: Props) => {
     }
 
     const materialsLimit = useMemo(() => {
-        return source === "months" ? selectedFrom.materials : submitedEvent.materials;
+        return source.includes("current") ? submitedEvent.materials : selectedFrom.materials;
     }, [source, selectedFrom, submitedEvent])
 
     const handleFromSelectorChange = (event: NamedEvent) => {
@@ -151,26 +149,25 @@ const SubmitEventDialog = (props: Props) => {
 
     //stale data hooks 
     const { getNextMonthsData } = useEvents();
-    const { dataDefaults } = useEventsWebStorage();
 
-    const getSourceData = (source: string): EventsData => {
+    const getSourceData = (source: SubmitSource): EventsData => {
         switch (source) {
             case 'months': return getNextMonthsData();
             case 'events': return eventsData;
-            case 'defaults': return dataDefaults.eventsData ?? {};
-            case 'web': return getEventsFromWebEvents(dataDefaults.webEventsData ?? {});
+            case 'defaults': return trackerDefaults.eventsData ?? {};
+            case 'defaultsWeb': return getEventsFromWebEvents(trackerDefaults.webEventsData ?? {});
             default: return eventsData;
         }
     }
 
-    const getSourceName = (source: Source) => {
+    const getSourceName = (source: SubmitSource) => {
         switch (source) {
             case "current": return "Current event";
             case "currentWeb": return "Selected web event";
             case "events": return "Events in Tracker";
             case "months": return "Months generator";
             case "defaults": return "Defaut event list";
-            case "web": return "Web data only";
+            case "defaultsWeb": return "CN prts.wiki data";
             default: return '';
         }
     }
@@ -281,8 +278,7 @@ const SubmitEventDialog = (props: Props) => {
     return (
         <Dialog open={open} onClose={handleDialogClose}>
             <DialogTitle p={1} minHeight="170px">
-                <Stack direction="column" width="100%" gap={1} /* alignItems="flex-start" */>
-                    {/* {getTitle(variant, selectedEvent, replace, isNumbersMatch, rawFarms)} */}
+                <Stack direction="column" width="100%" gap={1}>
                     <Stack direction="row">
                         From: <Button
                             variant="text"
@@ -361,7 +357,7 @@ const SubmitEventDialog = (props: Props) => {
             </DialogContent>
             <DialogActions sx={{ flexDirection: { xs: "column", md: "row" }, gap: 1 }}>
                 <EventsSelector
-                    emptyItem={source === 'current' ? "Depot" : "New event"}
+                    emptyItem={source === 'current' ? `Depot & ${mode} current event` : "New event"}
                     dataType={'events'}
                     eventsData={eventsData}
                     selectedEvent={selectedEvent ?? createEmptyEvent()}
@@ -371,7 +367,7 @@ const SubmitEventDialog = (props: Props) => {
                     <Button disabled={isSubmitDisabled} onClick={handleSubmit} variant="contained">
                         Submit
                     </Button>
-                    <Button variant="outlined" color="secondary" onClick={handleDialogClose}>Cancel</Button>
+                    <Button variant="contained" color="secondary" onClick={handleDialogClose}>Cancel</Button>
                 </Stack>
             </DialogActions>
         </Dialog>

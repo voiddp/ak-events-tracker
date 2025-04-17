@@ -201,7 +201,7 @@ export const getEventsFromWebEvents = (webEvents: WebEventsData): EventsData => 
         }, {} as EventsData)
 }
 
-export const getDateString = (date: Date) => {
+export const getDateString = (date: Date | string) => {
     if (!date) return "";
     const _date = new Date(date);
     const day = String(_date.getDate()).padStart(2, '0');

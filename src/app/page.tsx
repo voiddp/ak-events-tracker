@@ -1,7 +1,7 @@
 'use client'
 /* import Image from "next/image"; */
 import { Box, Button, colors, Divider, IconButton, List, ListItem, Paper, Stack, Tooltip, Typography, useMediaQuery, useTheme } from "@mui/material";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import WebEventsDialog from "../components/webEvents/WebEventsDialog";
 import EventsTracker from "@/components/EventsTrackerMain";
 import EventsTrackerDialog from "@/components/EventsTrackerDialog";
@@ -20,7 +20,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import DeleteIcon from '@mui/icons-material/Delete';
 import StorageIcon from '@mui/icons-material/Storage';
 import UpdateIcon from '@mui/icons-material/Update';
-import { useEventsWebStorage } from "@/utils/hooks/useEventsWebStorage";
+import { useEventsDefaults } from "@/utils/hooks/useEventsDefaults";
 import { createEmptyNamedEvent } from "@/lib/events/utils";
 import AcknowledgementDialog from "@/components/AcknowledgementDialog";
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
@@ -41,10 +41,15 @@ export default function Home() {
   const [submitSources, setSubmitSources] = useState<(EventsSelectorProps['dataType'])[]>(["months"]);
 
   const { eventsData, setEvents, submitEvent, createDefaultEventsData } = useEvents();
-  const { dataDefaults, loading, error, fetchEventsFromStorage } = useEventsWebStorage();
+  const { trackerDefaults, loading, error, fetchDefaults } = useEventsDefaults();
   const [acknowledgementsOpen, setAcknowledgementsOpen] = useState(false);
   ///
   const [drawerOpen, setDrawerOpen] = useState(false);
+/*   const [lastUpdated, setLastUpdated] = useState<string | Date>("")
+ */
+  /* useEffect(() => {
+    fetchDefaults();
+  }, []); */
 
   const handleDrawerOpen = () => {
     setDrawerOpen((prev) => !prev);
@@ -70,12 +75,12 @@ export default function Home() {
   const clientSideEmotionCache = createEmotionCache();
 
   const handleSetEventsFromDefaults = useCallback(() => {
-    if (dataDefaults && dataDefaults.eventsData
-      && Object.keys(dataDefaults.eventsData).length > 0) {
-      setEvents(dataDefaults.eventsData);
+    if (trackerDefaults && trackerDefaults.eventsData
+      && Object.keys(trackerDefaults.eventsData).length > 0) {
+      setEvents(trackerDefaults.eventsData);
       setForceUpdate(true);
     }
-  }, [dataDefaults, setEvents]
+  }, [trackerDefaults, setEvents]
   )
 
   const formatTimeAgo = (date: string) => {
@@ -95,9 +100,9 @@ export default function Home() {
       <Head
         onClick={handleDrawerOpen}
         menuButton={<MenuIcon sx={{ display: { xs: "unset", md: "none" } }} />}
-      > {dataDefaults.lastUpdated &&
-        <Tooltip title={`parsed prts.wiki ${!isMdUp ? formatTimeAgo(dataDefaults.lastUpdated) + " ago" : ""}`}>
-          <Stack direction="row" alignItems="center" fontSize="small">{isMdUp && formatTimeAgo(dataDefaults.lastUpdated)}<UpdateIcon fontSize="small" /></Stack>
+      > {trackerDefaults.lastUpdated &&
+        <Tooltip title={`parsed prts.wiki ${!isMdUp ? formatTimeAgo(trackerDefaults.lastUpdated) + " ago" : ""}`}>
+          <Stack direction="row" alignItems="center" fontSize="small">{isMdUp && formatTimeAgo(trackerDefaults.lastUpdated)}<UpdateIcon fontSize="small" /></Stack>
         </Tooltip>}
       </Head>
       <CollapsibleDrawer
@@ -218,7 +223,7 @@ export default function Home() {
               setTrackerOpen(true);
             }}
             eventsData={eventsData}
-            defaultList={dataDefaults?.webEventsData ?? {}}
+            defaultList={trackerDefaults?.webEventsData ?? {}}
             submitEvent={submitEvent}
           />
           <SubmitEventDialog
@@ -230,6 +235,7 @@ export default function Home() {
             onSubmit={handleSubmitEvent}
             submitedEvent={submitedEvent}
             eventsData={eventsData}
+            trackerDefaults={trackerDefaults}
             selectedEvent={selectedEvent}
             onSelectorChange={setSelectedEvent}
           />

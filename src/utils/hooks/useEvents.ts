@@ -146,7 +146,9 @@ function useEvents(): {
     const clientCreateDefaultEventsData = (webEvents: WebEventsData): EventsData => {
         return createDefaultEventsData(webEvents) ?? {};
     }
-    return {eventsData:_eventsData, setEvents, submitEvent, getNextMonthsData,
-        createDefaultEventsData: clientCreateDefaultEventsData}
+    return {
+        eventsData: _eventsData, setEvents, submitEvent, getNextMonthsData,
+        createDefaultEventsData: clientCreateDefaultEventsData
+    }
 }
 export default useEvents;

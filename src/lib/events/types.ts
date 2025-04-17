@@ -1,3 +1,5 @@
+import { WebEventsData } from "../prtsWiki/types";
+
 export type Event = {
     index: number;
     materials: {
@@ -25,10 +27,18 @@ export type SubmitEventProps = {
 }
 
 export interface EventsSelectorProps {
-    dataType: 'events' | 'months' | 'defaults' | 'web' | 'summary';
+    dataType: 'events' | 'months' | 'defaults' | 'defaultsWeb' | 'summary';
     emptyItem?: string;
     disabled?: boolean;
     eventsData: EventsData;
     selectedEvent?: Event | null;
     onChange?: (namedEvent: NamedEvent) => void;
+}
+
+export type SubmitSource = EventsSelectorProps['dataType'] | 'current' | 'currentWeb'
+
+export interface TrackerDefaults {
+    lastUpdated?: string;
+    webEventsData?: WebEventsData;
+    eventsData?: EventsData;
 }

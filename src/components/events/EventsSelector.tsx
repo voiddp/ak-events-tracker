@@ -45,7 +45,7 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
             label = "Select from defaults";
             break;
         }
-        case 'web': { //source only
+        case 'defaultsWeb': { //source only
             label = "Select from web data";
             break;
         }
