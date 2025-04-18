@@ -1,9 +1,7 @@
 'use server'
 import { Session } from './types'
 import axios, { AxiosResponse } from 'axios';
-import { createClient } from 'redis'
-import redisClient from '@/lib/redis/client';
-import { isLockActive, setLock, removeLock, addToQueue, getQueueHead, removeFromQueue, getQueue, getKeyValue, setKeyValue } from '@/lib/redis/utils';
+import { isLockActive, setLock, removeLock, addToQueue, getQueueHead, removeFromQueue, getQueue, getKeyValue, setKeyValue, clearQueue } from '@/lib/redis/utils';
 
 /* const redis = createClient({
   url: process.env.REDIS_URL,
@@ -66,7 +64,7 @@ class AxiosServer {
         })
       }
     };
-    const maxWaitTime = isServerJob ? 60_000 : 10_000;
+    const maxWaitTime = isServerJob ? 20_000 : 10_000;
     let fullQueue: string[] = [];
     try {
       // 1. Add to queue and wait for turn
@@ -97,8 +95,11 @@ class AxiosServer {
       }
 
       if (!isMyTurn) {
-        const numRemoved = await removeFromQueue(QUEUE_KEY, sessionId);
-        console.warn(`[${sessionId}] x${numRemoved}. Timed out from queue ${maxWaitTime / 1000}s, removed`);
+        //if got to queue but timeouted - need to clear query
+        const numRemoved = await clearQueue(QUEUE_KEY);
+        console.warn(`[${sessionId}] x${numRemoved}. Query was stuck and deleted`);
+        /* const numRemoved = await removeFromQueue(QUEUE_KEY, sessionId);
+        console.warn(`[${sessionId}] x${numRemoved}. Timed out from queue ${maxWaitTime / 1000}s, removed`); */
         throw new Error(`Queue timeout (${maxWaitTime / 1000}s)`);
       }
 

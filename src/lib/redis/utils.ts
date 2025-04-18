@@ -60,6 +60,10 @@ export async function getQueue(queueKey: string): Promise<string[]> {
     return await client.lRange(queueKey, 0, -1)
 };
 
+export async function clearQueue(queueKey: string):Promise<number> {
+    return await client.del(queueKey)
+};
+
 export async function getQueueHead(queueKey: string, getLength: true): Promise<{ firstItem: string | null; queueLength: number }>;
 export async function getQueueHead(queueKey: string, getLength?: false): Promise<{ firstItem: string | null }>;
 
