@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const session = { 
       sessionId: 'server-job-'+ nanoid(6),
-      rateLimit_s: 0.2,
+      rateLimit_s: 0.1,
       isServerJob: true, 
     };
     const webEventsData = await getEverythingAtOnce(session);
