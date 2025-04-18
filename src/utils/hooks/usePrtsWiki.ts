@@ -67,6 +67,7 @@ export const usePrtsWiki = () => {
   }, [turnback, sessionId, rateLimit, handleProgress, handleError]);
 
   const clientGetDataFromPage = useCallback(async (pageName: string, page_link: string) => {
+    setError(null);
     setLoading(prev => ({ ...prev, [pageName]: true }));
     try {
       const session: Session = { sessionId, rateLimit_s: rateLimit };

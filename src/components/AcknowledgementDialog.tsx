@@ -40,7 +40,7 @@ const AcknowledgementDialog: React.FC<AcknowledgementDialogProps> = ({ open, onC
             <Link href="https://github.com/Kengxxiao/ArknightsGameData" underline='always'> ArknightsGameData CN</Link> and
             <Link href="https://github.com/Kengxxiao/ArknightsGameData_YoStar" underline='always'> ArknightsGameData Yostar</Link></Typography> </ListItem>
           <ListItem><Typography><Link href="https://prts.wiki/" underline='always'>prts.wiki</Link> team, for their work on CN wiki and its timely updates.
-            Hope that web-scrapper of this site is not bothering your wiki much, it should be limited to polite delay levels</Typography></ListItem>
+            Hope that web-scrapper of this site is not bothering your wiki much, it should be limited to polite delay levels (2s for users, and 0.1s (40-60s max) for once per day job)</Typography></ListItem>
 
           <ListItem>Support all these creators on their sites.</ListItem>
           <ListItem>Or me, if you like what i do:

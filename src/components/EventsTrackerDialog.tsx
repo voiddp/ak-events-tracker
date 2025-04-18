@@ -610,7 +610,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 onClose={handleClose}
                 TransitionComponent={Transition}
                 fullScreen={fullScreen}
-                keepMounted fullWidth maxWidth="md">
+                keepMounted fullWidth maxWidth="lg">
                 <DialogTitle
                     sx={{
                         display: "flex",
