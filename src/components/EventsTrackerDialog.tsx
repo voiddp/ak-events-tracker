@@ -39,22 +39,23 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { TransitionProps } from '@mui/material/transitions';
 import { EventsData, SubmitEventProps, SubmitSource, TrackerDefaults } from "@/lib/events/types";
 import InputIcon from '@mui/icons-material/Input';
-import ImportExportIcon from '@mui/icons-material/ImportExport';
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from '@mui/icons-material/Delete';
+import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
+import ImportExportIcon from '@mui/icons-material/ImportExport';
+import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { Close } from "@mui/icons-material";
 interface DataShareInfo {
     format: string;
     description: string;
 }
 import { debounce } from 'lodash';
-import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import SubmitEventDialog from '@/components/events/SubmitEventDialog';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isMaterial, getDefaultEventMaterials, getFarmCSS } from '@/utils/ItemUtils'
 import { createEmptyEvent, createEmptyNamedEvent, getDateString, reindexEvents } from "@/lib/events/utils"
 import ItemEditBox from '@/components/events/ItemEditBox';
-import { useEventsDefaults } from '@/utils/hooks/useEventsDefaults';
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
@@ -128,7 +129,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
             </ul>
             <h3>Builder</h3>
             <ul>
-                <li>Used to put income `From` source event on top, into target event at bottom.</li>
+                <li>Used to put income from source event on top, into target event at bottom.</li>
                 <li>Action switch to pick what to do with target event: either modify-merge mats, or directly replace</li>
                 <li>Sources of data can be switched to pick from defaults, months, or current events list</li>
                 <li>If called with button on the event will let to fully or partially move materials from event to Depot</li>
@@ -137,8 +138,8 @@ const EventsTrackerDialog = React.memo((props: Props) => {
             {trackerDefaults.lastUpdated ? `Updated ${getDateString(trackerDefaults.lastUpdated)}` : ""}
             <ul>
                 <li>Provided by <Link href="https://ak-events-tracker.vercel.app/" underline="always">ak-events-tracker</Link>.</li>
-                <li>Data from CN prts.wiki events, adjusted by six months, is combined with monthly estimates and sorted by date. These are defaults used by the tracker.</li>
-                <li>The default order can be used as-is or adjusted as global updates occur.</li>
+                <li>Data from CN prts.wiki events, adjusted by six months, is combined with monthly estimates and auto sorted by date. These are defaults used by the tracker.</li>
+                <li>The default list can be used as-is, or as shifts occur in global shedule, can be used as base to create adjusted personal list</li>
             </ul>
         </>;
 
@@ -370,7 +371,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                     ))}
                             </Stack>
                         </Stack>
-                        <Stack direction={{ xs: "column", md: "row" }} gap={{ xs: 4, md: 2 }}>
+                        <Stack direction={{ xs: "column", md: "row" }} alignItems="center" gap={1}>
                             <Tooltip title="Add to Depot & Builder">
                                 <MoveToInboxIcon
                                     fontSize="large"
@@ -388,6 +389,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                         setSubmitDialogOpen(true);
                                     }} />
                             </Tooltip>
+                            {expandedAccordtition === name ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                             <DeleteIcon
                                 fontSize="large"
                                 sx={{
