@@ -13,7 +13,8 @@ import {
   pageNames,
   templates,
   argNames,
-  sssModuleFirstTime
+  sssModuleFirstTime,
+  moduleBox
 } from './constants';
 import {
   parseISHistoryTable,
@@ -320,6 +321,14 @@ export const getEverythingAtOnce = async (session: Session, setProgress?: Progre
           if (pageResult?.title) {
             webEvent.name = pageResult.title;
           }
+
+          //force 1 unparsed moduleBox into all "BATTLEPLAN" = CC
+          //for now till better algorithm
+          if (webEvent.name && webEvent.name.includes("BATTLEPLAN")) {
+            addItemsSet(moduleBox, 1, webEvent.materials ?? {});
+            webEvent.webDisable = true;
+          };
+
         }
         results.push(webEvent);
       } catch (err) {
