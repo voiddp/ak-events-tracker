@@ -838,7 +838,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
             <SubmitEventDialog
                 open={submitDialogOpen}
                 onClose={() => setSubmitDialogOpen(false)}
-                allowedSources={["current", "events", "defaults", "months", "currentWeb"]}
+                allowedSources={["current", "events", "defaults", "months", "defaultsWeb"]}
                 onSubmit={handleSubmitEvent}
                 submitedEvent={submitedEvent}
                 eventsData={eventsData}
