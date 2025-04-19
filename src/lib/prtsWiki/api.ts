@@ -12,7 +12,8 @@ import {
 import {
   pageNames,
   templates,
-  argNames
+  argNames,
+  sssModuleFirstTime
 } from './constants';
 import {
   parseISHistoryTable,
@@ -26,7 +27,7 @@ import {
   parseListDivs,
   parseSSSPageByNum
 } from './parsers';
-import { getAniEventsList, isDateTextValid } from './utils';
+import { addItemsSet, getAniEventsList, isDateTextValid } from './utils';
 
 export const getUrl = (pageTitle: string) => {
   return `https://prts.wiki/w/${encodeURIComponent(pageTitle)}`;
@@ -226,10 +227,18 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
         date.setMonth(date.getMonth() - 4); // -4 months
 
         if (date > monthsAgoDate) {
+          //fetch SSS data and add fixed modules
+          const sssHtml = await fetchHtml(getUrl(pageNames.operations), context.session);
+          const $_sss = cheerio.load(sssHtml);
+          const results = parseNumDivs($_sss, {});
+          addItemsSet(sssModuleFirstTime, 1, results);
+
           webEvents[sssArgs[argNames.sssMission]] = {
             pageName: sssArgs[argNames.sssMission],
             name: `SSS: ${sssArgs[argNames.sssMission]}`,
             link: getUrl(pageNames.operations),
+            materials: results,
+            webDisable: true,
             date
           };
         }

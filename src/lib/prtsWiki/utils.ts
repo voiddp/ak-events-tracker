@@ -1,5 +1,5 @@
 import { getUrl } from './api';
-import { argNames, dictionary, moduleBox } from './constants';
+import { argNames, dictionary } from './constants';
 import { WebEvent } from './types';
 
 export const createEmptyWebEvent = () => {
@@ -105,8 +105,8 @@ export const applyDictionary = (title: string | null): string | false => {
     return _title;
 }
 
-export const addModuleBox = (number: number, result: Record<string, number>) => {
-    Object.entries(moduleBox).forEach(([key, value]) => {
+export const addItemsSet = (set: Record<string, number>, number: number, result: Record<string, number>) => {
+    Object.entries(set).forEach(([key, value]) => {
         result[key] = (result[key] ?? 0) + value * number;
     });
 };

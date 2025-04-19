@@ -1,10 +1,10 @@
 import * as cheerio from 'cheerio';
 import { getItemByCnName } from '@/utils/ItemUtils';
 import itemsJson from '@/data/items.json';
-import { argNames, pageNames } from './constants';
+import { argNames, moduleBox, pageNames, sssModuleFirstTime } from './constants';
 import { WebEvent, WebEventsData } from './types';
 import { getUrl } from './api';
-import { addModuleBox, applyDictionary, createEmptyWebEvent, escapeRegExp, isMostlyEnglish, parseChineseNumber } from './utils';
+import { addItemsSet, applyDictionary, createEmptyWebEvent, escapeRegExp, isMostlyEnglish, parseChineseNumber } from './utils';
 
 export const findENTitle = ($: cheerio.CheerioAPI): string | null => {
     let result: string | null = null;
@@ -132,7 +132,7 @@ export const parseListDivs = ($: cheerio.CheerioAPI, result: Record<string, numb
                         const value = parseChineseNumber(match[1]) ?? 0;
                         if (value > 0) {
                             if (name === argNames.moduleBox) {
-                                addModuleBox(value, result);
+                                addItemsSet(moduleBox, value, result);
                             }
                             if (matchedItem) {
                                 const id = matchedItem.id;
@@ -192,7 +192,7 @@ export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, numbe
                     const valueText = $div.find('span').text().trim();
                     const value = parseChineseNumber(valueText) ?? 0;
 
-                    if (title === argNames.moduleBox) addModuleBox(value, result);
+                    if (title === argNames.moduleBox) addItemsSet(moduleBox, value, result);
 
                     if (matchedItem) {
                         const id = matchedItem.id;
@@ -214,7 +214,7 @@ export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, numbe
                 const valueText = $div.find('span').text().trim();
                 const value = parseChineseNumber(valueText) ?? 0;
 
-                if (title === argNames.moduleBox) addModuleBox(value, result);
+                if (title === argNames.moduleBox) addItemsSet(moduleBox, value, result);
 
                 if (matchedItem) {
                     const id = matchedItem.id;
@@ -373,6 +373,7 @@ export const parseSSSPageByNum = ($: cheerio.CheerioAPI, sss_num: string): WebEv
 
     // Parse divs inside
     const result = parseNumDivs(cheerio.load(targetTable.html() || ''), {});
+    addItemsSet(sssModuleFirstTime, 1, result);
     return {
         pageName: pageName,
         name: `SSS: ${pageName}`,
