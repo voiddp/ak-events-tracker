@@ -1,8 +1,8 @@
 import * as cheerio from 'cheerio';
 import { getItemByCnName } from '@/utils/ItemUtils';
 import itemsJson from '@/data/items.json';
-import { argNames } from './constants';
-import { WebEventsData } from './types';
+import { argNames, pageNames } from './constants';
+import { WebEvent, WebEventsData } from './types';
 import { getUrl } from './api';
 import { addModuleBox, applyDictionary, createEmptyWebEvent, escapeRegExp, isMostlyEnglish, parseChineseNumber } from './utils';
 
@@ -351,4 +351,34 @@ export const parseISSquadsPage = ($: cheerio.CheerioAPI, keywords: string[]) => 
     return result;
 }
 
+export const parseSSSPageByNum = ($: cheerio.CheerioAPI, sss_num: string): WebEvent | undefined => {
+    //specific colapsed sss table classes
+    const tables = $('table.wikitable.mw-collapsible-title-center');
+
+    const targetTable = tables.filter((_, el) => {
+        const titleText = $(el).find('th').first().text().trim();
+        return titleText.includes(`${argNames.sssTitle} ${sss_num}`);
+    }).first();
+
+    if (!targetTable.length) {
+        return;
+    }
+
+    // Extract the name part after the number
+    const titleText = targetTable.find('th').first().text().trim();
+    const nameMatch = titleText.match(new RegExp(`${argNames.sssTitle}\\s+${sss_num}\\s+(.+)`));
+    const name = nameMatch ? nameMatch[1] : '';
+
+    const pageName = `${sss_num} ${name}`.trim();
+
+    // Parse divs inside
+    const result = parseNumDivs(cheerio.load(targetTable.html() || ''), {});
+    return {
+        pageName: pageName,
+        name: `SSS: ${pageName}`,
+        link: getUrl(pageNames.all_sss),
+        webDisable: true,
+        materials: result
+    };
+}
 

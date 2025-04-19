@@ -1,6 +1,7 @@
 export const pageNames = {
     events: '活动一览',
     operations: '关卡一览/常态事务',
+    all_sss: "保全派驻",
     integratedStrategyList: '模板:集成战略导航',
     IS_navbox: '模板:Navbox_集成战略'
 };
@@ -16,6 +17,7 @@ export const templates = {
 export const argNames = {
     sssMission: '派驻周期名',
     sssEndDate: '派驻周期刷新时间',
+    sssTitle: '派驻周期任务',
     aniPrefix: '委托',
     curAniPrefix: '轮换委托',
     curAniDate: `结束时间`,

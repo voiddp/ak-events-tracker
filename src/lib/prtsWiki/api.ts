@@ -23,7 +23,8 @@ import {
   findFarms,
   parseTextRewards,
   parseShopInEvent,
-  parseListDivs
+  parseListDivs,
+  parseSSSPageByNum
 } from './parsers';
 import { getAniEventsList, isDateTextValid } from './utils';
 
@@ -211,7 +212,7 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
     const monthsAgoDate = new Date();
     monthsAgoDate.setMonth(today.getMonth() - monthsAgo);
     //correction by -7 days for server building list job to have ongoing events
-    if (context.session.isServerJob) monthsAgoDate.setDate(monthsAgoDate.getDate() - 7); 
+    if (context.session.isServerJob) monthsAgoDate.setDate(monthsAgoDate.getDate() - 7);
 
     context.setProgress?.("LIST", 10);
     const webEvents = await fetchEvents(monthsAgoDate, context);
@@ -222,15 +223,33 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
       const dateText = sssArgs[argNames.sssEndDate];
       if (isDateTextValid(dateText)) {
         const date = new Date(dateText);
-        date.setDate(date.getDate() - 4 * 4 * 7); // -4 months
+        date.setMonth(date.getMonth() - 4); // -4 months
 
-        if (date <= today && date > monthsAgoDate) {
+        if (date > monthsAgoDate) {
           webEvents[sssArgs[argNames.sssMission]] = {
             pageName: sssArgs[argNames.sssMission],
             name: `SSS: ${sssArgs[argNames.sssMission]}`,
             link: getUrl(pageNames.operations),
             date
           };
+        }
+        //get one previous SSS if another -4 months date fits
+        const sssPrevDate = new Date(date);
+        sssPrevDate.setMonth(date.getMonth() - 4); // -4 more months
+        if (sssPrevDate > monthsAgoDate) {
+          const numMatch = sssArgs[argNames.sssMission].match(/#(\d{1,2})/);
+          const sssPrevNum = numMatch ? (parseInt(numMatch[1], 10) - 1) : null;
+
+          const sssHtml = await fetchHtml(getUrl(pageNames.all_sss), context.session);
+          const $_sss = cheerio.load(sssHtml);
+
+          const sssPrev = parseSSSPageByNum($_sss, `#${sssPrevNum}`);
+
+          if (sssPrev)
+            webEvents[sssPrev.pageName] = {
+              ...sssPrev,
+              date: sssPrevDate
+            };
         }
       }
     }
