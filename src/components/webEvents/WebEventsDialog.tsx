@@ -41,7 +41,7 @@ const WebEventsDialog = React.memo((props: Props) => {
     //use for release
     //setRawWebEvents(webEvents ?? {});
     //+remove for release;
-    if (webEvents && Object.keys(webEvents).length > Object.keys(defaultList ?? {}).length) {
+    /* if (webEvents && Object.keys(webEvents).length > Object.keys(defaultList ?? {}).length) {
       setRawWebEvents((prev) => {
         const _next = webEvents ?? {};
         Object.keys(_next).forEach(key => {
@@ -53,10 +53,10 @@ const WebEventsDialog = React.memo((props: Props) => {
         })
         return _next
       });
-    } else {
-      setRawWebEvents(defaultList ?? {});
-      setWebEvents(defaultList ?? {});
-    }
+    } else { */
+      setRawWebEvents(defaultList ?? webEvents);
+     /*  setWebEvents(defaultList ?? {});
+    } */
   }, [open, defaultList]
   );
 
