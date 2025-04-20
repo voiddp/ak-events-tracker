@@ -24,6 +24,18 @@ import { useEventsDefaults } from "@/utils/hooks/useEventsDefaults";
 import { createEmptyNamedEvent } from "@/lib/events/utils";
 import AcknowledgementDialog from "@/components/AcknowledgementDialog";
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
+import { SnackbarProvider, enqueueSnackbar } from 'notistack'
+import ItemBase from "@/components/ItemBase";
+import { formatNumber, getItemBaseStyling } from "@/utils/ItemUtils";
+import ItemsSnackBar from "@/components/ItemsSnackBar"
+
+declare module 'notistack' {
+  interface VariantOverrides {  
+    items: {
+      items: React.ReactNode
+    };    
+  }
+}
 
 export default function Home() {
 
@@ -45,8 +57,8 @@ export default function Home() {
   const [acknowledgementsOpen, setAcknowledgementsOpen] = useState(false);
   ///
   const [drawerOpen, setDrawerOpen] = useState(false);
-/*   const [lastUpdated, setLastUpdated] = useState<string | Date>("")
- */
+  /*   const [lastUpdated, setLastUpdated] = useState<string | Date>("")
+   */
   /* useEffect(() => {
     fetchDefaults();
   }, []); */
@@ -58,8 +70,28 @@ export default function Home() {
   const [forceUpdate, setForceUpdate] = useState(false);
 
   const handleAddItemsToDepot = (items: [string, number][]) => {
-    console.log("adding to depot:", items);
+    enqueueSnackbar(
+      {variant: "items", 
+      autoHideDuration: 5000,
+      items: itemElementsList(items)
+    });
+
   };
+  const itemElementsList = (items: [string, number][]) => {
+    return (<>
+      {items.map(([id, quantity], idx) => (
+        <ItemBase
+          key={`${id}${quantity === 0 && "-farm"}`}
+          itemId={id} size={getItemBaseStyling("tracker").itemBaseSize}
+        >
+          <Typography {...getItemBaseStyling("tracker").numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
+        </ItemBase>
+      ))}
+    </>
+    )
+
+  }
+
   const handleSubmitEvent = useCallback((submit: SubmitEventProps) => {
     const depotAddon = submitEvent(submit);
     if (depotAddon) {
@@ -97,6 +129,11 @@ export default function Home() {
 
   return (
     <CacheProvider value={clientSideEmotionCache}>
+      <SnackbarProvider maxSnack={3} preventDuplicate
+        Components={{
+          items: ItemsSnackBar,
+        }}>
+
       <Head
         onClick={handleDrawerOpen}
         menuButton={<MenuIcon sx={{ display: { xs: "unset", md: "none" } }} />}
@@ -247,5 +284,6 @@ export default function Home() {
           />
         </Paper>
       </Box>
+      </SnackbarProvider>
     </CacheProvider>);
 }
