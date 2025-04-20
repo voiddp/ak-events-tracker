@@ -39,6 +39,8 @@ import InputIcon from '@mui/icons-material/Input';
 import ImportExportIcon from '@mui/icons-material/ImportExport';
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from '@mui/icons-material/Delete';
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { Close } from "@mui/icons-material";
 import { debounce } from 'lodash';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
@@ -373,8 +375,8 @@ const EventsTrackerMain = React.memo((props: Props) => {
                             <Stack direction="row" alignItems="center" flexWrap="wrap" flexGrow={1} justifyContent={{ xs: "center", md: "flex-end" }}>
                                 <TextField size="small" value={newEventNames[name] ?? name}
                                     sx={{
-                                        mr: { xs: "unset", md: "auto", },
-                                        mb: { xs: 0.5, md: 0 },
+                                        mr: { xs: "unset", md: "auto" },
+                                        mb: 0.5,
                                         width: { xs: '100%', md: getWidthFromValue(newEventNames[name] ?? name, '20ch') }
                                     }}
                                     onClick={(e) => {
@@ -383,7 +385,7 @@ const EventsTrackerMain = React.memo((props: Props) => {
                                     onChange={(e) => handleEventNameChange(name, e.target.value)} />
                                 {!_eventData.farms
                                     && Object.keys(_eventData.materials ?? {}).length === 0 &&
-                                    <Typography pt={{ xs: 2, md: 0 }} variant='caption'>expand to add materials</Typography>
+                                    <Typography alignSelf="center" pt={{ xs: 2, md: 0 }} variant='caption'>expand to add materials</Typography>
                                 }
                                 {(_eventData.farms ?? []).map((id) => [id, 0] as [string, number])
                                     .concat(Object.entries(_eventData.materials ?? {})
@@ -391,15 +393,14 @@ const EventsTrackerMain = React.memo((props: Props) => {
                                     .map(([id, quantity], idx) => (
                                         <ItemBase
                                             key={`${id}${quantity === 0 && "-farm"}`}
-                                            itemId={id}
-                                            size={getItemBaseStyling("tracker").itemBaseSize}
+                                            itemId={id} size={getItemBaseStyling("tracker").itemBaseSize}
                                             {...quantity === 0 && getFarmCSS("round")}>
                                             <Typography {...getItemBaseStyling("tracker").numberCSS}>{quantity === 0 ? ["Ⅰ", "Ⅱ", "Ⅲ"][idx] : formatNumber(quantity)}</Typography>
                                         </ItemBase>
                                     ))}
                             </Stack>
                         </Stack>
-                        <Stack direction="row" gap={2}>
+                        <Stack direction={{ xs: "column", md: "row" }} alignItems="center" gap={1}>
                             <Tooltip title="Add to Depot & Builder">
                                 <MoveToInboxIcon
                                     fontSize="large"
@@ -411,11 +412,12 @@ const EventsTrackerMain = React.memo((props: Props) => {
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        /* if (Object.keys(_eventData.materials ?? {}).length === 0) return; */
+                                        onChange(rawEvents);
                                         setSubmitedEvent({ name, index: _eventData.index, materials: _eventData.materials ?? {}, farms: _eventData.farms ?? [] });
                                         setSubmitDialogOpen(true);
                                     }} />
                             </Tooltip>
+                            {expandedAccordtition === name ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                             <DeleteIcon
                                 fontSize="large"
                                 sx={{
