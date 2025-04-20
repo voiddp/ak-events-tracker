@@ -72,8 +72,9 @@ export default function Home() {
   const handleAddItemsToDepot = (items: [string, number][]) => {
     enqueueSnackbar(
       {variant: "items", 
+      message: "Krooster simulation: to Depot: +",
       autoHideDuration: 5000,
-      items: itemElementsList(items)
+      items: itemElementsList(items),
     });
 
   };
@@ -129,7 +130,7 @@ export default function Home() {
 
   return (
     <CacheProvider value={clientSideEmotionCache}>
-      <SnackbarProvider maxSnack={3} preventDuplicate
+      <SnackbarProvider maxSnack={3}
         Components={{
           items: ItemsSnackBar,
         }}>

@@ -11,11 +11,12 @@ const ItemsSnackBar = forwardRef<HTMLDivElement, ItemsProps>((props, ref) => {
         id,
         message,
         items,
+        autoHideDuration,
         ...other
     } = props
 
     return (
-        <SnackbarContent ref={ref} role="success" {...other}>
+        <SnackbarContent ref={ref} id='id' role="success" {...other}>
             <Stack direction="row"
                 alignItems="center"
                 ml={2}
@@ -24,7 +25,7 @@ const ItemsSnackBar = forwardRef<HTMLDivElement, ItemsProps>((props, ref) => {
                     backgroundColor: "green",
                     borderRadius: "5px",
                 }}>
-                Krooster simulation: to Depot: + {items}
+                {message} {items}
             </Stack>
         </SnackbarContent>
     )
