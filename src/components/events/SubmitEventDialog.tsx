@@ -179,7 +179,7 @@ const SubmitEventDialog = (props: Props) => {
     }
 
     const getSourceName = (source: SubmitSource) => {
-        const arrow = (allowedSources?.length ?? 0) > 0 ? " »" : "";
+        const arrow = (allowedSources?.length ?? 0) > 1 ? " »" : "";
         switch (source) {
             case "current": return "Current event" + arrow;
             case "currentWeb": return "Selected web event" + arrow;
