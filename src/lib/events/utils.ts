@@ -46,7 +46,7 @@ const createMonthEvent = (month: number, year: number, startDay: number = 1): Na
     if (firstDay <= 3) fullWeeks++;
     if (lastDay >= 3) fullWeeks++;
     //mid-weeks
-    fullWeeks += Math.floor(daysLeft) / 7;
+    fullWeeks += Math.floor(daysLeft / 7);
 
     for (const [id, amount] of Object.entries(AK_WEEKLY)) {
         materials[id] = (materials[id] || 0) + amount * fullWeeks;
