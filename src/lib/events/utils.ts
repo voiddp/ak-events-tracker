@@ -10,7 +10,7 @@ export const createEmptyNamedEvent = () => {
     return { ...createEmptyEvent(), name: "", farms: [] } as NamedEvent;
 }
 
-const createMonthEvent = (month: number, year: number, startDay: number = 1): NamedEvent => {
+const createMonthEvent = (month: number, year: number, startDay: number = 1): NamedEvent | undefined => {
     const daysInMonth = new Date(year, month, 0).getDate();
     const firstDayNum = new Date(year, month - 1, 1).getDay();
     const lastDayNum = new Date(year, month - 1, daysInMonth).getDay();
@@ -21,6 +21,8 @@ const createMonthEvent = (month: number, year: number, startDay: number = 1): Na
 
     const materials: Record<string, number> = {};
     const remainingDays = daysInMonth - (startDay !== 1 ? startDay : 0);
+
+    if (!remainingDays) return;
 
     // AK_CALENDAR - only include days after startDay
     for (const [dayStr, items] of Object.entries(AK_CALENDAR)) {
@@ -48,8 +50,10 @@ const createMonthEvent = (month: number, year: number, startDay: number = 1): Na
     //mid-weeks
     fullWeeks += Math.floor(daysLeft / 7);
 
-    for (const [id, amount] of Object.entries(AK_WEEKLY)) {
-        materials[id] = (materials[id] || 0) + amount * fullWeeks;
+    if (fullWeeks) {
+        for (const [id, amount] of Object.entries(AK_WEEKLY)) {
+            materials[id] = (materials[id] || 0) + amount * fullWeeks;
+        }
     }
 
     const monthEventName = new Date(year, month - 1, daysInMonth)
@@ -79,6 +83,8 @@ export const getNextMonthsData = (months: number = 7): EventsData => {
         const monthEvent = i === 0
             ? createMonthEvent(month, year, currentDay)
             : createMonthEvent(month, year);
+
+        if (!monthEvent) continue;
 
         nextMonthsData[monthEvent.name] = monthEvent;
     }
