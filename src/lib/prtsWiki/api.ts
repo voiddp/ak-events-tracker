@@ -268,7 +268,7 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
     const aniArgs = await fetchTemplateArguments(pageNames.operations, templates.anihilations, context);
     if (aniArgs) {
       getAniEventsList(aniArgs)
-        .filter(event => event.date && event.date >= monthsAgoDate && event.date <= today)
+        .filter(event => event.date && event.date >= monthsAgoDate /* && event.date <= today */)
         .forEach(event => {
           webEvents[event.pageName] = event;
         });
