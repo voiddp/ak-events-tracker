@@ -36,11 +36,13 @@ export const getAniEventsList = (data: Record<string, string>): WebEvent[] => {
 
     let currentDate = new Date(dateText);
 
-    currentDate = subtractWeeks(currentDate, 8);
-
     // 3. Process events in reverse order (newest to oldest)
     const lastNumber = Number(data[`${argNames.curAniPrefix}${aniNumber}`]);
     for (let i = lastNumber; i >= 1; i--) {
+        // Move back 8 week before #28, and 12 weeks after #28, from end Date
+        const weeksToSub = i >= 28 ? 12 : 8;
+        currentDate = subtractWeeks(currentDate, weeksToSub);
+
         const eventKey = `${argNames.aniPrefix}${i}`;
         const title = data[eventKey];
         if (title) {
@@ -51,9 +53,6 @@ export const getAniEventsList = (data: Record<string, string>): WebEvent[] => {
                 name: `Anihilation #${i}: ${title}`,
                 link: getUrl(title)
             });
-
-            // Move back 8 weeks for the previous event
-            currentDate = subtractWeeks(currentDate, 8);
         }
     }
     return events;
