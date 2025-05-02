@@ -39,8 +39,8 @@ export const getAniEventsList = (data: Record<string, string>): WebEvent[] => {
     // 3. Process events in reverse order (newest to oldest)
     const lastNumber = Number(data[`${argNames.curAniPrefix}${aniNumber}`]);
     for (let i = lastNumber; i >= 1; i--) {
-        // Move back 8 week before #28, and 12 weeks after #28, from end Date
-        const weeksToSub = i >= 28 ? 12 : 8;
+        // Move back 8 week before #28, and 13 weeks after #28, from end Date
+        const weeksToSub = i >= 28 ? 13 : 8;
         currentDate = subtractWeeks(currentDate, weeksToSub);
 
         const eventKey = `${argNames.aniPrefix}${i}`;
@@ -50,7 +50,7 @@ export const getAniEventsList = (data: Record<string, string>): WebEvent[] => {
                 ...createEmptyWebEvent(),
                 date: new Date(currentDate),
                 pageName: title,
-                name: `Anihilation #${i}: ${title}`,
+                name: `Annihilation #${i}: ${title}`,
                 link: getUrl(title)
             });
         }
@@ -108,4 +108,13 @@ export const addItemsSet = (set: Record<string, number>, number: number, result:
     Object.entries(set).forEach(([key, value]) => {
         result[key] = (result[key] ?? 0) + value * number;
     });
+};
+
+export const capitalizeWords = (str: string): string => {
+    if (!str) return str;
+    return str
+        .trim()
+        .split(/\s+/)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
 };

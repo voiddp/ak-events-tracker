@@ -4,18 +4,25 @@ import itemsJson from '@/data/items.json';
 import { argNames, moduleBox, pageNames, sssModuleFirstTime } from './constants';
 import { WebEvent, WebEventsData } from './types';
 import { getUrl } from './api';
-import { addItemsSet, applyDictionary, createEmptyWebEvent, escapeRegExp, isMostlyEnglish, parseChineseNumber } from './utils';
+import { addItemsSet, applyDictionary, capitalizeWords, createEmptyWebEvent, escapeRegExp, isMostlyEnglish, parseChineseNumber } from './utils';
 
-export const findENTitle = ($: cheerio.CheerioAPI): string | null => {
+export const findENTitle = ($: cheerio.CheerioAPI, pageName: string): string | null => {
     let result: string | null = null;
 
     const unescaped = $.html().replace(/\\/g, '');
     const match = unescaped.match(/class=['"]fnameheader[^>]*>([^<]+)</);
     const title = match ? match[1].trim() : null;
     if (title && isMostlyEnglish(title)) {
-        result = title;
+        result = capitalizeWords(title);
     }
-    const afterDictionary = applyDictionary(result);
+
+    const source = result
+        ? result
+        : title
+            ? title
+            : pageName;
+    const afterDictionary = applyDictionary(source);
+
     return (afterDictionary ? afterDictionary : result);
 };
 
@@ -331,6 +338,7 @@ export const parseISSquadsPage = ($: cheerio.CheerioAPI, keywords: string[]) => 
 
             // Get the title from the following <p><b> element
             currentTitle = $h2.next('p').find('b').first().text().trim();
+            currentTitle = capitalizeWords(currentTitle);
 
             // Start collecting elements for this chunk
             const chunkElements = $h2.nextUntil('h2');

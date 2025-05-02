@@ -28,18 +28,20 @@ export const argNames = {
 };
 
 export const dictionary = {
+    '签到': 'Sign-in',
     '复刻': 'Rerun',
     'IN RETROSPECT': 'Rerun',
-    '签到': 'Sign-in'
-}
+    'In Retrospect': 'Rerun'
+};
+
 export const moduleBox = {
     'mod_unlock_token': 12,
     'mod_update_token_1': 60,
     'mod_update_token_2': 20,
-}
+};
 
 export const sssModuleFirstTime = {
     'mod_unlock_token': 10,
     'mod_update_token_1': 60,
     'mod_update_token_2': 20,
-}
+};

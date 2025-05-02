@@ -195,7 +195,7 @@ export const getDataFromPage = async (pageName: string, page_link: string, conte
     const $ = cheerio.load(html);
 
     let result: Record<string, number> = {};
-    const title = findENTitle($);
+    const title = findENTitle($, pageName);
     const farms = findFarms($);
     result = parseTextRewards($, result);
     result = parseShopInEvent($, result);
