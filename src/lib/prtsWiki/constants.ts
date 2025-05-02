@@ -27,11 +27,15 @@ export const argNames = {
     moduleBox: '模组数据整合箱',
 };
 
+//order matters, each next found word is placed at start
 export const dictionary = {
     '签到': 'Sign-in',
     '复刻': 'Rerun',
     'IN RETROSPECT': 'Rerun',
-    'In Retrospect': 'Rerun'
+    'In Retrospect': 'Rerun',
+    '限时任务': 'Missions',
+    '集成': 'IS',
+    '跨年': 'New Year',
 };
 
 export const moduleBox = {

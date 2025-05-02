@@ -98,7 +98,8 @@ export const applyDictionary = (title: string | null): string | false => {
 
     Object.entries(dictionary).forEach(([key, value]) => {
         if (title.includes(key)) {
-            _title = title.replace(key, ` ${value} `).trim();
+            const source = _title ? _title : title;
+            _title = `${value}${source.includes(':') ? '' : ':'} ${source.replace(key, '').trim()}`;
         }
     });
     return _title;
