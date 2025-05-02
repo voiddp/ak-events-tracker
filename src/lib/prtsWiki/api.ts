@@ -324,7 +324,9 @@ export const getEverythingAtOnce = async (session: Session, setProgress?: Progre
 
           //force 1 unparsed moduleBox into all "BATTLEPLAN" = CC
           //for now till better algorithm
-          if (webEvent.name && webEvent.name.includes("BATTLEPLAN")) {
+          if (webEvent.name &&
+            (webEvent.name.includes("BATTLEPLAN") ||
+              webEvent.name.includes("Battleplan"))) {
             addItemsSet(moduleBox, 1, webEvent.materials ?? {});
             webEvent.webDisable = true;
           };
