@@ -4,7 +4,8 @@ import { Session } from '@/lib/axios/types';
 export interface PageResult {
     title: string | null;
     items: Record<string, number>;
-    farms: string[];
+    farms: string[] | null;
+    infinite: string[] | null;
 }
 
 export interface MediaWikiApiResponse {

@@ -154,7 +154,7 @@ export const parseListDivs = ($: cheerio.CheerioAPI, result: Record<string, numb
     return result;
 };
 
-export const findFarms = ($: cheerio.CheerioAPI): string[] => {
+export const findFarms = ($: cheerio.CheerioAPI): string[] | null => {
     const dropKeywords = ['固定掉落', '大概率', '小概率', '概率掉落'];
     const foundItems: string[] = [];
 
@@ -178,7 +178,7 @@ export const findFarms = ($: cheerio.CheerioAPI): string[] => {
         }
     });
 
-    return foundItems;
+    return (foundItems.length > 0 ? foundItems : null);
 };
 
 export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, number>) => {
@@ -237,7 +237,9 @@ export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, numbe
     return result;
 };
 
-export const parseShopInEvent = ($: cheerio.CheerioAPI, result: Record<string, number>) => {
+export const parseShopInEvent = ($: cheerio.CheerioAPI, result: Record<string, number>)
+    : { materials: Record<string, number>, infinite: string[] | null } => {
+    const infinite: string[] = [];
     $('tr').each((_, row) => {
         const tds = $(row).find('td');
         if (tds.length < 2) return;
@@ -272,12 +274,16 @@ export const parseShopInEvent = ($: cheerio.CheerioAPI, result: Record<string, n
                 return false;
             }
         });
-
-        if (itemId && amount > 0) {
+        if (itemId && amount === Infinity) {
+            if (itemId !== "4001") infinite.push(itemId);
+        } else if (itemId && amount > 0) {
             result[itemId] = (result[itemId] ?? 0) + amount * multiplier;
         }
     });
-    return result;
+    return {
+        materials: result,
+        infinite: infinite.length > 0 ? infinite : null
+    };
 };
 
 export const parseTextRewards = ($: cheerio.CheerioAPI, result: Record<string, number>) => {

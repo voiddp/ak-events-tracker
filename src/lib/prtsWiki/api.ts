@@ -198,11 +198,12 @@ export const getDataFromPage = async (pageName: string, page_link: string, conte
     const title = findENTitle($, pageName);
     const farms = findFarms($);
     result = parseTextRewards($, result);
-    result = parseShopInEvent($, result);
+    const { materials, infinite } = parseShopInEvent($, result);
+    result = materials;
     result = parseNumDivs($, result);
     result = parseListDivs($, result);
 
-    return { title, items: result, farms };
+    return { title, items: result, farms, infinite };
   } catch (err) {
     throw err;
   }
@@ -315,8 +316,11 @@ export const getEverythingAtOnce = async (session: Session, setProgress?: Progre
             materials: pageResult?.items ?? {},
           };
 
-          if ((pageResult?.farms ?? []).length > 0) {
-            webEvent.farms = pageResult?.farms;
+          if (pageResult?.farms) {
+            webEvent.farms = pageResult.farms;
+          }
+          if (pageResult?.infinite) {
+            webEvent.infinite = pageResult.infinite;
           }
           if (pageResult?.title) {
             webEvent.name = pageResult.title;

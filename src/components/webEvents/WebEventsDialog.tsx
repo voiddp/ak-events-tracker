@@ -54,9 +54,9 @@ const WebEventsDialog = React.memo((props: Props) => {
         return _next
       });
     } else { */
-      setRawWebEvents(defaultList ?? webEvents);
-     /*  setWebEvents(defaultList ?? {});
-    } */
+    setRawWebEvents(defaultList ?? webEvents);
+    /*  setWebEvents(defaultList ?? {});
+   } */
   }, [open, defaultList]
   );
 
@@ -97,7 +97,7 @@ const WebEventsDialog = React.memo((props: Props) => {
       if (!result) return;
       /* console.log(result); */
 
-      const { title, items, farms } = result;
+      const { title, items, farms, infinite } = result;
       /* console.log(title, items); */
       setRawWebEvents((prev) => {
         const _next = { ...prev };
@@ -106,8 +106,11 @@ const WebEventsDialog = React.memo((props: Props) => {
         if (title) {
           _webEvent.name = title;
         }
-        if (farms && farms.length > 0) {
+        if (farms) {
           _webEvent.farms = farms;
+        }
+        if (infinite) {
+          _webEvent.infinite = infinite;
         }
         _next[pageName] = _webEvent;
         return _next;
@@ -250,30 +253,39 @@ const WebEventsDialog = React.memo((props: Props) => {
                       </Stack>
                     </AccordionSummary>
                     <AccordionDetails>
-                      <Stack direction="column" justifyContent="space-between" alignItems="center" gap={1}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" width="100%">
-                          {rawWebEvents[item.pageName] && rawWebEvents[item.pageName].farms && (
-                            <Stack direction="row" alignItems="center" gap={0.5}>
-                              {(rawWebEvents[item.pageName].farms ?? []).map((id) => (
-                                <ItemBase key={`${id}-farms`} itemId={id} size={getItemBaseStyling('builder', fullScreen).itemBaseSize * 1.1} />
-                              ))} T3 Farms
-                            </Stack>
-                          )}
+                      {rawWebEvents[item.pageName] &&
+                        <Stack direction="column" justifyContent="space-between" alignItems="center" gap={1}>
+                          <Stack direction="row" justifyContent="space-between" alignItems="center" width="100%">
+                            {rawWebEvents[item.pageName].farms && (
+                              <Stack direction="row" alignItems="center" gap={0.5}>
+                                {(rawWebEvents[item.pageName]?.farms ?? []).map((id) => (
+                                  <ItemBase key={`${id}-farms`} itemId={id} size={getItemBaseStyling('builder', fullScreen).itemBaseSize * 1.1} />
+                                ))} T3 Farms
+                              </Stack>
+                            )}
+                            {rawWebEvents[item.pageName].infinite && (
+                              <Stack direction="row" alignItems="center" gap={0.5}>
+                                {(rawWebEvents[item.pageName]?.infinite ?? []).map((id) => (
+                                  <ItemBase key={`${id}-infinite`} itemId={id} size={getItemBaseStyling('builder', fullScreen).itemBaseSize * 1.1} />
+                                ))} Infinite:
+                              </Stack>
+                            )}
+                          </Stack>
+                          <Stack direction="row" alignItems="center" justifyContent="center" flexWrap="wrap">
+                            {rawWebEvents[item.pageName].materials && (
+                              <>
+                                {Object.entries(rawWebEvents[item.pageName].materials ?? {})
+                                  .sort(([idA], [idB]) => standardItemsSort(idA, idB))
+                                  .map(([id, quantity], idx) => (
+                                    <ItemBase key={`${id}`} itemId={id} size={getItemBaseStyling('builder', fullScreen).itemBaseSize}>
+                                      <Typography {...getItemBaseStyling('builder', fullScreen).numberCSS}>{formatNumber(quantity)}</Typography>
+                                    </ItemBase>
+                                  ))}
+                              </>
+                            )}
+                          </Stack>
                         </Stack>
-                        <Stack direction="row" alignItems="center" justifyContent="center" flexWrap="wrap">
-                          {rawWebEvents[item.pageName] && rawWebEvents[item.pageName].materials && (
-                            <>
-                              {Object.entries(rawWebEvents[item.pageName].materials ?? {})
-                                .sort(([idA], [idB]) => standardItemsSort(idA, idB))
-                                .map(([id, quantity], idx) => (
-                                  <ItemBase key={`${id}`} itemId={id} size={getItemBaseStyling('builder', fullScreen).itemBaseSize}>
-                                    <Typography {...getItemBaseStyling('builder', fullScreen).numberCSS}>{formatNumber(quantity)}</Typography>
-                                  </ItemBase>
-                                ))}
-                            </>
-                          )}
-                        </Stack>
-                      </Stack>
+                      }
                     </AccordionDetails>
                   </Accordion>
                 </Box>
