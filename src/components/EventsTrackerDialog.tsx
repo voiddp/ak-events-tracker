@@ -109,11 +109,11 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     const SUPPORTED_IMPORT_EXPORT_TYPES: DataShareInfo[] = [
         {
             format: "CSV",
-            description: "A csv file containing 5 columns (,) divided with the following names: eventName, index, material_id, quantity, farms. Farms contains upto 3 id values (;) divided ",
+            description: "A csv file containing 5 columns (,) divided with the following names: eventName, index, material_id, quantity, farms, infinite. Farms and Infinite contains id values (;) divided. Farms up to 3 only.",
         },
         {
             format: "JSON",
-            description: `JSON example: { "eventName": { "index": orderNumber, "materials": { "id1": quantity, "id2": quantity }, "farms": ["id1", "id2"] } }`,
+            description: `JSON example: { "eventName": { "index": orderNumber, "materials": { "id1": quantity, "id2": quantity }, "farms": ["id1", "id2"], "infinite": ["id1", "id2"] } }`,
         },
     ];
 
@@ -503,7 +503,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 const csv = Object.entries(rawEvents)
                     .flatMap(([name, eventData]) => {
                         const materialRows = Object.entries(eventData.materials).map(([material_id, quantity]) =>
-                            `${name},${eventData.index},${material_id},${quantity},${(eventData.farms ?? []).join(';')}`
+                            `${name},${eventData.index},${material_id},${quantity},${(eventData.farms ?? []).join(';')},${(eventData.infinite ?? []).join(';')}`
                         );
                         const farmRows = (eventData.farms ?? []).length > 0 && Object.keys(eventData.materials).length === 0
                             ? [`${name},${eventData.index},,,${eventData.farms?.join(';')}`]
@@ -511,7 +511,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                         return [...materialRows, ...farmRows];
                     })
                     .join('\n');
-                result = `eventName,index,material_id,quantity,farms\n${csv}`;
+                result = `eventName,index,material_id,quantity,farms,infinite\n${csv}`;
                 break;
         }
         setExportData(result);
@@ -537,13 +537,16 @@ const EventsTrackerDialog = React.memo((props: Props) => {
             } else {
                 const lines = importData.split('\n').slice(1);
                 lines.forEach(line => {
-                    const [name, index, material_id, quantity, farms] = line.split(',');
+                    const [name, index, material_id, quantity, farms, infinite] = line.split(',');
                     if (!newData[name]) newData[name] = { index: Number(index), materials: {}, farms: [] };
                     if (material_id) {
                         newData[name].materials[material_id] = Math.min(Number(quantity), MAX_SAFE_INTEGER);
                     }
                     if (farms) {
                         newData[name].farms = farms.split(';');
+                    }
+                    if (infinite) {
+                        newData[name].infinite = infinite.split(';');
                     }
                 });
             };
