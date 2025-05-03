@@ -162,6 +162,9 @@ export const createDefaultEventsData = (webEvents: WebEventsData) => {
             if (event.farms) {
                 acc[_name].farms = event.farms;
             }
+            if (event.infinite) {
+                acc[_name].infinite = event.infinite;
+            }
             return acc
         }, {} as EventsData)
 
