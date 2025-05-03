@@ -292,6 +292,8 @@ export const parseTextRewards = ($: cheerio.CheerioAPI, result: Record<string, n
     $('p, span, li:not([class*="eventpoint"])').not('tr p, tr span, tr li')
         .each((_, element) => {
             const fullText = $(element).text();
+            if (fullText.includes(argNames.paidPackContent)) return;
+
             const splits = fullText.split(/[,.;]/).map(part => part.trim()).filter(part => part);
             // if (!text.includes('日')) return; not restrict to sign-ins.
 

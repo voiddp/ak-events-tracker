@@ -25,6 +25,7 @@ export const argNames = {
     themeUpdateHistory: '主题更新记录',
     totals: '报酬合计',
     moduleBox: '模组数据整合箱',
+    paidPackContent: '组合包内容',
 };
 
 //order matters, each next found word is placed at start
