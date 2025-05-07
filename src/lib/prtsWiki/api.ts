@@ -214,8 +214,14 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
     const today = new Date();
     const monthsAgoDate = new Date();
     monthsAgoDate.setMonth(today.getMonth() - monthsAgo);
+
     //correction by -7 days for server building list job to have ongoing events
     if (context.session.isServerJob) monthsAgoDate.setDate(monthsAgoDate.getDate() - 7);
+
+    //shift IS start 1.25 month back
+    const isStartDate = new Date(monthsAgoDate);
+    isStartDate.setMonth(isStartDate.getMonth() - 1);
+    isStartDate.setDate(isStartDate.getDate() - 7);
 
     context.setProgress?.("LIST", 10);
     const webEvents = await fetchEvents(monthsAgoDate, context);
@@ -269,14 +275,14 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
     const aniArgs = await fetchTemplateArguments(pageNames.operations, templates.anihilations, context);
     if (aniArgs) {
       getAniEventsList(aniArgs)
-        .filter(event => event.date && event.date >= monthsAgoDate /* && event.date <= today */)
+        .filter(event => event.date && event.date >= monthsAgoDate)
         .forEach(event => {
           webEvents[event.pageName] = event;
         });
     }
 
     context.setProgress?.("LIST", 40);
-    const ISEvents = await fetchLastISEvents(monthsAgoDate, context);
+    const ISEvents = await fetchLastISEvents(isStartDate, context);
     if (ISEvents) {
       Object.values(ISEvents).forEach(event => {
         webEvents[event.pageName] = event;

@@ -116,10 +116,22 @@ export const createDefaultEventsData = (webEvents: WebEventsData) => {
     if (!webEvents || Object.keys(webEvents).length === 0) return;
     const nextMonthsEvents = getNextMonthsData(7);
     if (!nextMonthsEvents || Object.keys(nextMonthsEvents).length === 0) return;
-    /* const result = */
-    //const _eventsData: EventsData = {};
-    /* const _eventsData: EventsData = Object.fromEntries( */
-    const _eventsData = Object.entries(webEvents)
+
+    //force 1 month shift for all IS events
+    const _webEvents: WebEventsData = { ...webEvents };
+    Object.entries(webEvents)
+        .forEach(([pageName, webEvent]) => {
+            const eventDate = new Date(webEvent.date?.getTime() ?? 0);
+            if (webEvent.name && webEvent.name.includes("IS")) {
+                eventDate.setMonth(eventDate.getMonth() + 1);
+            }
+            _webEvents[pageName] = {
+                ...webEvent,
+                date: eventDate
+            }
+        });
+
+    const _eventsData = Object.entries(_webEvents)
         .filter(([_, wEvent]) =>
             (wEvent.materials && Object.keys(wEvent.materials).length > 0)
             || (wEvent.farms && wEvent.farms.length > 0))
