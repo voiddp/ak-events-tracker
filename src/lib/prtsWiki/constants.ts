@@ -25,6 +25,7 @@ export const argNames = {
     themeUpdateHistory: '主题更新记录',
     totals: '报酬合计',
     moduleBox: '模组数据整合箱',
+    moduleChunk: '模组数据整合块',
     paidPackContent: '组合包内容',
 };
 
@@ -44,6 +45,12 @@ export const moduleBox = {
     'mod_update_token_1': 60,
     'mod_update_token_2': 20,
 };
+
+export const moduleChunk = {
+    'mod_unlock_token': 3,
+    'mod_update_token_1': 15,
+    'mod_update_token_2': 5,    
+}
 
 export const sssModuleFirstTime = {
     'mod_unlock_token': 10,

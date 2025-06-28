@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 import { getItemByCnName } from '@/utils/ItemUtils';
 import itemsJson from '@/data/items.json';
-import { argNames, moduleBox, pageNames, sssModuleFirstTime } from './constants';
+import { argNames, moduleBox, moduleChunk, pageNames, sssModuleFirstTime } from './constants';
 import { WebEvent, WebEventsData } from './types';
 import { getUrl } from './api';
 import { addItemsSet, applyDictionary, capitalizeWords, createEmptyWebEvent, escapeRegExp, isMostlyEnglish, parseChineseNumber } from './utils';
@@ -140,6 +140,8 @@ export const parseListDivs = ($: cheerio.CheerioAPI, result: Record<string, numb
                         if (value > 0) {
                             if (name === argNames.moduleBox) {
                                 addItemsSet(moduleBox, value, result);
+                            } else if (name === argNames.moduleChunk) {
+                                addItemsSet(moduleChunk, value, result);
                             }
                             if (matchedItem) {
                                 const id = matchedItem.id;
@@ -182,11 +184,25 @@ export const findFarms = ($: cheerio.CheerioAPI): string[] | null => {
 };
 
 export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, number>) => {
-    $('tr, div:not(tr div)').each((_, element) => {
 
+    //find tables where first row has "totals" text
+    const tablesToIgnore = new Set<any>();
+    $('table').each((_, table) => {
+        const $table = $(table);
+        const $firstTr = $table.find('tr').first();
+        if ($firstTr.text().includes(argNames.totals)) {
+            tablesToIgnore.add(table); 
+        }
+    });
+
+    $('tr, div:not(tr div)').each((_, element) => {
         const $element = $(element);
+
         if ($element.is('tr')) {
-            if ($element.text().includes(argNames.totals)) return; //ignore "totals" row, count only normals
+            if ($element.text().includes(argNames.totals)) return; //ignore rows with "totals" text
+
+            const parentTable = $element.closest('table')[0];
+            if (tablesToIgnore.has(parentTable)) return; // ignore all rows of ignored "totals" tables
 
             $element.find('div').each((_, div) => {
                 //parse multiple divs in tr
@@ -199,7 +215,11 @@ export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, numbe
                     const valueText = $div.find('span').text().trim();
                     const value = parseChineseNumber(valueText) ?? 0;
 
-                    if (title === argNames.moduleBox) addItemsSet(moduleBox, value, result);
+                    if (title === argNames.moduleBox) {
+                        addItemsSet(moduleBox, value, result);
+                    } else if (title === argNames.moduleChunk) {
+                        addItemsSet(moduleChunk, value, result);
+                    }
 
                     if (matchedItem) {
                         const id = matchedItem.id;
@@ -221,7 +241,11 @@ export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, numbe
                 const valueText = $div.find('span').text().trim();
                 const value = parseChineseNumber(valueText) ?? 0;
 
-                if (title === argNames.moduleBox) addItemsSet(moduleBox, value, result);
+                if (title === argNames.moduleBox) {
+                    addItemsSet(moduleBox, value, result);
+                } else if (title === argNames.moduleChunk) {
+                    addItemsSet(moduleChunk, value, result);
+                }
 
                 if (matchedItem) {
                     const id = matchedItem.id;
