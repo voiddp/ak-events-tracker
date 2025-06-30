@@ -191,7 +191,7 @@ export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, numbe
         const $table = $(table);
         const $firstTr = $table.find('tr').first();
         if ($firstTr.text().includes(argNames.totals)) {
-            tablesToIgnore.add(table); 
+            tablesToIgnore.add(table);
         }
     });
 
@@ -318,7 +318,7 @@ export const parseTextRewards = ($: cheerio.CheerioAPI, result: Record<string, n
             const fullText = $(element).text();
             if (fullText.includes(argNames.paidPackContent)) return;
 
-            const splits = fullText.split(/[,.;]/).map(part => part.trim()).filter(part => part);
+            const splits = fullText.split(/[、,.;：]/).map(part => part.trim()).filter(part => part.match(`.*[x×*]\s*(\\d+)`));
             // if (!text.includes('日')) return; not restrict to sign-ins.
 
             Object.values(itemsJson).forEach((item) => {
@@ -326,14 +326,19 @@ export const parseTextRewards = ($: cheerio.CheerioAPI, result: Record<string, n
                 if (!cnName) return;
                 const regex = new RegExp(`${cnName}[x×*]\s*(\\d+)`, 'g');
                 let match;
+                let found = null;
                 splits.forEach((text) => {
                     while ((match = regex.exec(text)) !== null) {
+                        found = text;
                         const quantity = parseChineseNumber(match[1]) ?? 0;
                         if (quantity > 0) {
                             result[item.id] = (result[item.id] ?? 0) + quantity;
                         }
                     }
                 })
+                if (found) {
+                    splits.splice(splits.indexOf(found), 1);
+                }
             });
         });
     return result;
