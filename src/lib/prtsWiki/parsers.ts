@@ -311,6 +311,19 @@ export const parseShopInEvent = ($: cheerio.CheerioAPI, result: Record<string, n
 };
 
 export const parseTextRewards = ($: cheerio.CheerioAPI, result: Record<string, number>) => {
+    //id  + regex for each item for looping
+    const itemsRegexs: { id: string; regex: RegExp }[] = [];
+    for (const item of Object.values(itemsJson)) {
+        const { cnName, id } = item as { cnName: string; id: string };
+        if (!cnName) continue;
+
+        for (const variant of getNameVariants(cnName)) {
+            itemsRegexs.push({
+                id,
+                regex: new RegExp(`${variant}[x×*]\\s*(\\d+)`, 'g'),
+            });
+        }
+    }
 
     //restrict text search to ouside of inner elements of table rows (other cases) and known li evenpoint case
     $('p, span, li:not([class*="eventpoint"])').not('tr p, tr span, tr li')
@@ -321,27 +334,39 @@ export const parseTextRewards = ($: cheerio.CheerioAPI, result: Record<string, n
             const splits = fullText.split(/[、,.;：]/).map(part => part.trim()).filter(part => part.match(`.*[x×*]\s*(\\d+)`));
             // if (!text.includes('日')) return; not restrict to sign-ins.
 
-            Object.values(itemsJson).forEach((item) => {
-                const { cnName } = item as { cnName: string };
-                if (!cnName) return;
-                const regex = new RegExp(`${cnName}[x×*]\s*(\\d+)`, 'g');
-                let match;
-                let found = null;
-                splits.forEach((text) => {
-                    while ((match = regex.exec(text)) !== null) {
-                        found = text;
-                        const quantity = parseChineseNumber(match[1]) ?? 0;
-                        if (quantity > 0) {
-                            result[item.id] = (result[item.id] ?? 0) + quantity;
-                        }
+            for (let i = 0; i < splits.length; i++) {
+                const text = splits[i];
+
+                for (const { id, regex } of itemsRegexs) {
+                    const match = regex.exec(text);
+                    if (!match) continue;
+
+                    const quantity = parseChineseNumber(match[1]) ?? 0;
+                    if (quantity > 0) {
+                        result[id] = (result[id] ?? 0) + quantity;
                     }
-                })
-                if (found) {
-                    splits.splice(splits.indexOf(found), 1);
+
+                    splits.splice(i, 1);
+                    i--;
+                    break;
                 }
-            });
+            }
         });
     return result;
+};
+
+const getNameVariants = (cnName: string): string[] => {
+    const variants = new Set<string>([cnName]);
+    const separators = ['·', '-'];
+    const replacements = [' ', ''];
+
+    for (const sep of separators) {
+        for (const rep of replacements) {
+            const variant = cnName.replaceAll(sep, rep);
+            variants.add(variant);
+        }
+    }
+    return Array.from(variants);
 };
 
 export const parseISSquadsPage = ($: cheerio.CheerioAPI, keywords: string[]) => {
