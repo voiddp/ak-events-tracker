@@ -100,7 +100,7 @@ export const fetchEvents = async (monthsAgoDate: Date, context: ApiContext): Pro
   return eventsResult;
 };
 
-export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext): Promise<WebEventsData | null> => {
+export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext, eventList: WebEventsData): Promise<WebEventsData | null> => {
   try {
     context.setProgress?.("LIST", 50);
     const ISPages = await fetchArgumentsByName(pageNames.integratedStrategyList, argNames.link, context);
@@ -134,6 +134,9 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
       if (IShistoryDates && Object.keys(IShistoryDates).length > 0) {
         if (Object.entries(IShistoryDates).some(([name, date]) =>
           name !== deepSubpage && date >= monthsAgoDate)) {
+          
+          //remove same named event from EventList
+          delete eventList[ISpage];
 
           const ISMonthlyEvents = parseISMonthsTabber($_main, IShistoryDates, ISpage, ISprefix, deepSubpage);
           if (ISMonthlyEvents && Object.keys(ISMonthlyEvents).length > 0) {
@@ -282,7 +285,7 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
     }
 
     context.setProgress?.("LIST", 40);
-    const ISEvents = await fetchLastISEvents(isStartDate, context);
+    const ISEvents = await fetchLastISEvents(isStartDate, context, webEvents);
     if (ISEvents) {
       Object.values(ISEvents).forEach(event => {
         webEvents[event.pageName] = event;
