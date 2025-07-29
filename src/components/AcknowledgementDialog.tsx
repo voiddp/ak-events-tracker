@@ -31,6 +31,7 @@ const AcknowledgementDialog: React.FC<AcknowledgementDialogProps> = ({ open, onC
       </DialogTitle>
       <DialogContent>
         <List>
+          <ListItem><Typography>To fix any bugs you find, please contact me on the Krooster Discord server.</Typography></ListItem>
           <ListItem sx={{ flexDirection: "row", flexWrap: "wrap" }}><Typography>This <Link href="https://github.com/voiddp/ak-events-tracker" underline="always">github project</Link>
             &nbsp; is developed with end goal to be part of Krooster planner tools in combination with its summary and statistics (also by me)</Typography></ListItem>
           <ListItem><Typography><Link href="https://www.krooster.com/" underline='always'>Krooster</Link> for some components</Typography></ListItem>

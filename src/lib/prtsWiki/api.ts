@@ -14,7 +14,7 @@ import {
   templates,
   argNames,
   sssModuleFirstTime,
-  moduleBox
+  moduleChunk
 } from './constants';
 import {
   parseISHistoryTable,
@@ -335,12 +335,11 @@ export const getEverythingAtOnce = async (session: Session, setProgress?: Progre
             webEvent.name = pageResult.title;
           }
 
-          //force 1 unparsed moduleBox into all "BATTLEPLAN" = CC
+          //force 1 unparsed moduleChunk into all "BATTLEPLAN" = CC
           //for now till better algorithm
           if (webEvent.name &&
-            (webEvent.name.includes("BATTLEPLAN") ||
-              webEvent.name.includes("Battleplan"))) {
-            addItemsSet(moduleBox, 1, webEvent.materials ?? {});
+            (webEvent.name.toLowerCase().includes("battleplan"))) {
+            addItemsSet(moduleChunk, 1, webEvent.materials ?? {});
             webEvent.webDisable = true;
           };
 
