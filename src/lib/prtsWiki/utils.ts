@@ -97,7 +97,7 @@ export const applyDictionary = (title: string | null): string | false => {
     let _title: string | false = false;
     if (!title?.trim()) return _title;
 
-    Object.entries(dictionary).forEach(([key, value]) => {
+    Object.entries(dictionary ?? {}).forEach(([key, value]) => {
         if (title.includes(key)) {
             const source = _title ? _title : title;
             _title = `${value}${source.includes(':') ? '' : ':'} ${source.replace(key, '').trim()}`;
@@ -107,7 +107,7 @@ export const applyDictionary = (title: string | null): string | false => {
 }
 
 export const addItemsSet = (set: Record<string, number>, number: number, result: Record<string, number>) => {
-    Object.entries(set).forEach(([key, value]) => {
+    Object.entries(set ?? {}).forEach(([key, value]) => {
         result[key] = (result[key] ?? 0) + value * number;
     });
 };

@@ -88,7 +88,7 @@ export const parseISMonthsTabber = (
     const WebEventsData_IS: WebEventsData = {};
 
     // Get all dates excluding the deepInvestigation entry
-    const dates = Object.entries(IShistory)
+    const dates = Object.entries(IShistory ?? {})
         .filter(([key]) => key !== deepSubpage)
         .sort(([, a], [, b]) => a.getTime() - b.getTime())
         .forEach(([name, date], idx) => {

@@ -40,8 +40,8 @@ export const getApiUrl = (pageTitle: string) => {
 
 export const getWikitextFromApiJson = async (pageName: string, context: ApiContext) => {
   const response = await fetchJson<MediaWikiApiResponse>(getApiUrl(pageName), context.session);
-  const page = Object.values(response.query.pages)[0];
-  return page.revisions?.[0]?.slots?.main?.['*'] || '';
+  const page = Object.values(response.query.pages ?? {})[0] ?? [];
+  return page?.revisions?.[0]?.slots?.main?.['*'] || '';
 };
 
 export const fetchArgumentsByName = async (pageName: string, argument: string, context: ApiContext) => {
@@ -131,21 +131,21 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
       const $_main = cheerio.load(html_main);
       const IShistoryDates = parseISHistoryTable($_main, squadsSubpage, deepSubpage);
 
-      if (IShistoryDates && Object.keys(IShistoryDates).length > 0) {
-        if (Object.entries(IShistoryDates).some(([name, date]) =>
+      if (IShistoryDates && Object.keys(IShistoryDates ?? {}).length > 0) {
+        if (Object.entries(IShistoryDates ?? {}).some(([name, date]) =>
           name !== deepSubpage && date >= monthsAgoDate)) {
           
           //remove same named event from EventList
           delete eventList[ISpage];
 
           const ISMonthlyEvents = parseISMonthsTabber($_main, IShistoryDates, ISpage, ISprefix, deepSubpage);
-          if (ISMonthlyEvents && Object.keys(ISMonthlyEvents).length > 0) {
+          if (ISMonthlyEvents && Object.keys(ISMonthlyEvents ?? {}).length > 0) {
             context.setProgress?.("LIST", 40);
             const html_squads = await fetchHtml(getUrl(`${ISpage}/${squadsSubpage}`), context.session);
             const $_squads = cheerio.load(html_squads);
-            const squadsData = parseISSquadsPage($_squads, Object.keys(IShistoryDates));
+            const squadsData = parseISSquadsPage($_squads, Object.keys(IShistoryDates ?? {}));
 
-            Object.values(ISMonthlyEvents).forEach(event => {
+            Object.values(ISMonthlyEvents ?? {}).forEach(event => {
               if (event.date && event.date >= monthsAgoDate) {
                 const _event = {
                   ...event,
@@ -157,7 +157,7 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
                   _event.name = _event.name?.replace(event.pageName, squadsData[_page].title);
                 }
 
-                Object.entries(squadsData[_page].materials).forEach(([id, amount]) => {
+                Object.entries(squadsData[_page]?.materials ?? {}).forEach(([id, amount]) => {
                   if (!_event.materials) _event.materials = {};
                   _event.materials[id] = (_event.materials[id] ?? 0) + amount;
                 });
@@ -287,7 +287,7 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
     context.setProgress?.("LIST", 40);
     const ISEvents = await fetchLastISEvents(isStartDate, context, webEvents);
     if (ISEvents) {
-      Object.values(ISEvents).forEach(event => {
+      Object.values(ISEvents ?? {}).forEach(event => {
         webEvents[event.pageName] = event;
       });
     }
@@ -303,10 +303,10 @@ export const getEverythingAtOnce = async (session: Session, setProgress?: Progre
 
   try {
     const eventsList = await getEventList(6, context);
-    if (!eventsList || Object.keys(eventsList).length === 0) return;
+    if (!eventsList || Object.keys(eventsList ?? {}).length === 0) return;
 
     const results: WebEvent[] = [];
-    const entries = Object.entries(eventsList);
+    const entries = Object.entries(eventsList ?? {});
 
     for (const [i, [_, event]] of entries.entries()) {
       try {
