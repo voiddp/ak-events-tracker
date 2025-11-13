@@ -1,0 +1,14 @@
+{
+  "name": "ak-events-tracker",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "forwardPorts": [3000],
+  // 1. Install deps
+  // 2. Force submodules to init + fetch latest commits from origin
+  "postCreateCommand": "yarn install && yarn vercel link --yes --project ak-events-tracker && yarn vercel env pull .env.development.local"
+  // && git submodule update --init --recursive --force --remote,
+
+  // Every start, refresh modules/upstream
+  //"postStartCommand": "git submodule sync --recursive && git submodule update --init --recursive --force --remote && git fetch --all"
+}
