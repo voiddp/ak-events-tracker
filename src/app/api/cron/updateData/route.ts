@@ -28,7 +28,6 @@ export async function GET() {
         eventsData,
         eventsUpdated,
       });
-      /* const timestamp = await putEventsInStorage(webEventsData, eventsData); */
 
       return NextResponse.json({
         success: true,

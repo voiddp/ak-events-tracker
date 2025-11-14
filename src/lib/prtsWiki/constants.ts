@@ -32,12 +32,14 @@ export const argNames = {
 //order matters, each next found word is placed at start
 export const dictionary = {
     '签到': 'Sign-in',
+    event: '活动',
     '复刻': 'Rerun',
     'IN RETROSPECT': 'Rerun',
     'In Retrospect': 'Rerun',
     '限时任务': 'Missions',
     '集成': 'IS',
     '跨年': 'New Year',
+    '促融共竞': `Icebreaker Games`,
 };
 
 export const moduleBox = {

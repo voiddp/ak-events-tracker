@@ -1,6 +1,7 @@
 import { AK_CALENDAR, AK_DAILY, AK_WEEKLY } from "@/utils/ItemUtils";
 import { EventsData, NamedEvent, Event } from "./types";
 import { WebEventsData, WebEvent } from "../prtsWiki/types";
+import { GL_EVENT_DATES, IS_START_MONTH_SHIFT } from "./constants";
 
 export const createEmptyEvent = () => {
     return { index: -1, materials: {} } as Event;
@@ -114,57 +115,40 @@ export const reindexEvents = (eventsData: EventsData | [string, Event][]): Event
 
 export const createDefaultEventsData = (webEvents: WebEventsData) => {
     if (!webEvents || Object.keys(webEvents).length === 0) return;
+    const _webEvents: WebEventsData = { ...webEvents };
+
     const nextMonthsEvents = getNextMonthsData(7);
     if (!nextMonthsEvents || Object.keys(nextMonthsEvents).length === 0) return;
 
-    //force 1 month shift for all IS events
-    const _webEvents: WebEventsData = { ...webEvents };
-    Object.entries(webEvents)
-        .forEach(([pageName, webEvent]) => {
-            const eventDate = new Date(webEvent.date?.getTime() ?? 0);
-            if (webEvent.name && webEvent.name.includes("IS")) {
-                eventDate.setMonth(eventDate.getMonth() + 1);
-            }
-            _webEvents[pageName] = {
-                ...webEvent,
-                date: eventDate
-            }
-        });
-
-    const _eventsData = Object.entries(_webEvents)
+    const sortedEvents = Object.entries(_webEvents)
         .filter(([_, wEvent]) =>
             (wEvent.materials && Object.keys(wEvent.materials).length > 0)
-            || (wEvent.farms && wEvent.farms.length > 0))
-        .map(([name, wEvent]) => {
-            let _wEvent = { ...wEvent };
-            if (_wEvent.date) {
-                const date = new Date(_wEvent.date);
-                //decrease web events date by 6 months to sort
-                date.setMonth(date.getMonth() + 6);
-                _wEvent.date = date;
-            }
-            return [name, _wEvent] as [string, WebEvent];
-        }) //concat with Months events to sort
-        .concat(
-            Object.entries(nextMonthsEvents).map(([name, event]) => {
-                //name is May 2025, convert to last day of month date
-                const date = new Date(name);
-                const webEvent: WebEvent = {
-                    ...event,
-                    pageName: name,
-                    name,
-                    date: date,
-                    link: ""
-                }
-                return [name, webEvent] as [string, WebEvent];
-            }))
+            || (wEvent.farms && wEvent.farms.length > 0)
+            && wEvent.date)
+        //sort pure events first
         .sort(([, a], [, b]) => {
-            if (a.date && b.date) {
-                return new Date(a.date).getTime() - new Date(b.date).getTime();
+            return new Date(a.date!).getTime() - new Date(b.date!).getTime();
+        })
+    //Apply +6 months shift and known dates with relative positioning
+    const shiftedEvents = applyGLDatesShift(sortedEvents);
+    const _eventsData = shiftedEvents.concat(
+        Object.entries(nextMonthsEvents).map(([name, event]) => {
+            //name is May 31, 2025, convert to last day of month date
+            const date = new Date(name);
+            const webEvent: WebEvent = {
+                ...event,
+                pageName: name,
+                name: `${date.toLocaleString('en-US', {
+                    month: 'long',
+                    year: 'numeric'
+                })} - Missions/Logins`,
+                date: date,
+                link: ""
             }
-            if (!a.date) return -1;
-            if (!b.date) return 1;
-            return 0;
+            return [name, webEvent] as [string, WebEvent];
+        }))
+        .sort(([, a], [, b]) => {
+            return new Date(a.date!).getTime() - new Date(b.date!).getTime();
         }).reduce((acc, [_, event], idx) => {
             const _name = event.name ?? event.pageName;
             acc[_name] = {
@@ -179,7 +163,6 @@ export const createDefaultEventsData = (webEvents: WebEventsData) => {
             }
             return acc
         }, {} as EventsData)
-
     return _eventsData;
 }
 
@@ -215,3 +198,71 @@ export const getDateString = (date: Date | string) => {
 
     return `${day}-${month}-${year}`;
 }
+
+export const applyGLDatesShift = (events: [string, WebEvent][]): [string, WebEvent][] => {
+    let firstKnownEvent: { key: string; event: WebEvent; newDate: Date; sixMonthDate: Date } | null = null;
+
+    for (const [eventName, fixedDate] of Object.entries(GL_EVENT_DATES)) {
+        const existingEvent = events.find(([_, wEvent]) => wEvent.name === eventName);
+        if (existingEvent) {
+            const [key, wEvent] = existingEvent;
+            const newDate = new Date(fixedDate);
+            const sixMonthDate = new Date(wEvent.date!);
+            sixMonthDate.setMonth(sixMonthDate.getMonth() + 6);
+
+            if (!firstKnownEvent || newDate.getTime() < firstKnownEvent.newDate.getTime()) {
+                firstKnownEvent = {
+                    key,
+                    event: wEvent,
+                    newDate,
+                    sixMonthDate
+                };
+            }
+        }
+    }
+
+    if (!firstKnownEvent) {
+        return events.map(([key, wEvent]) => {
+            const date = new Date(wEvent.date!);
+            const name = wEvent.name || '';
+            date.setMonth(date.getMonth() + 6
+                + (name.startsWith("IS") ? IS_START_MONTH_SHIFT : 0));
+            return [key, { ...wEvent, date }];
+        });
+    }
+    const firstSixMonth = firstKnownEvent.sixMonthDate.getTime();
+    const firstNew = firstKnownEvent.newDate.getTime();
+    let runningShiftTime = firstNew - firstSixMonth;
+    return events.map(([key, wEvent]) => {
+        const name = wEvent.name || '';
+        const sixMonthDate = new Date(wEvent.date!);
+        sixMonthDate.setMonth(sixMonthDate.getMonth() + 6
+            + (name.startsWith("IS") ? IS_START_MONTH_SHIFT : 0));
+
+        if (name.startsWith("IS") || name.startsWith("Annihilation") || name.startsWith("SSS")) {
+            return [key, { ...wEvent, date: sixMonthDate }];
+        }
+
+        // Handle known events
+        if (name in GL_EVENT_DATES) {
+            const newDate = new Date(GL_EVENT_DATES[name]);
+            runningShiftTime = newDate.getTime() - sixMonthDate.getTime();
+            return [key, { ...wEvent, date: newDate }];
+        }
+
+        //Put events that were before first known relative to it
+        const sixMonth = sixMonthDate.getTime();
+        if (sixMonth < firstSixMonth
+            && sixMonth > firstNew) {
+            const timeDiff = firstSixMonth - sixMonth;
+            const adjustedDate = new Date(firstNew - timeDiff);
+            return [key, { ...wEvent, date: adjustedDate }];
+        } else if (sixMonth === firstSixMonth) {
+            return [key, { ...wEvent, date: firstKnownEvent.newDate }];
+        }
+
+        // Normal shift for other unknown events (those before first known event)
+        const adjustedDate = new Date(sixMonth + runningShiftTime);
+        return [key, { ...wEvent, date: adjustedDate }];
+    });
+};

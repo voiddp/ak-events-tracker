@@ -134,7 +134,6 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
       if (IShistoryDates && Object.keys(IShistoryDates ?? {}).length > 0) {
         if (Object.entries(IShistoryDates ?? {}).some(([name, date]) =>
           name !== deepSubpage && date >= monthsAgoDate)) {
-          
           //remove same named event from EventList
           delete eventList[ISpage];
 
@@ -154,7 +153,9 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
                 const _page = event.pageName;
 
                 if (squadsData[_page]) {
-                  _event.name = _event.name?.replace(event.pageName, squadsData[_page].title);
+                  _event.name = squadsData[_page].title === ""
+                    ? _event.name?.replace(` - ${event.pageName}`, "")
+                    : _event.name?.replace(event.pageName, squadsData[_page].title);
                 }
 
                 Object.entries(squadsData[_page]?.materials ?? {}).forEach(([id, amount]) => {

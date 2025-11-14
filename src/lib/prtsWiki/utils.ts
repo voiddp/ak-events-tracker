@@ -101,6 +101,7 @@ export const applyDictionary = (title: string | null): string | false => {
         if (title.includes(key)) {
             const source = _title ? _title : title;
             _title = `${value}${source.includes(':') ? '' : ':'} ${source.replace(key, '').trim()}`;
+            if (value === "Sign-in") _title = _title.replace(dictionary.event, '').trim();
         }
     });
     return _title;

@@ -8,19 +8,23 @@ import { addItemsSet, applyDictionary, capitalizeWords, createEmptyWebEvent, esc
 
 export const findENTitle = ($: cheerio.CheerioAPI, pageName: string): string | null => {
     let result: string | null = null;
+    let h1Text: string | null = null;
 
     const unescaped = $.html().replace(/\\/g, '');
     const match = unescaped.match(/class=['"]fnameheader[^>]*>([^<]+)</);
     const title = match ? match[1].trim() : null;
     if (title && isMostlyEnglish(title)) {
         result = capitalizeWords(title);
+    } else {
+        //<h1 id="firstHeading" class="firstHeading mw-first-heading">CN full title</h1>
+        h1Text = $('h1#firstHeading').text().trim();
     }
 
     const source = result
         ? result
-        : title
-            ? title
-            : pageName;
+        : h1Text
+            ? h1Text
+            : title ? title : pageName;
     const afterDictionary = applyDictionary(source);
 
     return (afterDictionary ? afterDictionary : result);
@@ -99,7 +103,7 @@ export const parseISMonthsTabber = (
             const datePattern = `${yearShort}/${month}`;
 
             // Find the tabber panel with matching data-title
-            const tabPanel = $(`article.tabber__panel[data-title*="${datePattern}"]`);
+            const tabPanel = $(`article.tabber__panel[aria-labelledby*="${datePattern}"]`);
 
             if (tabPanel.length > 0) {
                 // Process the tab panel content
