@@ -5,4 +5,5 @@ export const GL_EVENT_DATES: Record<string,string> = {
     "Trials For Navigator #05" : "2025-11-20",
     "Rerun: Path Of Life": "2025-11-27",
     "Fantasy In The Mirage": "2025-12-11",
+    "Ato": "2026-01-15"
 }
