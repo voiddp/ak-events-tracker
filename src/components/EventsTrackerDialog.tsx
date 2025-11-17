@@ -56,6 +56,7 @@ import SubmitEventDialog from '@/components/events/SubmitEventDialog';
 import { MAX_SAFE_INTEGER, getWidthFromValue, formatNumber, standardItemsSort, getItemBaseStyling, isMaterial, getDefaultEventMaterials, getFarmCSS } from '@/utils/ItemUtils'
 import { createEmptyEvent, createEmptyNamedEvent, getDateString, reindexEvents } from "@/lib/events/utils"
 import ItemEditBox from '@/components/events/ItemEditBox';
+import BlockIcon from '@mui/icons-material/Block';
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
@@ -104,7 +105,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     const [submitDialogOpen, setSubmitDialogOpen] = useState<boolean>(false);
     const [submitedEvent, setSubmitedEvent] = useState(createEmptyNamedEvent());
     const [selectedEvent, setSelectedEvent] = useState(createEmptyNamedEvent());
-    const [submitSources, setSubmitSources] = useState<SubmitSource[]>(["defaults", "defaultsWeb", "months"]);
+    const [submitSources, setSubmitSources] = useState<SubmitSource[]>(["defaults", "archiveIS", "archiveRA", "defaultsWeb", "months"]);
 
     const SUPPORTED_IMPORT_EXPORT_TYPES: DataShareInfo[] = [
         {
@@ -140,6 +141,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                 <li>Provided by <Link href="https://ak-events-tracker.vercel.app/" underline="always">ak-events-tracker</Link>.</li>
                 <li>Data from CN prts.wiki events, adjusted by six months, is combined with monthly estimates and auto sorted by date. These are defaults used by the tracker.</li>
                 <li>The default list can be used as-is, or as shifts occur in global shedule, can be used as base to create adjusted personal list</li>
+                <li>Events from Tracker and Defaults can be <BlockIcon sx={{ display: "inline-block", verticalAlign: "middle", color: "primary.main" }} /> disabled in the Events Selector, so they are excluded from calculations.</li>
             </ul>
         </>;
 
@@ -389,7 +391,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onChange(rawEvents);
-                                        setSubmitSources(["current", "events", "defaults", "defaultsWeb", "months"])
+                                        setSubmitSources(["current", "events", "defaults", "archiveIS", "archiveRA", "defaultsWeb", "months"])
                                         setSubmitedEvent({ name, index: _eventData.index, materials: _eventData.materials ?? {}, farms: _eventData.farms ?? [] });
                                         setSubmitDialogOpen(true);
                                     }} />
@@ -579,21 +581,24 @@ const EventsTrackerDialog = React.memo((props: Props) => {
     };
 
     const handleSetEventsFromDefaults = useCallback(() => {
-        if (trackerDefaults && trackerDefaults.eventsData
-            && Object.keys(trackerDefaults.eventsData).length > 0) {
+        if (trackerDefaults?.eventsData && Object.keys(trackerDefaults.eventsData).length > 0) {
+            const enabledEvents = reindexEvents(
+                Object.fromEntries(
+                    Object.entries(trackerDefaults.eventsData)
+                        .filter(([, eventData]) => !eventData.disabled)
+                ));
 
-            setRawEvents(trackerDefaults.eventsData);
-            onChange(trackerDefaults.eventsData);
+            setRawEvents(enabledEvents);
+            onChange(enabledEvents);
         }
-    }, [trackerDefaults, onChange, setRawEvents]
-    )
+    }, [trackerDefaults, onChange, setRawEvents]);
 
     const getBuilderButton = () => {
         return (<Button
             variant="contained"
             size="small"
             onClick={() => {
-                setSubmitSources(['defaults', 'months', 'events', 'defaultsWeb'])
+                setSubmitSources(['defaults', "archiveIS", "archiveRA", 'months', 'events', 'defaultsWeb'])
                 setSubmitDialogOpen(true);
             }}
             sx={{ minWidth: "fit-content", whiteSpace: "nowrap" }}
@@ -675,12 +680,12 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                         <Grid container spacing={2} mt={1} mb={2}>
                             <Grid size={{ xs: 12, md: 6 }}>
                                 <FormControl fullWidth>
-                                    <InputLabel id="export-format-label">Export format</InputLabel>
+                                    <InputLabel id="tr-export-format-label">Export format</InputLabel>
                                     <Select
-                                        id="export-format"
+                                        id="tr-export-format"
                                         variant="standard"
                                         name="export-format"
-                                        labelId="export-format-label"
+                                        labelId="tr-export-format-label"
                                         label="Export format"
                                         value={exportFormat}
                                         MenuProps={{
@@ -702,12 +707,12 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                             </Grid>
                             <Grid size={{ xs: 8, md: 4 }}>
                                 <FormControl fullWidth>
-                                    <InputLabel id="import-format-label">Import format</InputLabel>
+                                    <InputLabel id="tr-import-format-label">Import format</InputLabel>
                                     <Select
-                                        id="import-format"
+                                        id="tr-import-format"
                                         variant="standard"
                                         name="import-format"
-                                        labelId="import-format-label"
+                                        labelId="tr-import-format-label"
                                         label="import format"
                                         value={importFormat}
                                         MenuProps={{
@@ -750,7 +755,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                     multiline
                                     minRows={10}
                                     maxRows={10}
-                                    id="exported-data-input"
+                                    id="tr-exported-data-input"
                                     label="Export data"
                                     slotProps={{
                                         input: {
@@ -784,7 +789,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                                     multiline
                                     minRows={10}
                                     maxRows={10}
-                                    id="import-data-input"
+                                    id="tr-import-data-input"
                                     label="Import data"
                                     value={importData}
                                     disabled={importFormat == ""}

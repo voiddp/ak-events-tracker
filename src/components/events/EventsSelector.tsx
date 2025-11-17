@@ -8,12 +8,15 @@ import {
     Stack,
     Typography,
     useTheme,
-    useMediaQuery
+    useMediaQuery,
+    IconButton
 } from '@mui/material';
+import ClearIcon from '@mui/icons-material/Clear';
 import ItemBase from "@/components/ItemBase";
 import { EventsSelectorProps } from "@/lib/events/types"
 import { getItemBaseStyling, customItemsSort, formatNumber, getFarmCSS } from "@/utils/ItemUtils";
 import { createEmptyEvent, createEmptyNamedEvent } from '@/lib/events/utils';
+import BlockIcon from '@mui/icons-material/Block';
 
 export const EventsSelector = React.memo((props: EventsSelectorProps) => {
     const {
@@ -23,6 +26,8 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
         eventsData,
         selectedEvent,
         onChange,
+        onOpen,
+        onEventToggle,
     } = props;
 
     let label: string;
@@ -49,9 +54,17 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
             label = "Select from web data";
             break;
         }
+        case 'archiveIS': { //source only
+            label = "Select from IS Archive";
+            break;
+        }
+        case 'archiveRA': { //source only
+            label = "Select from RA Archive";
+            break;
+        }
     };
 
-    const [isSelectFinished, setIsSelectFinished] = useState(true);
+    const [isSelecClosed, setIsSelectClosed] = useState(true);
 
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -60,7 +73,6 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
         .sort(([, a], [, b]) => a.index - b.index), [eventsData]);
 
     const handleChange = (eventIndex: number) => {
-        setIsSelectFinished(true);
         if (eventIndex === -1) {
             onChange?.({ ...createEmptyNamedEvent() });
             return;
@@ -73,10 +85,6 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
         return;
     };
 
-    const handleOnClick = () => {
-        setIsSelectFinished(true);
-    }
-
     return (<FormControl sx={{ flexGrow: 1, width: "100%" }}>
         <InputLabel>{label}</InputLabel>
         <Select
@@ -87,21 +95,45 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
                 : -1}
             onChange={(e) => handleChange(Number(e.target.value))}
             onOpen={() => {
-                setIsSelectFinished(false)
+                setIsSelectClosed(false)
+                onOpen?.();
             }}
+            onClose={() => setIsSelectClosed(true)}
             label={label}
             fullWidth
             sx={{ maxHeight: "3rem", minHeight: "3rem", overflow: "hidden" }}
+            IconComponent={(props) => (
+                <IconButton
+                    size="small"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleChange(-1);
+                    }}
+                >
+                    <ClearIcon fontSize="small" />
+                </IconButton>
+            )}
         >
             <MenuItem value={-1} key={-1} className="no-underline">{emptyOption}</MenuItem>
             <Divider component="li" />
             {eventsList
                 .map(([name, event]) => (
-                    <MenuItem value={event.index} key={event.index} className="no-underline" onClick={handleOnClick}>
+                    <MenuItem value={event.index} key={event.index} className="no-underline">
                         <Stack direction="row" justifyContent="flex-end" alignItems="center" width="stretch" flexWrap="wrap">
+                            {!isSelecClosed && onEventToggle && <IconButton
+                                sx={{
+                                    opacity: !event.disabled ? 0.2 : 1,
+                                    color: event.disabled ? "primary.main" : "inherit",
+                                }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEventToggle(name)
+                                }}>
+                                <BlockIcon fontSize='small' />
+                            </IconButton>}
                             <Typography sx={{ mr: "auto", whiteSpace: "wrap", fontSize: fullScreen ? "small" : "unset" }}>
                                 {`${event.index}: ${name} `}
-                            </Typography> {!isSelectFinished ? (
+                            </Typography> {!isSelecClosed && (!onEventToggle || !event.disabled) && (
                                 <Stack direction="row">
                                     {(event.farms ?? []).map((id) => [id, 0] as [string, number])
                                         .concat(Object.entries(event.materials)
@@ -114,7 +146,7 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
                                             </ItemBase>
                                         ))}
                                     <small>{"..."}</small>
-                                </Stack>) : null}
+                                </Stack>)}
                         </Stack>
                     </MenuItem>
                 ))}

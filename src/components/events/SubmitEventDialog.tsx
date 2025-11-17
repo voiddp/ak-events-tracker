@@ -63,8 +63,10 @@ const SubmitEventDialog = (props: Props) => {
             return;
         }
         if (!allowedSources || allowedSources.length === 1) return;
-
-        const list = allowedSources;
+        let list = allowedSources;
+        if (!trackerDefaults) {
+            list = allowedSources.filter((s) => !s.includes("archive") && !s.includes("default"))
+        }
         setSource((prev) => {
             let result: SubmitSource;
 
@@ -77,7 +79,7 @@ const SubmitEventDialog = (props: Props) => {
                 setFormToSubmited();
             return result;
         })
-    }, [allowedSources, setFormToSubmited]
+    }, [allowedSources, setFormToSubmited, trackerDefaults]
     );
 
     useEffect(() => {
@@ -178,6 +180,8 @@ const SubmitEventDialog = (props: Props) => {
             case 'events': return eventsData;
             case 'defaults': return trackerDefaults?.eventsData ?? {};
             case 'defaultsWeb': return getEventsFromWebEvents(trackerDefaults?.webEventsData ?? {});
+            case 'archiveIS': return getEventsFromWebEvents(trackerDefaults?.archive?.integratedStrategies ?? {})
+            case 'archiveRA': return getEventsFromWebEvents(trackerDefaults?.archive?.reclamationAlgorithm ?? {})
             default: return eventsData;
         }
     }
@@ -191,6 +195,8 @@ const SubmitEventDialog = (props: Props) => {
             case "months": return "Months generator" + arrow;
             case "defaults": return "Defaut event list" + arrow;
             case "defaultsWeb": return "CN prts.wiki data" + arrow;
+            case 'archiveIS': return "IS - Archive" + arrow;
+            case 'archiveRA': return "RA - Archive" + arrow;
             default: return '';
         }
     }
@@ -303,13 +309,13 @@ const SubmitEventDialog = (props: Props) => {
 
     return (
         <Dialog open={open} onClose={handleDialogClose}>
-            <DialogTitle sx={{ p: 2, alignItems: "flex-start" }} typography="h3">
+            <DialogTitle sx={{ p: 2, alignItems: "flex-start" }}>
                 <Stack direction="row" width="100%" gap={1}>
                     <Stack width="100%" gap={1}>
-                        <Stack direction="row" alignItems="center">
+                        <Stack direction="row">
                             From: <Button
                                 variant="text"
-                                sx={{ minWidth: "9rem" }}
+                                sx={{ minWidth: "10rem" }}
                                 onClick={() => switchSource()}
                             ><Typography variant="caption">{getSourceName(source)}</Typography></Button>
                         </Stack>

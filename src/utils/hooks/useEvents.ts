@@ -6,14 +6,16 @@ import useLocalStorage from "@/utils/hooks/useLocalStorage";
 import { getNextMonthsData } from "@/lib/events/utils";
 import { WebEventsData } from "@/lib/prtsWiki/types";
 
-function useEvents(): {
-    eventsData: EventsData,
-    setEvents: (newEventsData: EventsData) => void,
-    submitEvent: (submit: SubmitEventProps) => null | [string, number][],
-    getNextMonthsData: (months?: number) => EventsData,
-    createDefaultEventsData: (webEvents: WebEventsData) => EventsData,
-} {
-    const [eventsData, _setEvents] = useLocalStorage<EventsData>("eventsTracker", {});
+export interface EventsHook {
+    readonly eventsData: EventsData;
+    readonly setEvents: (newEventsData: EventsData) => void;
+    readonly submitEvent: (submit: SubmitEventProps) => null | [string, number][];
+    readonly getNextMonthsData: (months?: number) => EventsData;
+    readonly createDefaultEventsData: (webEvents: WebEventsData) => EventsData;
+    readonly toggleEvent: (name: string) => void;
+}
+export default function useEvents(): EventsHook {
+    const [eventsData, _setEvents] = useLocalStorage<EventsData>("trackerEvents", {});
     const [settings, setSettings] = useSettings();
 
     const removeOldStorage = useCallback(() => {
@@ -73,6 +75,21 @@ function useEvents(): {
         return _items;
     };
 
+    const toggleEvent = (name: string) => {
+        _setEvents((prev) => {
+            const event = prev[name];
+            if (!event) return prev;
+
+            return {
+                ...prev,
+                [name]: {
+                    ...event,
+                    disabled: !event.disabled
+                },
+            }
+        });
+    };
+
     const submitEvent = useCallback((props: SubmitEventProps): null | [string, number][] => {
         const { targetName, sourceName, targetEventIndex, materialsToDepot, materialsToEvent, action, farms, infinite } = props;
         const _eventsData = { ...eventsData };
@@ -98,7 +115,7 @@ function useEvents(): {
                     _event.materials = materialsToEvent;
                 if (_eventsData[_targetName]) _event.index = _eventsData[_targetName].index;
                 _eventsData[_targetName] = _event;
-                console.log("created event:", { _targetName, data: { ..._eventsData[_targetName] } })
+                /* console.log("created event:", { _targetName, data: { ..._eventsData[_targetName] } }) */
             }
                 break;
             case "replace": {
@@ -106,12 +123,12 @@ function useEvents(): {
                     _event.materials = materialsToEvent;
 
                 _eventsData[_targetName] = _event;
-                console.log("delete check: ", name, name ? _eventsData[name] : 'noName');
+                /* console.log("delete check: ", name, name ? _eventsData[name] : 'noName'); */
                 if (name && name !== _targetName && _eventsData[name]) {
                     delete _eventsData[name];
-                    console.log(" deleting: ", name);
+                    /* console.log(" deleting: ", name); */
                 }
-                console.log("replacing:", { _targetName, data: { ..._eventsData[_targetName] } });
+                /* console.log("replacing:", { _targetName, data: { ..._eventsData[_targetName] } }); */
             }
                 break;
             case "modify": {
@@ -123,14 +140,14 @@ function useEvents(): {
                 _eventsData[_targetName] = _event;
                 if (sourceName && sourceName !== _targetName && _eventsData[sourceName]) {
                     delete _eventsData[sourceName];
-                    console.log(" deleting: ", sourceName);
+                    /* console.log(" deleting: ", sourceName); */
                 }
-                console.log("adding to:", { _targetName, data: { ..._eventsData[_targetName] } });
+                /* console.log("adding to:", { _targetName, data: { ..._eventsData[_targetName] } }); */
             }
                 break;
             case "remove": {
                 delete _eventsData[_targetName];
-                console.log("removing", _targetName);
+                /* console.log("removing", _targetName); */
             }
                 break;
         }
@@ -147,7 +164,7 @@ function useEvents(): {
     }
     return {
         eventsData: _eventsData, setEvents, submitEvent, getNextMonthsData,
-        createDefaultEventsData: clientCreateDefaultEventsData
-    }
+        createDefaultEventsData: clientCreateDefaultEventsData,
+        toggleEvent
+    } as const;
 }
-export default useEvents;

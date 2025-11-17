@@ -20,7 +20,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import DeleteIcon from '@mui/icons-material/Delete';
 import StorageIcon from '@mui/icons-material/Storage';
 import UpdateIcon from '@mui/icons-material/Update';
-import { useEventsDefaults } from "@/utils/hooks/useEventsDefaults";
+import useEventsDefaults from "@/utils/hooks/useEventsDefaults";
 import { createEmptyNamedEvent } from "@/lib/events/utils";
 import AcknowledgementDialog from "@/components/AcknowledgementDialog";
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
@@ -52,8 +52,8 @@ export default function Home() {
   const [selectedEvent, setSelectedEvent] = useState<NamedEvent>();
   const [submitSources, setSubmitSources] = useState<(EventsSelectorProps['dataType'])[]>(["months"]);
 
-  const { eventsData, setEvents, submitEvent, createDefaultEventsData } = useEvents();
-  const { trackerDefaults, loading, error, fetchDefaults } = useEventsDefaults();
+  const { eventsData, setEvents, submitEvent, toggleEvent } = useEvents();
+  const { loading, trackerDefaults, fetchDefaults, toggleDefaultsEvent } = useEventsDefaults();
   const [acknowledgementsOpen, setAcknowledgementsOpen] = useState(false);
   ///
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -213,7 +213,7 @@ export default function Home() {
             forceUpdate={forceUpdate}
             forceUpdateCallback={setForceUpdate}
             open={trackerOpen}
-            onClose={() => setTrackerOpen(false)}
+            onClose={() => setTrackerOpen(false)}    
             eventsData={eventsData}
             onChange={setEvents}
             submitEvent={handleSubmitEvent}

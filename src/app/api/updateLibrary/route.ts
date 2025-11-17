@@ -27,22 +27,22 @@ export async function GET(request: NextRequest) {
     const context: ApiContext = { session };
     const startOfAk = new Date(2019, 0, 16);
 
-    const ISLibrary = await fetchLastISEvents(startOfAk, context, undefined, true);
-    const RALibrary = await fetchLastRAEvents(startOfAk, context, undefined, true);
+    const ISArchive = await fetchLastISEvents(startOfAk, context, undefined, true);
+    const RAArchive = await fetchLastRAEvents(startOfAk, context, undefined, true);
 
-    if (!RALibrary || Object.keys(RALibrary).length <= 2
-      || !ISLibrary || Object.keys(ISLibrary).length <= 2) {
+    if (!RAArchive || Object.keys(RAArchive).length <= 2
+      || !ISArchive || Object.keys(ISArchive).length <= 2) {
       responseData = { error: "No data recieved from the API" };
       status = 404;
     } else {
-      const library = {
-        integratedStrategies: ISLibrary,
-        reclamationAlgorithm: RALibrary,
+      const archive = {
+        integratedStrategies: ISArchive,
+        reclamationAlgorithm: RAArchive,
       }
       await putToStorage({
-        library
+        archive
       });
-      responseData = { library };
+      responseData = { archive };
     }
   }
   catch (error) {
