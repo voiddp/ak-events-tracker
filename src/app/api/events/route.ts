@@ -16,10 +16,11 @@ export async function GET(request: NextRequest) {
   let status = 200;
 
   try {
-    const { webEventsData, eventsData, eventsUpdated } = await getFromStorage([
+    const { webEventsData, eventsData, eventsUpdated, library } = await getFromStorage([
       'webEventsData',
       'eventsData',
       'eventsUpdated',
+      'library',
     ]);
 
     if (!webEventsData || !eventsData) {
@@ -29,7 +30,8 @@ export async function GET(request: NextRequest) {
       responseData = {
         webEventsData,
         eventsData,
-        eventsUpdated
+        eventsUpdated,
+        library
       };
   } catch (error) {
     console.error('Failed to fetch web events:', error);

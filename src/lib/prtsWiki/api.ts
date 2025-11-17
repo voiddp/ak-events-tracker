@@ -26,7 +26,8 @@ import {
   parseShopInEvent,
   parseListDivs,
   parseSSSPageByNum,
-  parseRAShopTables
+  parseRAShopTables,
+  parseRATidesOfWar
 } from './parsers';
 import { addItemsSet, getAniEventsList, isDateTextValid } from './utils';
 
@@ -250,7 +251,7 @@ export const fetchLastRAEvents = async (
     for (let i = 1; i <= RAEventsNum; i++) {
       const RApage = RAPages[RAPages.length - i];
       const RAprefix = `RA${RAPages.length - i}:`;
-      const tidesSubpage = pageNames.RATidesOfWarSub;
+      const tidesSubpage = pageNames.reclamationAlgorithmTides;
 
       const html_main = await fetchHtml(getUrl(RApage), context.session);
       const $_main = cheerio.load(html_main);
@@ -259,12 +260,12 @@ export const fetchLastRAEvents = async (
       Object.entries(shopData)
         //.filter(([key, event]) => event.materials && event.materials.length > 0)
         .forEach(([key, event]) => {
-          if ((lastDate?.getTime()??0) < (event.date?.getTime() ?? 0)) lastDate = event.date;
+          if ((lastDate?.getTime() ?? 0) < (event.date?.getTime() ?? 0)) lastDate = event.date;
           resultData[key] = event;
         });
 
-      let critModeMaterials: Record<string,number> = {}; 
-      critModeMaterials = parseNumDivs($_main,critModeMaterials);
+      let critModeMaterials: Record<string, number> = {};
+      critModeMaterials = parseNumDivs($_main, critModeMaterials);
       resultData[`${RAprefix} Critical Contentions`] = {
         pageName: RApage,
         link: getUrl(RApage),
@@ -274,23 +275,36 @@ export const fetchLastRAEvents = async (
         date: lastDate,
       }
 
-      /*  if (IShistoryDates[deepSubpage] >= monthsAgoDate) {
-         context.setProgress?.("LIST", 80);
-         const html = await fetchHtml(getUrl(`${ISpage}/${deepSubpage}`), context.session);
-         const $ = cheerio.load(html);
-         const deepResult = parseNumDivs($, {});
- 
-         resultData[`${ISpage}/${deepSubpage}`] = {
-           date: IShistoryDates[deepSubpage],
-           materials: deepResult,
-           pageName: `${ISpage}/${deepSubpage}`,
-           link: getUrl(`${ISpage}/${deepSubpage}`),
-           name: `${ISprefix} Deep Investigations`
-         };
-       }*/
-    }
-    
+      const html_tides = await fetchHtml(getUrl(`${RApage}/${pageNames.reclamationAlgorithmTides}`), context.session);
+      const $_tides = cheerio.load(html_tides);
+      const RAtidesOfWar = parseRATidesOfWar($_tides, RApage, RAprefix);
 
+      if (!libraryFormat) {
+        Object.entries(RAtidesOfWar).forEach(([key, event]) => {
+          resultData[key] = event;
+        });
+      } else {
+        resultData[`${RAprefix} Tides Of War`] = Object.values(RAtidesOfWar)
+          .reduce((acc, event) => {
+            if (Object.keys(acc).length === 0) {
+              acc = {
+                pageName: event.pageName,
+                link: event.link,
+                name: `${RAprefix} Tides Of War`
+              }
+            }
+            if (event.date && (acc.date?.getTime() ?? 0) < event.date.getTime()) {
+              acc.date = event.date;
+              acc.date.setMonth(event.date.getMonth() + 1);
+            }
+            Object.entries(event.materials ?? {}).forEach(([id, amount]) => {
+              if (!acc.materials) acc.materials = {};
+              acc.materials[id] = (acc.materials[id] ?? 0) + amount;
+            });
+            return acc
+          }, {} as WebEvent);
+      }
+    }
     return resultData;
   } catch (err) {
     throw err;

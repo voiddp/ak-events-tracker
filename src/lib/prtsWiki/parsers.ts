@@ -321,7 +321,7 @@ export const parseRAShopTables = ($: cheerio.CheerioAPI, page: string, prefix: s
             const stageMatch = $row.text().match(/STAGE\s+(\d+)/i);
             if (stageMatch && $tds.length >= 3) {
                 const stageNumber = stageMatch[1];
-                const stageKey = `${prefix} Shop, Stage ${stageNumber}`;
+                const stageKey = `${prefix} Shop Stage ${stageNumber}`;
                 const dateText = $row.find('.reward-time-badge').text().trim();
 
                 // Parse date format "2024/2"
@@ -540,4 +540,81 @@ export const parseSSSPageByNum = ($: cheerio.CheerioAPI, sss_num: string): WebEv
         materials: result
     };
 }
+
+export const parseRATidesOfWar = ($: cheerio.CheerioAPI, page: string, prefix: string): WebEventsData => {
+    const webEventsData: WebEventsData = {};
+    let currentTide: string | null = null;
+    let tideCount = 0;
+
+    $('h2').each((index, element) => {
+        const $h2 = $(element);
+        const headline = $h2.find('.mw-headline');
+        const headlineText = headline.text().trim();
+        
+        // is a tide header (year/month pattern and tide name)
+        const tideMatch = headlineText.match(/(\d{4})年(\d{1,2})月\s+(.+)/);
+        if (tideMatch) {
+            const [, year, month, tideName] = tideMatch;
+            tideCount++;
+            
+            const tideTitle = `${prefix} Tide of War#${tideCount} ${tideName}`;
+            const tideDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+            
+            currentTide = tideTitle;
+            const tideKey = `${page}/${tideName}`;
+            webEventsData[tideKey] = {
+                pageName: `${page}/${pageNames.reclamationAlgorithmTides}`,
+                link: getUrl(`${page}/${pageNames.reclamationAlgorithmTides}`),
+                date: tideDate,
+                materials: {},
+                name: currentTide,
+                webDisable: true,
+            };
+            
+            let nextElement = $h2.next();
+            let foundRewards = false;
+            
+            while (nextElement.length > 0 && !foundRewards) {
+                const tagName = nextElement.get(0)?.tagName?.toLowerCase();
+                
+                // another tide header
+                if (tagName === 'h2') {
+                    break;
+                }
+                
+                // h3 header of rewards
+                if (tagName === 'h3') {
+                    const h3Text = nextElement.find('.mw-headline').text().trim();
+                    if (h3Text === argNames.raTideRewards) {
+                        let tableElement = nextElement.next();
+                        
+                        while (tableElement.length > 0) {
+                            const tableTagName = tableElement.get(0)?.tagName?.toLowerCase();
+                            
+                            //another header
+                            if (tableTagName === 'h2' || tableTagName === 'h3') {
+                                break;
+                            }
+
+                            if (tableTagName === 'table') {
+                                const $table = tableElement;
+                                const materials = parseNumDivs(cheerio.load($table.html() || ""), {});
+                                webEventsData[tideKey].materials = materials;
+                                foundRewards = true;
+                                break;
+                            }
+                            
+                            tableElement = tableElement.next();
+                        }
+                        break;
+                    }
+                }
+                
+                nextElement = nextElement.next();
+            }
+        }
+    });
+
+    return webEventsData;
+};
 

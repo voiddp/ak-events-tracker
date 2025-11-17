@@ -6,7 +6,7 @@ export const pageNames = {
     IS_navbox: '模板:Navbox_集成战略',
     reclamationAlgorithmList: '模板:生息演算导航',
     //tides of war
-    RATidesOfWarSub: '战争浪潮'
+    reclamationAlgorithmTides: '战争浪潮'
     //critical contentions
 };
 
@@ -29,6 +29,7 @@ export const argNames = {
     themeUpdateHistory: '主题更新记录',
     totals: '报酬合计',
     paidPackContent: '组合包内容',
+    raTideRewards: '击破奖励',
 };
 
 //order matters, each next found word is placed at start
