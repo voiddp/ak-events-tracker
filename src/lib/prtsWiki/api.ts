@@ -13,8 +13,7 @@ import {
   pageNames,
   templates,
   argNames,
-  sssModuleFirstTime,
-  moduleChunk
+  containersContent,
 } from './constants';
 import {
   parseISHistoryTable,
@@ -241,7 +240,6 @@ export const fetchLastRAEvents = async (
 ): Promise<WebEventsData | null> => {
   try {
     const RAPages = await fetchArgumentsByName(pageNames.reclamationAlgorithmList, argNames.link, context);
-    console.log("pages:", RAPages);
     if (!RAPages || RAPages.length < 2) return null;
 
 
@@ -257,11 +255,24 @@ export const fetchLastRAEvents = async (
       const html_main = await fetchHtml(getUrl(RApage), context.session);
       const $_main = cheerio.load(html_main);
       const shopData = parseRAShopTables($_main, RApage, RAprefix);
+      let lastDate: Date | undefined;
       Object.entries(shopData)
         //.filter(([key, event]) => event.materials && event.materials.length > 0)
         .forEach(([key, event]) => {
-          resultData[key] = event
+          if ((lastDate?.getTime()??0) < (event.date?.getTime() ?? 0)) lastDate = event.date;
+          resultData[key] = event;
         });
+
+      let critModeMaterials: Record<string,number> = {}; 
+      critModeMaterials = parseNumDivs($_main,critModeMaterials);
+      resultData[`${RAprefix} Critical Contentions`] = {
+        pageName: RApage,
+        link: getUrl(RApage),
+        name: `${RAprefix} Critical Contentions`,
+        webDisable: true,
+        materials: critModeMaterials,
+        date: lastDate,
+      }
 
       /*  if (IShistoryDates[deepSubpage] >= monthsAgoDate) {
          context.setProgress?.("LIST", 80);
@@ -278,7 +289,7 @@ export const fetchLastRAEvents = async (
          };
        }*/
     }
-    console.log("shop data:", resultData);
+    
 
     return resultData;
   } catch (err) {
@@ -339,7 +350,7 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
           const sssHtml = await fetchHtml(getUrl(pageNames.operations), context.session);
           const $_sss = cheerio.load(sssHtml);
           const results = parseNumDivs($_sss, {});
-          addItemsSet(sssModuleFirstTime, 1, results);
+          addItemsSet(containersContent['sssModuleFirstTime'], 1, results);
 
           webEvents[sssArgs[argNames.sssMission]] = {
             pageName: sssArgs[argNames.sssMission],
@@ -436,7 +447,7 @@ export const getEverythingAtOnce = async (session: Session, setProgress?: Progre
           //for now till better algorithm
           if (webEvent.name &&
             (webEvent.name.toLowerCase().includes("battleplan"))) {
-            addItemsSet(moduleChunk, 1, webEvent.materials ?? {});
+            addItemsSet(containersContent['moduleChunk'], 1, webEvent.materials ?? {});
             webEvent.webDisable = true;
           };
 

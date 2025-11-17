@@ -1,5 +1,5 @@
 import { getUrl } from './api';
-import { argNames, dictionary } from './constants';
+import { argNames, containers, containersContent, dictionary } from './constants';
 import { WebEvent } from './types';
 
 export const createEmptyWebEvent = () => {
@@ -63,7 +63,7 @@ export const parseChineseNumber = (input: string): number | null => {
     const match = input.match(/^(∞|\d+)([万千百])?$/);
 
     if (match) {
-        if (match[1]=== "∞") return Infinity;
+        if (match[1] === "∞") return Infinity;
         const num = parseInt(match[1], 10);
         const unit = match[2];
 
@@ -107,7 +107,15 @@ export const applyDictionary = (title: string | null): string | false => {
     return _title;
 }
 
+export const processContainers = (name: string, amount: number, result: Record<string, number>) => {
+    if (amount == 0 || !(name in containers)) return;
+    const setName = containers[name];
+    const setContent = containersContent[setName];
+    addItemsSet(setContent, amount, result);
+}
+
 export const addItemsSet = (set: Record<string, number>, number: number, result: Record<string, number>) => {
+    if (number === 0) return;
     Object.entries(set ?? {}).forEach(([key, value]) => {
         result[key] = (result[key] ?? 0) + value * number;
     });
@@ -121,3 +129,29 @@ export const capitalizeWords = (str: string): string => {
         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
         .join(' ');
 };
+
+export const getItemsAndContainers = (itemsJson: Record<string, any>): Record<string, { cnName: string; id: string, name: string }> => {
+
+    const combinedItems: Record<string, { cnName: string; id: string, name: string }> = {};
+
+    // Add items from itemsJson
+    Object.values(itemsJson ?? {}).forEach(item => {
+        if ('cnName' in item && 'id' in item && 'name' in item) {
+            combinedItems[item.id] = {
+                cnName: item.cnName,
+                id: item.id,
+                name: item.name,
+            };
+        }
+    });
+
+    Object.entries(containers).forEach(([cnName, id]) => {
+        combinedItems[cnName] = {
+            cnName,
+            id: cnName,
+            name: id,
+        };
+    });
+
+    return combinedItems;
+}

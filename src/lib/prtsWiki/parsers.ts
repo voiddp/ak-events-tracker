@@ -1,10 +1,10 @@
 import * as cheerio from 'cheerio';
 import { getItemByCnName } from '@/utils/ItemUtils';
 import itemsJson from '@/data/items.json';
-import { argNames, moduleBox, moduleChunk, pageNames, sssModuleFirstTime } from './constants';
+import { argNames, pageNames, containers, containersContent } from './constants';
 import { WebEvent, WebEventsData } from './types';
 import { getUrl } from './api';
-import { addItemsSet, applyDictionary, capitalizeWords, createEmptyWebEvent, escapeRegExp, isMostlyEnglish, parseChineseNumber } from './utils';
+import { addItemsSet, applyDictionary, capitalizeWords, createEmptyWebEvent, escapeRegExp, getItemsAndContainers, isMostlyEnglish, parseChineseNumber, processContainers } from './utils';
 
 export const findENTitle = ($: cheerio.CheerioAPI, pageName: string): string | null => {
     let result: string | null = null;
@@ -141,12 +141,8 @@ export const parseListDivs = ($: cheerio.CheerioAPI, result: Record<string, numb
 
                     if (match) {
                         const value = parseChineseNumber(match[1]) ?? 0;
+                        processContainers(name, value, result);
                         if (value > 0) {
-                            if (name === argNames.moduleBox) {
-                                addItemsSet(moduleBox, value, result);
-                            } else if (name === argNames.moduleChunk) {
-                                addItemsSet(moduleChunk, value, result);
-                            }
                             if (matchedItem) {
                                 const id = matchedItem.id;
                                 result[id] = (result[id] || 0) + value;
@@ -219,15 +215,10 @@ export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, numbe
                     const valueText = $div.find('span').text().trim();
                     const value = parseChineseNumber(valueText) ?? 0;
 
-                    if (title === argNames.moduleBox) {
-                        addItemsSet(moduleBox, value, result);
-                    } else if (title === argNames.moduleChunk) {
-                        addItemsSet(moduleChunk, value, result);
-                    }
+                    processContainers(title, value, result);
 
                     if (matchedItem) {
                         const id = matchedItem.id;
-
                         if (value > 0) {
                             result[id] = (result[id] || 0) + value;
                         }
@@ -245,15 +236,10 @@ export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, numbe
                 const valueText = $div.find('span').text().trim();
                 const value = parseChineseNumber(valueText) ?? 0;
 
-                if (title === argNames.moduleBox) {
-                    addItemsSet(moduleBox, value, result);
-                } else if (title === argNames.moduleChunk) {
-                    addItemsSet(moduleChunk, value, result);
-                }
+                processContainers(title, value, result);
 
                 if (matchedItem) {
                     const id = matchedItem.id;
-
                     if (value > 0) {
                         result[id] = (result[id] || 0) + value;
                     }
@@ -268,6 +254,7 @@ export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, numbe
 export const parseShopInEvent = ($: cheerio.CheerioAPI, result: Record<string, number>)
     : { materials: Record<string, number>, infinite: string[] | null } => {
     const infinite: string[] = [];
+    const items = getItemsAndContainers(itemsJson);
     $('tr').each((_, row) => {
         const tds = $(row).find('td');
         if (tds.length < 2) return;
@@ -282,8 +269,7 @@ export const parseShopInEvent = ($: cheerio.CheerioAPI, result: Record<string, n
             if (itemId && amount !== 0) return;
 
             if (!itemId) {
-                const foundItem = Object.values(itemsJson).find(item => {
-                    if (!('cnName' in item)) return false;
+                const foundItem = Object.values(items).find(item => {
                     const nameRegex = new RegExp(
                         `^${escapeRegExp(item.cnName)}(?:\\s*[x×*]\\s*\\d+)?$`
                     );
@@ -304,6 +290,8 @@ export const parseShopInEvent = ($: cheerio.CheerioAPI, result: Record<string, n
         });
         if (itemId && amount === Infinity) {
             if (itemId !== "4001") infinite.push(itemId);
+        } else if (itemId && itemId in containers) {
+            processContainers(itemId, amount, result);
         } else if (itemId && amount > 0) {
             result[itemId] = (result[itemId] ?? 0) + amount * multiplier;
         }
@@ -319,6 +307,7 @@ export const parseRAShopTables = ($: cheerio.CheerioAPI, page: string, prefix: s
 
     const webEventsData: WebEventsData = {};
     let currentStage: string | null = null;
+    const items = getItemsAndContainers(itemsJson);
 
     //tables with class "eventshoplist"
     $('table.eventshoplist').each((tableIndex, table) => {
@@ -371,8 +360,7 @@ export const parseRAShopTables = ($: cheerio.CheerioAPI, page: string, prefix: s
                 if (itemId && amount !== 0) return;
 
                 if (!itemId) {
-                    const foundItem = Object.values(itemsJson).find(item => {
-                        if (!('cnName' in item)) return false;
+                    const foundItem = Object.values(items).find(item => {
                         const nameRegex = new RegExp(
                             `^${escapeRegExp(item.cnName)}(?:\\s*[x×*]\\s*\\d+)?$`
                         );
@@ -394,8 +382,12 @@ export const parseRAShopTables = ($: cheerio.CheerioAPI, page: string, prefix: s
 
             if (itemId && amount > 0) {
                 if (!webEventsData[currentStage].materials) webEventsData[currentStage].materials = {};
-                webEventsData[currentStage].materials![itemId] =
-                    (webEventsData[currentStage].materials?.[itemId] ?? 0) + amount * multiplier;
+                if (itemId in containers) {
+                    processContainers(itemId, amount, webEventsData[currentStage].materials!);
+                } else {
+                    webEventsData[currentStage].materials![itemId] =
+                        (webEventsData[currentStage].materials?.[itemId] ?? 0) + amount * multiplier;
+                }
             }
         });
 
@@ -539,7 +531,7 @@ export const parseSSSPageByNum = ($: cheerio.CheerioAPI, sss_num: string): WebEv
 
     // Parse divs inside
     const result = parseNumDivs(cheerio.load(targetTable.html() || ''), {});
-    addItemsSet(sssModuleFirstTime, 1, result);
+    addItemsSet(containersContent['sssModuleFirstTime'], 1, result);
     return {
         pageName: pageName,
         name: `SSS: ${pageName}`,
