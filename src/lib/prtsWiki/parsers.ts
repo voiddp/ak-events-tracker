@@ -314,6 +314,98 @@ export const parseShopInEvent = ($: cheerio.CheerioAPI, result: Record<string, n
     };
 };
 
+export const parseRAShopTables = ($: cheerio.CheerioAPI, page: string, prefix: string)
+    : WebEventsData => {
+
+    const webEventsData: WebEventsData = {};
+    let currentStage: string | null = null;
+
+    //tables with class "eventshoplist"
+    $('table.eventshoplist').each((tableIndex, table) => {
+        const $table = $(table);
+
+        $table.find('tr').each((_, row) => {
+            const $row = $(row);
+            const $tds = $row.find('td');
+
+            // Check if stage header row
+            const stageMatch = $row.text().match(/STAGE\s+(\d+)/i);
+            if (stageMatch && $tds.length >= 3) {
+                const stageNumber = stageMatch[1];
+                const stageKey = `${prefix} Shop, Stage ${stageNumber}`;
+                const dateText = $row.find('.reward-time-badge').text().trim();
+
+                // Parse date format "2024/2"
+                let stageDate: Date | undefined;
+                if (dateText) {
+                    const [year, month] = dateText.split('/').map(Number);
+                    stageDate = new Date(year, month - 1, 1); // Use 1st day of month
+                };
+
+                //new stage data
+                currentStage = stageKey;
+                webEventsData[currentStage] = {
+                    pageName: page,
+                    link: getUrl(`${page}`),
+                    date: stageDate,
+                    name: currentStage,
+                    webDisable: true,
+                };
+
+                return; // Continue to next row
+            }
+
+            if ($tds.length < 2 || !currentStage || !webEventsData[currentStage]) return;
+
+            // Skip summary rows (like "层级合计点数")
+            //if ($row.text().includes('层级合计点数')) return;
+
+            // Parse item rows
+            let itemId: string | undefined;
+            let multiplier = 1;
+            let amount = 0;
+
+            $tds.each((tdIndex, td) => {
+                const text = $(td).text().trim();
+
+                if (itemId && amount !== 0) return;
+
+                if (!itemId) {
+                    const foundItem = Object.values(itemsJson).find(item => {
+                        if (!('cnName' in item)) return false;
+                        const nameRegex = new RegExp(
+                            `^${escapeRegExp(item.cnName)}(?:\\s*[x×*]\\s*\\d+)?$`
+                        );
+                        return nameRegex.test(text)
+                    });
+                    if (foundItem) {
+                        itemId = foundItem.id;
+
+                        const multiplierMatch = text.match(/[x×*]\s*(\d+)$/);
+                        if (multiplierMatch) {
+                            multiplier = parseInt(multiplierMatch[1], 10);
+                        }
+                    }
+                } else if (amount === 0) {
+                    amount = parseChineseNumber(text) ?? 0;
+                    return false;
+                }
+            });
+
+            if (itemId && amount > 0) {
+                if (!webEventsData[currentStage].materials) webEventsData[currentStage].materials = {};
+                webEventsData[currentStage].materials![itemId] =
+                    (webEventsData[currentStage].materials?.[itemId] ?? 0) + amount * multiplier;
+            }
+        });
+
+        // Reset current stage when moving to next table
+        currentStage = null;
+    });
+
+    return webEventsData;
+};
+
 export const parseTextRewards = ($: cheerio.CheerioAPI, result: Record<string, number>) => {
     //id  + regex for each item for looping
     const itemsRegexs: { id: string; regex: RegExp }[] = [];

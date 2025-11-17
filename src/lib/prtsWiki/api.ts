@@ -26,7 +26,8 @@ import {
   parseTextRewards,
   parseShopInEvent,
   parseListDivs,
-  parseSSSPageByNum
+  parseSSSPageByNum,
+  parseRAShopTables
 } from './parsers';
 import { addItemsSet, getAniEventsList, isDateTextValid } from './utils';
 
@@ -100,7 +101,12 @@ export const fetchEvents = async (monthsAgoDate: Date, context: ApiContext): Pro
   return eventsResult;
 };
 
-export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext, eventList: WebEventsData): Promise<WebEventsData | null> => {
+export const fetchLastISEvents = async (
+  monthsAgoDate: Date,
+  context: ApiContext,
+  eventList?: WebEventsData,
+  libraryFormat?: boolean,
+): Promise<WebEventsData | null> => {
   try {
     context.setProgress?.("LIST", 50);
     const ISPages = await fetchArgumentsByName(pageNames.integratedStrategyList, argNames.link, context);
@@ -111,8 +117,10 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
     if (!NAV_wikiText) return null;
 
     const resultData: WebEventsData = {};
+    const daysDiff = (new Date().getTime() - monthsAgoDate.getTime()) / 1000 / 60 / 60 / 24;
+    const ISEventsNum = daysDiff > 365 ? ISPages.length - 2 : 2;
 
-    for (let i = 1; i <= 2; i++) {
+    for (let i = 1; i <= ISEventsNum; i++) {
       const ISpage = ISPages[ISPages.length - i];
       const ISprefix = `IS${ISPages.length - i}:`;
 
@@ -135,7 +143,7 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
         if (Object.entries(IShistoryDates ?? {}).some(([name, date]) =>
           name !== deepSubpage && date >= monthsAgoDate)) {
           //remove same named event from EventList
-          delete eventList[ISpage];
+          if (eventList) delete eventList[ISpage];
 
           const ISMonthlyEvents = parseISMonthsTabber($_main, IShistoryDates, ISpage, ISprefix, deepSubpage);
           if (ISMonthlyEvents && Object.keys(ISMonthlyEvents ?? {}).length > 0) {
@@ -143,28 +151,63 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
             const html_squads = await fetchHtml(getUrl(`${ISpage}/${squadsSubpage}`), context.session);
             const $_squads = cheerio.load(html_squads);
             const squadsData = parseISSquadsPage($_squads, Object.keys(IShistoryDates ?? {}));
+            if (!libraryFormat) {
+              Object.values(ISMonthlyEvents ?? {}).forEach(event => {
+                if (event.date && event.date >= monthsAgoDate) {
+                  const _event = {
+                    ...event,
+                    webDisable: true,
+                  };
+                  const _page = event.pageName;
 
-            Object.values(ISMonthlyEvents ?? {}).forEach(event => {
-              if (event.date && event.date >= monthsAgoDate) {
-                const _event = {
-                  ...event,
-                  webDisable: true,
-                };
-                const _page = event.pageName;
+                  if (squadsData[_page]) {
+                    _event.name = squadsData[_page].title === ""
+                      ? _event.name?.replace(` - ${event.pageName}`, "")
+                      : _event.name?.replace(event.pageName, squadsData[_page].title);
+                  }
 
-                if (squadsData[_page]) {
-                  _event.name = squadsData[_page].title === ""
-                    ? _event.name?.replace(` - ${event.pageName}`, "")
-                    : _event.name?.replace(event.pageName, squadsData[_page].title);
+                  Object.entries(squadsData[_page]?.materials ?? {}).forEach(([id, amount]) => {
+                    if (!_event.materials) _event.materials = {};
+                    _event.materials[id] = (_event.materials[id] ?? 0) + amount;
+                  });
+                  resultData[_page] = _event;
                 }
+              });
+            } else {
+              //standalone rewards & squads
+              resultData[ISpage] = Object.values(ISMonthlyEvents ?? {})
+                .reduce((acc, event) => {
+                  if (Object.keys(acc).length === 0) {
+                    acc = {
+                      pageName: ISpage,
+                      link: getUrl(`${ISpage}`),
+                      name: `${ISprefix} Score Rewards`
+                    }
+                  }
+                  if (event.date && (acc.date?.getTime() ?? 0) < event.date.getTime()) {
+                    acc.date = event.date;
+                    acc.date.setMonth(event.date.getMonth() + 1);
+                  }
+                  Object.entries(event.materials ?? {}).forEach(([id, amount]) => {
+                    if (!acc.materials) acc.materials = {};
+                    acc.materials[id] = (acc.materials[id] ?? 0) + amount;
+                  });
+                  return acc
+                }, {} as WebEvent);
 
-                Object.entries(squadsData[_page]?.materials ?? {}).forEach(([id, amount]) => {
-                  if (!_event.materials) _event.materials = {};
-                  _event.materials[id] = (_event.materials[id] ?? 0) + amount;
-                });
-                resultData[_page] = _event;
+              resultData[`${ISpage}/${squadsSubpage}`] = {
+                date: resultData[ISpage].date,
+                pageName: `${ISpage}/${squadsSubpage}`,
+                link: getUrl(`${ISpage}/${squadsSubpage}`),
+                name: `${ISprefix} Monhtly Squads`,
+                materials: Object.values(squadsData).reduce((acc, event) => {
+                  Object.entries(event.materials ?? {}).forEach(([id, num]) =>
+                    acc[id] = (acc[id] ?? 0) + num
+                  )
+                  return acc
+                }, {} as Record<string, number>)
               }
-            });
+            }
           }
         }
       }
@@ -184,6 +227,59 @@ export const fetchLastISEvents = async (monthsAgoDate: Date, context: ApiContext
         };
       }
     }
+    return resultData;
+  } catch (err) {
+    throw err;
+  }
+};
+
+export const fetchLastRAEvents = async (
+  monthsAgoDate: Date,
+  context: ApiContext,
+  eventList?: WebEventsData,
+  libraryFormat?: boolean,
+): Promise<WebEventsData | null> => {
+  try {
+    const RAPages = await fetchArgumentsByName(pageNames.reclamationAlgorithmList, argNames.link, context);
+    console.log("pages:", RAPages);
+    if (!RAPages || RAPages.length < 2) return null;
+
+
+    const resultData: WebEventsData = {};
+    const daysDiff = (new Date().getTime() - monthsAgoDate.getTime()) / 1000 / 60 / 60 / 24;
+    const RAEventsNum = daysDiff > 365 ? RAPages.length - 2 : 1;
+
+    for (let i = 1; i <= RAEventsNum; i++) {
+      const RApage = RAPages[RAPages.length - i];
+      const RAprefix = `RA${RAPages.length - i}:`;
+      const tidesSubpage = pageNames.RATidesOfWarSub;
+
+      const html_main = await fetchHtml(getUrl(RApage), context.session);
+      const $_main = cheerio.load(html_main);
+      const shopData = parseRAShopTables($_main, RApage, RAprefix);
+      Object.entries(shopData)
+        //.filter(([key, event]) => event.materials && event.materials.length > 0)
+        .forEach(([key, event]) => {
+          resultData[key] = event
+        });
+
+      /*  if (IShistoryDates[deepSubpage] >= monthsAgoDate) {
+         context.setProgress?.("LIST", 80);
+         const html = await fetchHtml(getUrl(`${ISpage}/${deepSubpage}`), context.session);
+         const $ = cheerio.load(html);
+         const deepResult = parseNumDivs($, {});
+ 
+         resultData[`${ISpage}/${deepSubpage}`] = {
+           date: IShistoryDates[deepSubpage],
+           materials: deepResult,
+           pageName: `${ISpage}/${deepSubpage}`,
+           link: getUrl(`${ISpage}/${deepSubpage}`),
+           name: `${ISprefix} Deep Investigations`
+         };
+       }*/
+    }
+    console.log("shop data:", resultData);
+
     return resultData;
   } catch (err) {
     throw err;

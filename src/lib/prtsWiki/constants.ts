@@ -3,7 +3,11 @@ export const pageNames = {
     operations: '关卡一览/常态事务',
     all_sss: "保全派驻",
     integratedStrategyList: '模板:集成战略导航',
-    IS_navbox: '模板:Navbox_集成战略'
+    IS_navbox: '模板:Navbox_集成战略',
+    reclamationAlgorithmList: '模板:生息演算导航',
+    //tides of war
+    RATidesOfWarSub: '战争浪潮'
+    //critical contentions
 };
 
 export const templates = {
