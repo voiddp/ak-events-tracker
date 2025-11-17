@@ -14,8 +14,19 @@ export type NamedEvent = Event & {
 };
 
 export type EventsData = {
-    [name: string]: Event;
+    [name: string]: Event & { disabled?: boolean };
 }
+
+/* export type WebEvent = {
+    pageName: string;
+    date?: Date;
+    link: string;
+    webDisable?: boolean;
+} & Omit<Partial<NamedEvent>, 'index'>
+
+export type WebEventsData = {
+    [pageName: string]: WebEvent
+} */
 
 export type SubmitEventProps = {
     targetName: string,
@@ -29,12 +40,14 @@ export type SubmitEventProps = {
 }
 
 export interface EventsSelectorProps {
-    dataType: 'events' | 'months' | 'defaults' | 'defaultsWeb' | 'summary';
+    dataType: 'events' | 'months' | 'defaults' | 'defaultsWeb' | 'archiveIS' | 'archiveRA' | 'summary';
     emptyItem?: string;
     disabled?: boolean;
     eventsData: EventsData;
     selectedEvent?: Event | null;
     onChange?: (namedEvent: NamedEvent) => void;
+    onOpen?: () => void;
+    onEventToggle?: (name: string) => void;
 }
 
 export type SubmitSource = EventsSelectorProps['dataType'] | 'current' | 'currentWeb'
@@ -43,4 +56,14 @@ export interface TrackerDefaults {
     lastUpdated?: string;
     webEventsData?: WebEventsData;
     eventsData?: EventsData;
+    archive?: {
+        integratedStrategies: WebEventsData,
+        reclamationAlgorithm: WebEventsData,
+    }
+}
+
+export type UpcomingMaterialsData = {
+    materials: Record<string, number>;
+    farmTimes: Record<string, number>;
+    infiniteTimes: Record<string, number>;
 }
