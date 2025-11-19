@@ -103,15 +103,17 @@ export const EventsSelector = React.memo((props: EventsSelectorProps) => {
             fullWidth
             sx={{ maxHeight: "3rem", minHeight: "3rem", overflow: "hidden" }}
             IconComponent={(props) => (
-                <IconButton
-                    size="small"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        handleChange(-1);
-                    }}
-                >
-                    <ClearIcon fontSize="small" />
-                </IconButton>
+                <>
+                    {(selectedEvent?.index ?? -1) !== -1 && <IconButton
+                        size="small"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleChange(-1);
+                        }}
+                    >
+                        <ClearIcon fontSize="small" />
+                    </IconButton>}
+                </>
             )}
         >
             <MenuItem value={-1} key={-1} className="no-underline">{emptyOption}</MenuItem>

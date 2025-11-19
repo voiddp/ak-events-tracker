@@ -85,8 +85,15 @@ const SubmitEventDialog = (props: Props) => {
     useEffect(() => {
         if (!open) return;
         setFormToSubmited();
-        let _source = allowedSources?.[0];
-        if (!_source) {
+        let _source: SubmitSource | undefined;
+
+        if (allowedSources?.includes(source)) {
+            _source = source;
+        } else {
+            _source = allowedSources?.[0];
+        }
+        if (!_source
+            || ('index' in submitedEvent && submitedEvent.index !== -1)) {
             _source = ('pageName' in submitedEvent)
                 ? 'currentWeb'
                 : 'current';
@@ -308,11 +315,11 @@ const SubmitEventDialog = (props: Props) => {
     };
 
     return (
-        <Dialog open={open} onClose={handleDialogClose}>
+        <Dialog open={open} onClose={handleDialogClose} sx={{width: "max(360px,100%)"}} >
             <DialogTitle sx={{ p: 2, alignItems: "flex-start" }}>
                 <Stack direction="row" width="100%" gap={1}>
                     <Stack width="100%" gap={1}>
-                        <Stack direction="row">
+                        <Stack direction={{ xs: "column", sm: "row" }}>
                             From: <Button
                                 variant="text"
                                 sx={{ minWidth: "10rem" }}
@@ -344,14 +351,18 @@ const SubmitEventDialog = (props: Props) => {
                             />}
                     </Stack>
                     <Stack justifyContent="space-between"
-                        alignItems="flex-end">
+                        alignItems="flex-end" position="relative">
                         <IconButton onClick={handleDialogClose}>
                             <Close />
                         </IconButton>
                         {mode && (<Button
                             variant="text"
                             onClick={switchMode}
-                            sx={{ minWidth: "5rem", pb: "0.8rem", whiteSpace: "nowrap" }}
+                            sx={{
+                                minWidth: "5rem", pb: "0.8rem", whiteSpace: "nowrap", rotate: { xs: "90deg", sm: "unset" },
+                                position: { xs: "absolute", sm: "unset" },
+                                bottom: 20, right: -20
+                            }}
                         >
                             {`${mode} ${modesList.length > 1 ? "»" : ""}`}
                         </Button>

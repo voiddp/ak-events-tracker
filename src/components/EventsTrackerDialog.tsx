@@ -593,12 +593,17 @@ const EventsTrackerDialog = React.memo((props: Props) => {
         }
     }, [trackerDefaults, onChange, setRawEvents]);
 
-    const getBuilderButton = () => {
+    const getBuilderButton = (source?: SubmitSource) => {
         return (<Button
             variant="contained"
             size="small"
             onClick={() => {
-                setSubmitSources(['defaults', "archiveIS", "archiveRA", 'months', 'events', 'defaultsWeb'])
+                if (!source) {
+                    setSubmitSources(['defaults', "archiveIS", "archiveRA", 'months', 'events', 'defaultsWeb']);
+                } else {
+                    setSubmitSources([source]);
+                }
+                setSubmitedEvent({ ...createEmptyNamedEvent() });
                 setSubmitDialogOpen(true);
             }}
             sx={{ minWidth: "fit-content", whiteSpace: "nowrap" }}
@@ -815,7 +820,7 @@ const EventsTrackerDialog = React.memo((props: Props) => {
                     }}
                         variant="contained"
                         color="primary">
-                        Open Summary
+                        {`${!fullScreen ? "Open " : " "}Summary`}
                     </Button>
                     <Stack direction="row" gap={{ xs: 1, md: 2 }}>
                         {Object.keys(rawEvents).length > 0 && (
@@ -863,13 +868,13 @@ const EventsTrackerDialog = React.memo((props: Props) => {
             <SubmitEventDialog
                 open={submitDialogOpen}
                 onClose={() => setSubmitDialogOpen(false)}
-                allowedSources={submitSources}
+                allowedSources={["current", "events", "defaults", "archiveIS", "archiveRA", "months", "defaultsWeb"]}
                 onSubmit={handleSubmitEvent}
                 submitedEvent={submitedEvent}
                 eventsData={eventsData}
-                trackerDefaults={trackerDefaults}
                 selectedEvent={selectedEvent}
                 onSelectorChange={setSelectedEvent}
+                trackerDefaults={trackerDefaults}
             />
         </>
     );

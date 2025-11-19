@@ -6,7 +6,7 @@ import WebEventsDialog from "../components/webEvents/WebEventsDialog";
 import EventsTracker from "@/components/EventsTrackerMain";
 import EventsTrackerDialog from "@/components/EventsTrackerDialog";
 import useEvents from "../utils/hooks/useEvents";
-import { EventsSelectorProps, NamedEvent, SubmitEventProps } from "@/lib/events/types";
+import { EventsSelectorProps, NamedEvent, SubmitEventProps, SubmitSource } from "@/lib/events/types";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import Head from "./Head";
@@ -30,10 +30,10 @@ import { formatNumber, getItemBaseStyling } from "@/utils/ItemUtils";
 import ItemsSnackBar from "@/components/ItemsSnackBar"
 
 declare module 'notistack' {
-  interface VariantOverrides {  
+  interface VariantOverrides {
     items: {
       items: React.ReactNode
-    };    
+    };
   }
 }
 
@@ -50,7 +50,7 @@ export default function Home() {
   const [submitDialogOpen, setSubmitDialogOpen] = useState<boolean>(false);
   const [submitedEvent, setSubmitedEvent] = useState({ ...createEmptyNamedEvent() });
   const [selectedEvent, setSelectedEvent] = useState<NamedEvent>();
-  const [submitSources, setSubmitSources] = useState<(EventsSelectorProps['dataType'])[]>(["months"]);
+  const [submitSources, setSubmitSources] = useState<SubmitSource[]>(["months"]);
 
   const { eventsData, setEvents, submitEvent, toggleEvent } = useEvents();
   const { loading, trackerDefaults, fetchDefaults, toggleDefaultsEvent } = useEventsDefaults();
@@ -71,11 +71,12 @@ export default function Home() {
 
   const handleAddItemsToDepot = (items: [string, number][]) => {
     enqueueSnackbar(
-      {variant: "items", 
-      message: "Krooster simulation: to Depot: +",
-      autoHideDuration: 5000,
-      items: itemElementsList(items),
-    });
+      {
+        variant: "items",
+        message: "Krooster simulation: to Depot: +",
+        autoHideDuration: 5000,
+        items: itemElementsList(items),
+      });
 
   };
   const itemElementsList = (items: [string, number][]) => {
@@ -114,7 +115,35 @@ export default function Home() {
       setForceUpdate(true);
     }
   }, [trackerDefaults, setEvents]
-  )
+  );
+
+  const getBuilderButton = (source?: SubmitSource) => {
+    return (<Button
+      variant="contained"
+      size="small"
+      onClick={() => {
+        if (!source) {
+          setSubmitSources(['defaults', "archiveIS", "archiveRA", 'months', 'events', 'defaultsWeb']);
+        } else {
+          setSubmitSources([source]);
+        }
+        setSubmitedEvent({ ...createEmptyNamedEvent() });
+        setSubmitDialogOpen(true);
+      }}
+      sx={{ minWidth: "fit-content", whiteSpace: "nowrap" }}
+    >Builder
+    </Button>)
+  };
+
+  const getDefaultsButton = () => {
+    return (<Button
+      variant="contained"
+      size="small"
+      onClick={handleSetEventsFromDefaults}
+      sx={{ minWidth: "fit-content", whiteSpace: "nowrap" }}
+    >Defaults
+    </Button>)
+  };
 
   const formatTimeAgo = (date: string) => {
     const timestamp = new Date(date).getTime();;
@@ -126,7 +155,7 @@ export default function Home() {
       : `${diffMinutes}m`) + (isMdUp ? " ago" : "");
 
     return result;
-  }
+  };
 
   return (
     <CacheProvider value={clientSideEmotionCache}>
@@ -135,156 +164,161 @@ export default function Home() {
           items: ItemsSnackBar,
         }}>
 
-      <Head
-        onClick={handleDrawerOpen}
-        menuButton={<MenuIcon sx={{ display: { xs: "unset", md: "none" } }} />}
-      > {trackerDefaults.lastUpdated &&
-        <Tooltip title={`parsed prts.wiki ${!isMdUp ? formatTimeAgo(trackerDefaults.lastUpdated) + " ago" : ""}`}>
-          <Stack direction="row" alignItems="center" fontSize="small">{isMdUp && formatTimeAgo(trackerDefaults.lastUpdated)}<UpdateIcon fontSize="small" /></Stack>
-        </Tooltip>}
-      </Head>
-      <CollapsibleDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      >
-        <DrawerListItem
-          icon={<TravelExploreIcon fontSize="large" />}
-          text="Build from prts"
-          onClick={() => {
-            setEventsOpen(true);
-            setTrackerOpen(false);
-          }}
-          sx={{ minWidth: "fit-content" }}
-        />
-        <DrawerListItem
-          icon={<CalendarMonthIcon fontSize="large" />}
-          text="Add months"
-          onClick={() => {
-            setSubmitedEvent({ ...createEmptyNamedEvent() });
-            setSubmitSources(['months']);
-            setSubmitDialogOpen(true);
-          }}
-          sx={{ minWidth: "fit-content" }}
-        />
-        <DrawerListItem
-          icon={<StorageIcon fontSize="large" />}
-          text="Set defaults"
-          onClick={handleSetEventsFromDefaults}
-          sx={{ minWidth: "fit-content" }}
-        />
-        <Divider />
-        <DrawerListItem
-          icon={<VolunteerActivismIcon fontSize="large" />}
-          text="Credits"
-          onClick={() => setAcknowledgementsOpen(true)}
-          sx={{ minWidth: "fit-content" }}
-        />
+        <Head
+          onClick={handleDrawerOpen}
+          menuButton={<MenuIcon sx={{ display: { xs: "unset", md: "none" } }} />}
+        > {trackerDefaults.lastUpdated &&
+          <Tooltip title={`parsed prts.wiki ${!isMdUp ? formatTimeAgo(trackerDefaults.lastUpdated) + " ago" : ""}`}>
+            <Stack direction="row" alignItems="center" fontSize="small">{isMdUp && formatTimeAgo(trackerDefaults.lastUpdated)}<UpdateIcon fontSize="small" /></Stack>
+          </Tooltip>}
+        </Head>
+        <CollapsibleDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+        >
+          <DrawerListItem
+            icon={<TravelExploreIcon fontSize="large" />}
+            text="Build from prts"
+            onClick={() => {
+              setEventsOpen(true);
+              setTrackerOpen(false);
+            }}
+            sx={{ minWidth: "fit-content" }}
+          />
+          <DrawerListItem
+            icon={<TravelExploreIcon fontSize="large" />}
+            text="Build from..."
+            onClick={() => {
+              setSubmitedEvent({ ...createEmptyNamedEvent() });
+              setSubmitSources(['defaults', "archiveIS", "archiveRA", 'months', 'events', 'defaultsWeb']);
+              setSubmitDialogOpen(true);
+            }}
+            sx={{ minWidth: "fit-content" }}
+          />
+          <DrawerListItem
+            icon={<CalendarMonthIcon fontSize="large" />}
+            text="Add months"
+            onClick={() => {
+              setSubmitedEvent({ ...createEmptyNamedEvent() });
+              setSubmitSources(['months']);
+              setSubmitDialogOpen(true);
+            }}
+            sx={{ minWidth: "fit-content" }}
+          />
+          <DrawerListItem
+            icon={<StorageIcon fontSize="large" />}
+            text="Set defaults"
+            onClick={handleSetEventsFromDefaults}
+            sx={{ minWidth: "fit-content" }}
+          />
+          <Divider />
+          <DrawerListItem
+            icon={<VolunteerActivismIcon fontSize="large" />}
+            text="Credits"
+            onClick={() => setAcknowledgementsOpen(true)}
+            sx={{ minWidth: "fit-content" }}
+          />
 
-        <Divider />
-        <DrawerListItem
-          icon={<LogoDevIcon fontSize="large" />}
-          text="Krooster test..."
-          onClick={() => {
-            setEventsKroosterOpen(true);
-          }}
-          sx={{ minWidth: "fit-content" }} />
-        {/* <DrawerListItem
+          <Divider />
+          <DrawerListItem
+            icon={<LogoDevIcon fontSize="large" />}
+            text="Krooster test..."
+            onClick={() => {
+              setEventsKroosterOpen(true);
+            }}
+            sx={{ minWidth: "fit-content" }} />
+          {/* <DrawerListItem
           icon={<LogoDevIcon fontSize="large" />}
           text="fetch all test..."
           onClick={handleGetEverythingAtOnce} /> */}
-        <Divider />
-        <DrawerListItem
-          icon={<DeleteIcon fontSize="large" />}
-          text={"Reset Events"}
-          onClick={() => {
-            setEvents({});
-            setForceUpdate(true);
-          }}
-          sx={{ minWidth: "fit-content", color: "rgb(248, 112, 97) " }} />
-
-        {/* 
-                <DrawerListItem icon={<SettingsIcon />} text="Settings" /> */}
-        {/* Add more items or pass children */}
-      </CollapsibleDrawer>
-      <Box sx={{ flex: 1 }}>
-        <Paper elevation={2}
-          sx={{ height: "100%", maxWidth: "1200px", ml: { xs: "auto", md: "80px", xl: "auto" }, mr: "auto", /* pb: "20px" */ }}>
-          <EventsTracker
-            forceUpdate={forceUpdate}
-            forceUpdateCallback={setForceUpdate}
-            open={trackerOpen}
-            onClose={() => setTrackerOpen(false)}    
-            eventsData={eventsData}
-            onChange={setEvents}
-            submitEvent={handleSubmitEvent}
-            trackerDefaults={trackerDefaults}
-          >
-            <List>
-              <ListItem>Input future events, using sidebar menu options, import, or manually.</ListItem>
-              <ListItem ><Stack direction="row" gap={2} alignItems="center">
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={handleSetEventsFromDefaults}
-                  disabled={loading}
-                  sx={{ minWidth: "fit-content" }}
-                >Default&nbsp;List
-                </Button> 6 months of upcoming events from prts.wiki sorted by date, updated daily.</Stack></ListItem>
-              <ListItem ><Stack direction="row" gap={2} alignItems="center">
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={() => {
-                    setEventsOpen(true);
-                    setTrackerOpen(false);
-                  }}
-                  disabled={loading}
-                  sx={{ minWidth: "fit-content" }}
-                >CN&nbsp;Builder
-                </Button>CN data and builder to add, combine or replace events in tracker list</Stack></ListItem>
-            </List>
-          </EventsTracker>
-          <EventsTrackerDialog
-            eventsData={eventsData}
-            open={eventsKroosterOpen}
-            onChange={setEvents}
-            onClose={() => {
-              setEventsKroosterOpen(false);
+          <Divider />
+          <DrawerListItem
+            icon={<DeleteIcon fontSize="large" />}
+            text={"Reset Events"}
+            onClick={() => {
+              setEvents({});
               setForceUpdate(true);
             }}
-            openSummary={setSummaryOpen}
-            submitEvent={handleSubmitEvent}
-            trackerDefaults={trackerDefaults}
-          />
-          <WebEventsDialog
-            open={eventsOpen}
-            onClose={() => {
-              setEventsOpen(false);
-              setTrackerOpen(true);
-            }}
-            eventsData={eventsData}
-            defaultList={trackerDefaults?.webEventsData ?? {}}
-            submitEvent={submitEvent}
-          />
-          <SubmitEventDialog
-            open={submitDialogOpen}
-            allowedSources={submitSources}
-            onClose={() => {
-              setSubmitDialogOpen(false)
-            }}
-            onSubmit={handleSubmitEvent}
-            submitedEvent={submitedEvent}
-            eventsData={eventsData}
-            trackerDefaults={trackerDefaults}
-            selectedEvent={selectedEvent}
-            onSelectorChange={setSelectedEvent}
-          />
-          <AcknowledgementDialog
-            open={acknowledgementsOpen}
-            onClose={() => setAcknowledgementsOpen(false)}
-          />
-        </Paper>
-      </Box>
+            sx={{ minWidth: "fit-content", color: "rgb(248, 112, 97) " }} />
+
+          {/* 
+                <DrawerListItem icon={<SettingsIcon />} text="Settings" /> */}
+          {/* Add more items or pass children */}
+        </CollapsibleDrawer>
+        <Box sx={{ flex: 1 }}>
+          <Paper elevation={2}
+            sx={{ height: "100%", maxWidth: "1200px", ml: { xs: "auto", md: "80px", xl: "auto" }, mr: "auto", /* pb: "20px" */ }}>
+            <EventsTracker
+              forceUpdate={forceUpdate}
+              forceUpdateCallback={setForceUpdate}
+              open={trackerOpen}
+              onClose={() => setTrackerOpen(false)}
+              eventsData={eventsData}
+              onChange={setEvents}
+              submitEvent={handleSubmitEvent}
+              trackerDefaults={trackerDefaults}
+            >
+              <List>
+                <ListItem>Input future events, using sidebar menu options, import, or manually.</ListItem>
+                <ListItem ><Stack direction="row" gap={2} alignItems="center">
+                  {getDefaultsButton()} 6 months of upcoming events from prts.wiki sorted by date, updated daily.</Stack></ListItem>
+                <ListItem ><Stack direction="row" gap={2} alignItems="center">
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => {
+                      setEventsOpen(true);
+                      setTrackerOpen(false);
+                    }}
+                    disabled={loading}
+                    sx={{ minWidth: "fit-content" }}
+                  >CN&nbsp;Builder
+                  </Button>CN data and builder to add, combine or replace events in tracker list</Stack></ListItem>
+                <ListItem ><Stack direction="row" gap={2} alignItems="center">
+                  {getBuilderButton()} Builder to combine and merge events from different sources including RA & IS Archives</Stack></ListItem>
+              </List>
+            </EventsTracker>
+            <EventsTrackerDialog
+              eventsData={eventsData}
+              open={eventsKroosterOpen}
+              onChange={setEvents}
+              onClose={() => {
+                setEventsKroosterOpen(false);
+                setForceUpdate(true);
+              }}
+              openSummary={setSummaryOpen}
+              submitEvent={handleSubmitEvent}
+              trackerDefaults={trackerDefaults}
+            />
+            <WebEventsDialog
+              open={eventsOpen}
+              onClose={() => {
+                setEventsOpen(false);
+                setTrackerOpen(true);
+              }}
+              eventsData={eventsData}
+              defaultList={trackerDefaults?.webEventsData ?? {}}
+              submitEvent={submitEvent}
+            />
+            <SubmitEventDialog
+              open={submitDialogOpen}
+              allowedSources={submitSources}
+              onClose={() => {
+                setSubmitDialogOpen(false)
+              }}
+              onSubmit={handleSubmitEvent}
+              submitedEvent={submitedEvent}
+              eventsData={eventsData}
+              trackerDefaults={trackerDefaults}
+              selectedEvent={selectedEvent}
+              onSelectorChange={setSelectedEvent}
+            />
+            <AcknowledgementDialog
+              open={acknowledgementsOpen}
+              onClose={() => setAcknowledgementsOpen(false)}
+            />
+          </Paper>
+        </Box>
       </SnackbarProvider>
     </CacheProvider>);
 }
