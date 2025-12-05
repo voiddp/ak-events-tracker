@@ -28,9 +28,9 @@
     "axios": "^1.8.4",
     "cheerio": "^1.0.0",
     "lodash": "^4.17.21",
-    "next": "15.4.7",
+    "next": "16.0.7",
     "notistack": "^3.0.2",
-    "react": "^19.0.0",
+    "react": "19.2.1",
     "react-dom": "^19.0.0",
     "redis": "^4.7.0",
     "styled-components": "^6.1.16"
