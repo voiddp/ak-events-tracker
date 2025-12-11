@@ -133,7 +133,9 @@ export const createDefaultEventsData = (webEvents: WebEventsData) => {
             && wEvent.date)
         //sort pure events first
         .sort(([, a], [, b]) => {
-            return new Date(a.date!).getTime() - new Date(b.date!).getTime();
+            const sort = new Date(a.date!).getTime() - new Date(b.date!).getTime();
+            return sort !== 0 ? sort
+                : (a.farms ? -1 : 0) + (b.farms ? 1 : 0); //events with farms first 
         })
     //Apply +6 months shift and known dates with relative positioning
     const shiftedEvents = applyGLDatesShift(sortedEvents);
@@ -215,7 +217,7 @@ export const applyGLDatesShift = (events: [string, WebEvent][]): [string, WebEve
     let firstKnownEvent: { key: string; event: WebEvent; newDate: Date; sixMonthDate: Date } | null = null;
 
     for (const [eventName, fixedDate] of Object.entries(GL_EVENT_DATES)) {
-        const existingEvent = events.find(([_, wEvent]) => wEvent.name === eventName);
+        const existingEvent = events.find(([_, wEvent]) => wEvent.name === eventName && fixedDate !== "remove");
         if (existingEvent) {
             const [key, wEvent] = existingEvent;
             const newDate = new Date(fixedDate);
@@ -245,36 +247,71 @@ export const applyGLDatesShift = (events: [string, WebEvent][]): [string, WebEve
     const firstSixMonth = firstKnownEvent.sixMonthDate.getTime();
     const firstNew = firstKnownEvent.newDate.getTime();
     let runningShiftTime = firstNew - firstSixMonth;
-    return events.map(([key, wEvent]) => {
-        const name = wEvent.name || '';
-        const sixMonthDate = new Date(wEvent.date!);
-        sixMonthDate.setMonth(sixMonthDate.getMonth() + 6
-            + (name.startsWith("IS") ? IS_START_MONTH_SHIFT : 0));
+    let prevNewDate = new Date(firstNew);
+    let ignoredSixMonthDate: Date | null = null;
+    console.log("shifting event dates result:");
+    return events
+        .filter(([_, { name }]) =>
+            !name || !(name in GL_EVENT_DATES)
+            || name in GL_EVENT_DATES && GL_EVENT_DATES[name] !== "remove")
+        .map(([key, wEvent]) => {
+            const name = wEvent.name || '';
+            const sixMonthDate = new Date(wEvent.date!);
+            sixMonthDate.setMonth(sixMonthDate.getMonth() + 6
+                + (name.startsWith("IS") ? IS_START_MONTH_SHIFT : 0));
 
-        if (name.startsWith("IS") || name.startsWith("Annihilation") || name.startsWith("SSS")) {
-            return [key, { ...wEvent, date: sixMonthDate }];
-        }
+            if (name.startsWith("IS") || name.startsWith("Annihilation") || name.startsWith("SSS")) {
+                console.log("+6m - operation:", name);
+                return [key, { ...wEvent, date: sixMonthDate }];
+            }
 
-        // Handle known events
-        if (name in GL_EVENT_DATES) {
-            const newDate = new Date(GL_EVENT_DATES[name]);
-            runningShiftTime = newDate.getTime() - sixMonthDate.getTime();
-            return [key, { ...wEvent, date: newDate }];
-        }
+            const applyDiffToShift = (ignoredDate: Date | null, currentDate: Date, runningShiftTime: number): number => {
+                if (ignoredDate) {
+                    const ignoredDiff = currentDate.getTime() - ignoredDate.getTime();
+                    runningShiftTime -= ignoredDiff;
+                }
+                return runningShiftTime;
+            }
 
-        //Put events that were before first known relative to it
-        const sixMonth = sixMonthDate.getTime();
-        if (sixMonth < firstSixMonth
-            && sixMonth > firstNew) {
-            const timeDiff = firstSixMonth - sixMonth;
-            const adjustedDate = new Date(firstNew - timeDiff);
+            // Handle known events
+            if (name in GL_EVENT_DATES) {
+                const newDate = new Date(GL_EVENT_DATES[name]);
+                //event was moved back in shedule, save its date for ref
+                if (newDate.getTime() < prevNewDate.getTime()) {
+                    ignoredSixMonthDate = new Date(sixMonthDate);
+                } else { //wasn't moved back shift
+                    runningShiftTime = newDate.getTime() - sixMonthDate.getTime();
+
+                    runningShiftTime = applyDiffToShift(ignoredSixMonthDate, sixMonthDate, runningShiftTime);
+                    ignoredSixMonthDate = null;
+                }
+                prevNewDate = new Date(newDate);
+                console.log(((newDate.getTime() - sixMonthDate.getTime()) / (1000 * 60 * 60 * 24)).toFixed(0), "days +6m shift - known date:", wEvent.name );
+                return [key, { ...wEvent, date: newDate }];
+            }
+
+            runningShiftTime = applyDiffToShift(ignoredSixMonthDate, sixMonthDate, runningShiftTime);
+            ignoredSixMonthDate = null;
+
+            //Put events that were before first known relative to it
+            const sixMonth = sixMonthDate.getTime();
+            if (sixMonth < firstSixMonth
+                && sixMonth > firstNew) {
+                const timeDiff = firstSixMonth - sixMonth;
+                const adjustedDate = new Date(firstNew - timeDiff);
+                prevNewDate = new Date(adjustedDate);
+                console.log(((adjustedDate.getTime() - sixMonthDate.getTime()) / (1000 * 60 * 60 * 24)).toFixed(0), "days +6m shift - event before known:", wEvent.name);
+                return [key, { ...wEvent, date: adjustedDate }];
+            } else if (sixMonth === firstSixMonth) {
+                prevNewDate = new Date(firstKnownEvent.newDate);
+                console.log("repeat date - event before known", wEvent.name);
+                return [key, { ...wEvent, date: firstKnownEvent.newDate }];
+            }
+
+            // Normal shift for other unknown events (those before first known event)
+            console.log((runningShiftTime / (1000 * 60 * 60 * 24)).toFixed(0), "days +6m shift - normal inverval:", wEvent.name);
+            const adjustedDate = new Date(sixMonth + runningShiftTime);
+            prevNewDate = new Date(adjustedDate);
             return [key, { ...wEvent, date: adjustedDate }];
-        } else if (sixMonth === firstSixMonth) {
-            return [key, { ...wEvent, date: firstKnownEvent.newDate }];
-        }
-
-        // Normal shift for other unknown events (those before first known event)
-        const adjustedDate = new Date(sixMonth + runningShiftTime);
-        return [key, { ...wEvent, date: adjustedDate }];
-    });
+        });
 };
