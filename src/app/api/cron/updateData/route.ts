@@ -31,7 +31,8 @@ export async function GET() {
 
       return NextResponse.json({
         success: true,
-        eventsUpdated
+        eventsUpdated,
+        webEventsData,
       });
     }
   } catch (error) {

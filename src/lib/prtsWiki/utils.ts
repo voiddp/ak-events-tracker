@@ -7,7 +7,7 @@ export const createEmptyWebEvent = () => {
 }
 
 export const isDateTextValid = (dateText: string): boolean => {
-    const dateTextRegExp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?$/;
+    const dateTextRegExp = /^\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}(?::\d{2})?$/;
     return dateTextRegExp.test(dateText)
 }
 
