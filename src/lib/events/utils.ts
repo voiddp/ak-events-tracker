@@ -140,7 +140,7 @@ export const createDefaultEventsData = (webEvents: WebEventsData) => {
     //Apply +6 months shift and known dates with relative positioning
     const shiftedEvents = applyGLDatesShift(sortedEvents)
         //remove one month ago dates to auto clear shifted events/IS etc
-        .filter(([_, wEvent]) => => {
+        .filter(([_, wEvent]) => {
         const oneMonthAgo = new Date();
         oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);        
         return wEvent.date >= oneMonthAgo;
