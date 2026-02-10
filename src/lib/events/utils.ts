@@ -138,7 +138,13 @@ export const createDefaultEventsData = (webEvents: WebEventsData) => {
                 : (a.farms ? -1 : 0) + (b.farms ? 1 : 0); //events with farms first 
         })
     //Apply +6 months shift and known dates with relative positioning
-    const shiftedEvents = applyGLDatesShift(sortedEvents);
+    const shiftedEvents = applyGLDatesShift(sortedEvents)
+        //remove one month ago dates to auto clear shifted events/IS etc
+        .filter(([_, wEvent]) => => {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);        
+        return wEvent.date >= oneMonthAgo;
+    });
     const _eventsData = shiftedEvents.concat(
         Object.entries(nextMonthsEvents).map(([name, event]) => {
             //name is May 31, 2025, convert to last day of month date
