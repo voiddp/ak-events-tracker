@@ -143,7 +143,7 @@ export const createDefaultEventsData = (webEvents: WebEventsData) => {
         .filter(([_, wEvent]) => {
         const oneMonthAgo = new Date();
         oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);        
-        return wEvent.date >= oneMonthAgo;
+        return wEvent.date && wEvent.date >= oneMonthAgo;
     });
     const _eventsData = shiftedEvents.concat(
         Object.entries(nextMonthsEvents).map(([name, event]) => {
