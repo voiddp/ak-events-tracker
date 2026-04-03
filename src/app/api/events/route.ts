@@ -6,6 +6,9 @@ const allowedOrigins = [
   'https://www.krooster.com',
   'http://localhost:3000',
 ];
+const CACHE_TTL = 86400;
+
+export const revalidate = 86400;
 
 export async function GET(request: NextRequest) {
   const origin = request.headers.get('origin') || '';
@@ -41,6 +44,14 @@ export async function GET(request: NextRequest) {
   }
   const response = NextResponse.json(responseData, { status });
 
+  // s-maxage=24h: Vercel Edge caches this for 24 hours.
+  //invalidation happens via revalidatePath('/api/events') in the cron job after data update.
+  // stale-while-revalidate: If the cache is old, serve it anyway while fetching fresh data in the background.
+  response.headers.set(
+    'Cache-Control',
+    `public, s-maxage=${CACHE_TTL}, stale-while-revalidate=${CACHE_TTL}`
+  );
+
   // Set CORS headers
   if (allowedOrigins.includes(origin)) {
     response.headers.set('Access-Control-Allow-Origin', origin);
@@ -70,4 +81,4 @@ export async function OPTIONS(request: NextRequest) {
   return response;
 }
 
-export const dynamic = 'force-dynamic';
+/* export const dynamic = 'force-dynamic'; */

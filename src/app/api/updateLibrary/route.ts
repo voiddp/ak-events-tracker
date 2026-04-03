@@ -3,6 +3,7 @@ import { fetchLastISEvents, fetchLastRAEvents } from '@/lib/prtsWiki/api';
 import { putToStorage } from '@/lib/redis/utils';
 import { nanoid } from 'nanoid';
 import { ApiContext } from '@/lib/prtsWiki/types';
+import { revalidatePath } from 'next/cache';
 
 //just local repo api to parse and store library for now manually 
 const allowedOrigins = [
@@ -43,6 +44,9 @@ export async function GET(request: NextRequest) {
         archive
       });
       responseData = { archive };
+
+      revalidatePath('/api/events');
+      console.log('Cache invalidated for /api/events at', new Date().toISOString());
     }
   }
   catch (error) {
