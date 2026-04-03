@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   // stale-while-revalidate: If the cache is old, serve it anyway while fetching fresh data in the background.
   response.headers.set(
     'Cache-Control',
-    `public, s-maxage=${CACHE_TTL}, stale-while-revalidate=${CACHE_TTL}`
+    `public, s-maxage=${CACHE_TTL}, stale-while-revalidate=${CACHE_TTL}, max-age=0`
   );
 
   // Set CORS headers

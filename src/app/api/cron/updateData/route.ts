@@ -31,6 +31,7 @@ export async function GET() {
       });
 
       revalidatePath('/api/events');
+      revalidatePath('/api/events', 'page');
       console.log('Cache invalidated for /api/events at', eventsUpdated);
 
       return NextResponse.json({

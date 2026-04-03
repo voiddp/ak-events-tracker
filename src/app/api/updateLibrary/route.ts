@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
       responseData = { archive };
 
       revalidatePath('/api/events');
+      revalidatePath('/api/events', 'page');
       console.log('Cache invalidated for /api/events at', new Date().toISOString());
     }
   }
