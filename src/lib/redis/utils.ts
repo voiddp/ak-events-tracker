@@ -1,4 +1,5 @@
 import client from "@/lib/redis/client";
+import { unstable_cache } from "next/cache";
 
 export async function putToStorage(data: Record<string, any>) {
     const entries = Object.entries(data);
@@ -12,15 +13,24 @@ export async function putToStorage(data: Record<string, any>) {
 };
 
 export async function getFromStorage(keys: string[]) {
-    const values = await Promise.all(keys.map((key) => client.get(key)));
+    return await unstable_cache(
+        async () => {
+            const values = await Promise.all(keys.map((key) => client.get(key)));
 
-    const result: Record<string, any> = {};
-    keys.forEach((key, index) => {
-        const val = values[index];
-        result[key] = val ? JSON.parse(val) : null;
-    });
+            const result: Record<string, any> = {};
+            keys.forEach((key, index) => {
+                const val = values[index];
+                result[key] = val ? JSON.parse(val) : null;
+            });
 
-    return result;
+            return result;
+        },
+        [...keys], 
+        {
+            tags: ['events-data'], // cache TAG
+            revalidate: 86400,
+        }
+    )();
 };
 
 export async function isLockActive(lockKey: string): Promise<boolean> {
@@ -60,7 +70,7 @@ export async function getQueue(queueKey: string): Promise<string[]> {
     return await client.lRange(queueKey, 0, -1)
 };
 
-export async function clearQueue(queueKey: string):Promise<number> {
+export async function clearQueue(queueKey: string): Promise<number> {
     return await client.del(queueKey)
 };
 

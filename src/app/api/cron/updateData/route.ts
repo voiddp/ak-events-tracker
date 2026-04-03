@@ -3,7 +3,7 @@ import { getEverythingAtOnce } from '@/lib/prtsWiki/api';
 import { createDefaultEventsData } from '@/lib/events/utils';
 import { putToStorage } from '@/lib/redis/utils';
 import { nanoid } from 'nanoid';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 export const maxDuration = 60;
 
@@ -29,9 +29,8 @@ export async function GET() {
         eventsData,
         eventsUpdated,
       });
-
       revalidatePath('/api/events');
-      revalidatePath('/api/events', 'page');
+      revalidateTag('events-data','default');
       console.log('Cache invalidated for /api/events at', eventsUpdated);
 
       return NextResponse.json({
