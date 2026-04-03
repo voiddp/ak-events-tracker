@@ -13,24 +13,15 @@ export async function putToStorage(data: Record<string, any>) {
 };
 
 export async function getFromStorage(keys: string[]) {
-    return await unstable_cache(
-        async () => {
-            const values = await Promise.all(keys.map((key) => client.get(key)));
+    const values = await Promise.all(keys.map((key) => client.get(key)));
 
-            const result: Record<string, any> = {};
-            keys.forEach((key, index) => {
-                const val = values[index];
-                result[key] = val ? JSON.parse(val) : null;
-            });
+    const result: Record<string, any> = {};
+    keys.forEach((key, index) => {
+        const val = values[index];
+        result[key] = val ? JSON.parse(val) : null;
+    });
 
-            return result;
-        },
-        [...keys], 
-        {
-            tags: ['events-data'], // cache TAG
-            revalidate: 86400,
-        }
-    )();
+    return result;
 };
 
 export async function isLockActive(lockKey: string): Promise<boolean> {

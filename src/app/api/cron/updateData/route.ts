@@ -29,9 +29,6 @@ export async function GET() {
         eventsData,
         eventsUpdated,
       });
-      revalidatePath('/api/events');
-      revalidateTag('events-data','default');
-      console.log('Cache invalidated for /api/events at', eventsUpdated);
 
       return NextResponse.json({
         success: true,

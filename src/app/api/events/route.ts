@@ -8,8 +8,6 @@ const allowedOrigins = [
 ];
 const CACHE_TTL = 86400;
 
-export const revalidate = 86400;
-
 export async function GET(request: NextRequest) {
   const origin = request.headers.get('origin') || '';
   if (origin !== '')
@@ -44,12 +42,10 @@ export async function GET(request: NextRequest) {
   }
   const response = NextResponse.json(responseData, { status });
 
-  // s-maxage=24h: Vercel Edge caches this for 24 hours.
-  //invalidation happens via revalidatePath('/api/events') in the cron job after data update.
-  // stale-while-revalidate: If the cache is old, serve it anyway while fetching fresh data in the background.
+  //CDN cache 12h outdate, 24h stale.
   response.headers.set(
     'Cache-Control',
-    `public, s-maxage=${CACHE_TTL}, stale-while-revalidate=${CACHE_TTL}, max-age=0`
+    `public, s-maxage=${CACHE_TTL}/2, stale-while-revalidate=${CACHE_TTL}, max-age=0`
   );
 
   // Set CORS headers
