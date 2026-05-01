@@ -5,6 +5,3 @@
 	path = scripts/ArknightsGameData_YoStar
 	url = https://github.com/Kengxxiao/ArknightsGameData_YoStar
 
-[submodule "scripts/Arknight-Images"]
-	path = scripts/Arknight-Images
-	url = https://github.com/PuppiizSunniiz/Arknight-Images
