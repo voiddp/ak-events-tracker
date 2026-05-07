@@ -9,8 +9,13 @@ const CACHE_TTL = 86400;
 
 export async function GET(request: NextRequest) {
   const origin = request.headers.get('origin') || '';
-  if (origin !== '')
-    console.log(origin);
+  if (origin && !allowedOrigins.includes(origin)) {
+    console.log('Blocked request from origin:', origin);
+    return new NextResponse('Forbidden', { status: 403 });
+  } else if (!origin) {
+    console.log('Blocked request, no origin header');
+    return new NextResponse('Forbidden', { status: 403 });
+  }
 
   let responseData: any;
   let status = 200;
@@ -48,10 +53,8 @@ export async function GET(request: NextRequest) {
   );
 
   // Set CORS headers
-  if (allowedOrigins.includes(origin)) {
-    response.headers.set('Access-Control-Allow-Origin', origin);
-  }
 
+  response.headers.set('Access-Control-Allow-Origin', origin);
   response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
   response.headers.set('Vary', 'Origin');
