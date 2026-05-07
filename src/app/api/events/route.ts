@@ -14,13 +14,13 @@ export async function GET(request: NextRequest) {
     return new NextResponse('Forbidden', { status: 403 });
   } else if (!origin) {
     console.log('no origin header');
-    //return new NextResponse('Forbidden', { status: 403 });
   } else {
     console.log(origin, "- is allowed");
   }
 
   let responseData: any;
   let status = 200;
+  let _eventsUpdated;
 
   try {
     const { webEventsData, eventsData, eventsUpdated, archive } = await getFromStorage([
@@ -33,13 +33,22 @@ export async function GET(request: NextRequest) {
     if (!webEventsData || !eventsData) {
       responseData = { error: 'No data available' };
       status = 404;
-    } else
+    } else {
+      //check if 24h old (/24h update failed), and fake eventsUpdated to +24h more to stop client from triggering update till next day cron.
+      _eventsUpdated = eventsUpdated;
+      const now = Date.now();
+      const eventsUpdatedTime = new Date(eventsUpdated).getTime();
+      if (now - eventsUpdatedTime > 24 * 60 * 60 * 1000) {
+        console.warn('Data is older than 24 hours, faking eventsUpdated to prevent client edge requests.');
+        _eventsUpdated = new Date(eventsUpdatedTime + 24 * 60 * 60 * 1000).toISOString(); //+24h
+      }
       responseData = {
         webEventsData,
         eventsData,
-        eventsUpdated,
+        eventsUpdated: _eventsUpdated,
         archive
       };
+    }
   } catch (error) {
     console.error('Failed to fetch web events:', error);
     responseData = { error: 'Failed to fetch data' };
@@ -48,18 +57,34 @@ export async function GET(request: NextRequest) {
   }
   const response = NextResponse.json(responseData, { status });
 
-  //CDN cache 12h outdate, 24h stale.
+  const baseDate = _eventsUpdated ? new Date(_eventsUpdated).getTime() : Date.now();
+  const nextRefreshDate = baseDate + (24 * 60 * 60 * 1000);
+  const now = Date.now();
+
+  let raw_age = Math.floor((nextRefreshDate - now) / 1000);
+  let age_s;
+  if (raw_age > CACHE_TTL / 2) {
+    age_s = Math.floor(CACHE_TTL / 2); // 12h
+  } else if (raw_age > CACHE_TTL / 4) {
+    age_s = Math.floor(CACHE_TTL / 4); // 6h
+  } else {
+    age_s = 3600; // 1h
+  }
+  //CDN cache 
   response.headers.set(
     'Cache-Control',
-    `public, s-maxage=${CACHE_TTL}/2/6, stale-while-revalidate=${CACHE_TTL/6}, max-age=0`
+    `public, s-maxage=${age_s}, stale-while-revalidate=${age_s * 2}, max-age=0`
   );
 
   // Set CORS headers
-
-  response.headers.set('Access-Control-Allow-Origin', origin);
+  if (origin) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+  }
   response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
-  response.headers.set('Vary', 'Origin');
+  //to make cache global.
+  response.headers.delete('Vary');
+  response.headers.set('Vary', 'Accept-Encoding');
 
   return response;
 
@@ -76,7 +101,7 @@ export async function OPTIONS(request: NextRequest) {
 
   response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
-  response.headers.set('Vary', 'Origin');
+  //response.headers.set('Vary', 'Origin');
 
   return response;
 }
