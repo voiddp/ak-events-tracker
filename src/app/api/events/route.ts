@@ -4,7 +4,6 @@ import { getFromStorage } from '@/lib/redis/utils';
 const allowedOrigins = [
   'https://krooster.com',
   'https://www.krooster.com',
-  'http://localhost:3000',
 ];
 const CACHE_TTL = 86400;
 
