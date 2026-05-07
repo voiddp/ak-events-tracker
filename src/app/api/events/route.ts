@@ -13,8 +13,10 @@ export async function GET(request: NextRequest) {
     console.log('Blocked request from origin:', origin);
     return new NextResponse('Forbidden', { status: 403 });
   } else if (!origin) {
-    console.log('Blocked request, no origin header');
-    return new NextResponse('Forbidden', { status: 403 });
+    console.log('no origin header');
+    //return new NextResponse('Forbidden', { status: 403 });
+  } else {
+    console.log(origin, "- is allowed");
   }
 
   let responseData: any;
@@ -49,7 +51,7 @@ export async function GET(request: NextRequest) {
   //CDN cache 12h outdate, 24h stale.
   response.headers.set(
     'Cache-Control',
-    `public, s-maxage=${CACHE_TTL}/2, stale-while-revalidate=${CACHE_TTL}, max-age=0`
+    `public, s-maxage=${CACHE_TTL}/2/6, stale-while-revalidate=${CACHE_TTL/6}, max-age=0`
   );
 
   // Set CORS headers
