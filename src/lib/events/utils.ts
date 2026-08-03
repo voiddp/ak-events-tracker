@@ -267,10 +267,15 @@ export const applyGLDatesShift = (events: [string, WebEvent][]): [string, WebEve
                 + (name.startsWith("IS") ? IS_START_MONTH_SHIFT : 0));
 
             if (name.startsWith("IS") || name.startsWith("Annihilation") || name.startsWith("SSS")) {
-                console.log("+6m +",ANIHILATIONS_START_DAYS_SHIFT," shift - operation:", name);
-                const alignedAniDate = new Date(sixMonthDate);
-                alignedAniDate.setDate(alignedAniDate.getDate() + ANIHILATIONS_START_DAYS_SHIFT);
-                return [key, { ...wEvent, date: alignedAniDate }];
+                if (name.startsWith("Annihilation")) {
+                    console.log("+6m +",ANIHILATIONS_START_DAYS_SHIFT," shift - operation:", name);
+                    const alignedAniDate = new Date(sixMonthDate);
+                    alignedAniDate.setDate(alignedAniDate.getDate() + ANIHILATIONS_START_DAYS_SHIFT);
+                    return [key, { ...wEvent, date: alignedAniDate }];
+                } else {
+                    console.log("+6m - operation:", name);
+                    return [key, { ...wEvent, date: sixMonthDate }];
+                }  
             }
 
             const applyDiffToShift = (ignoredDate: Date | null, currentDate: Date, runningShiftTime: number): number => {
