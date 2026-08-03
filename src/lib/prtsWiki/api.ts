@@ -30,6 +30,7 @@ import {
   parseRATidesOfWar
 } from './parsers';
 import { addItemsSet, getAniEventsList, isDateTextValid } from './utils';
+import { ANIHILATIONS_START_DAYS_SHIFT } from "@/lib/events/constants";
 
 export const getUrl = (pageTitle: string) => {
   return `https://prts.wiki/w/${encodeURIComponent(pageTitle)}`;
@@ -397,10 +398,12 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
     }
 
     context.setProgress?.("LIST", 30);
+    const aniCutOffDate = new Date(monthsAgoDate);
+    aniCutOffDate.setDate(aniCutOffDate.getDate() + ANNIHILATIONS_START_DAYS_SHIFT);
     const aniArgs = await fetchTemplateArguments(pageNames.operations, templates.anihilations, context);
     if (aniArgs) {
       getAniEventsList(aniArgs)
-        .filter(event => event.date && event.date >= monthsAgoDate)
+        .filter(event => event.date && event.date >= aniCutOffDate)
         .forEach(event => {
           webEvents[event.pageName] = event;
         });
