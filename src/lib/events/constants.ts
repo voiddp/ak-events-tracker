@@ -1,5 +1,7 @@
 export const IS_START_MONTH_SHIFT: number = -1
 
+export const ANIHILATIONS_START_DAYS_SHIFT: number = 21
+
 export const GL_EVENT_DATES: Record<string,string> = { 
     "Rerun: Exodus From The Pale Sea": "remove",
     "Trials For Navigator #06": "2026-06-11",
