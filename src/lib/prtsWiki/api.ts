@@ -399,7 +399,7 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
 
     context.setProgress?.("LIST", 30);
     const aniCutOffDate = new Date(monthsAgoDate);
-    aniCutOffDate.setDate(aniCutOffDate.getDate() + ANIHILATIONS_START_DAYS_SHIFT);
+    aniCutOffDate.setDate(aniCutOffDate.getDate() - ANIHILATIONS_START_DAYS_SHIFT);
     const aniArgs = await fetchTemplateArguments(pageNames.operations, templates.anihilations, context);
     if (aniArgs) {
       getAniEventsList(aniArgs)
