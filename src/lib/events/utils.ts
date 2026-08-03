@@ -1,7 +1,7 @@
 import { AK_CALENDAR, AK_DAILY, AK_WEEKLY } from "@/utils/ItemUtils";
 import { EventsData, NamedEvent, Event } from "./types";
 import { WebEventsData, WebEvent } from "../prtsWiki/types";
-import { GL_EVENT_DATES, IS_START_MONTH_SHIFT } from "./constants";
+import { GL_EVENT_DATES, IS_START_MONTH_SHIFT, ANIHILATIONS_START_DAYS_SHIFT } from "./constants";
 
 export const createEmptyEvent = () => {
     return { index: -1, materials: {} } as Event;
@@ -267,8 +267,10 @@ export const applyGLDatesShift = (events: [string, WebEvent][]): [string, WebEve
                 + (name.startsWith("IS") ? IS_START_MONTH_SHIFT : 0));
 
             if (name.startsWith("IS") || name.startsWith("Annihilation") || name.startsWith("SSS")) {
-                console.log("+6m - operation:", name);
-                return [key, { ...wEvent, date: sixMonthDate }];
+                console.log("+6m +",ANIHILATIONS_START_DAYS_SHIFT," shift - operation:", name);
+                const alignedAniDate = new Date(sixMonthDate);
+                alignedAniDate.setDate(alignedAniDate.getDate() + ANIHILATIONS_START_DAYS_SHIFT);
+                return [key, { ...wEvent, date: alignedAniDate }];
             }
 
             const applyDiffToShift = (ignoredDate: Date | null, currentDate: Date, runningShiftTime: number): number => {
