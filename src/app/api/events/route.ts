@@ -6,6 +6,7 @@ const allowedOrigins = [
   'https://www.krooster.com',
 ];
 const CACHE_TTL = 86400;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
   const origin = request.headers.get('origin') || '';
@@ -34,13 +35,20 @@ export async function GET(request: NextRequest) {
       responseData = { error: 'No data available' };
       status = 404;
     } else {
-      //check if 24h old (/24h update failed), and fake eventsUpdated to +24h more to stop client from triggering update till next day cron.
       _eventsUpdated = eventsUpdated;
       const now = Date.now();
       const eventsUpdatedTime = new Date(eventsUpdated).getTime();
-      if (now - eventsUpdatedTime > 24 * 60 * 60 * 1000) {
-        console.warn('Data is older than 24 hours, faking eventsUpdated to prevent client edge requests.');
-        _eventsUpdated = new Date(eventsUpdatedTime + 24 * 60 * 60 * 1000).toISOString(); //+24h
+      const elapsedMs = now - eventsUpdatedTime;
+
+      // If data is older than 24h, advance eventsUpdated by 24h * amount of elapsed days
+      if (elapsedMs > DAY_IN_MS) {
+        const daysPassed = Math.floor(elapsedMs / DAY_IN_MS);
+        
+        console.warn(
+          `Data is older than 24 hours (${daysPassed} days stale), faking eventsUpdated +${daysPassed * 24}h to prevent client edge requests.`
+        );
+
+        _eventsUpdated = new Date(eventsUpdatedTime + (daysPassed * DAY_IN_MS)).toISOString();
       }
       responseData = {
         webEventsData,
