@@ -268,43 +268,49 @@ export const fetchLastRAEvents = async (
 
       let critModeMaterials: Record<string, number> = {};
       critModeMaterials = parseNumDivs($_main, critModeMaterials);
-      resultData[`${RAprefix} Critical Contentions`] = {
-        pageName: RApage,
-        link: getUrl(RApage),
-        name: `${RAprefix} Critical Contentions`,
-        webDisable: true,
-        materials: critModeMaterials,
-        date: lastDate,
+      if (Object.keys(critModeMaterials).length > 0) {
+        resultData[`${RAprefix} Critical Contentions`] = {
+          pageName: RApage,
+          link: getUrl(RApage),
+          name: `${RAprefix} Critical Contentions`,
+          webDisable: true,
+          materials: critModeMaterials,
+          date: lastDate,
+        }
       }
 
-      const html_tides = await fetchHtml(getUrl(`${RApage}/${pageNames.reclamationAlgorithmTides}`), context.session);
-      const $_tides = cheerio.load(html_tides);
-      const RAtidesOfWar = parseRATidesOfWar($_tides, RApage, RAprefix);
+      try {
+        const html_tides = await fetchHtml(getUrl(`${RApage}/${pageNames.reclamationAlgorithmTides}`), context.session);
+        const $_tides = cheerio.load(html_tides);
+        const RAtidesOfWar = parseRATidesOfWar($_tides, RApage, RAprefix);
 
-      if (!libraryFormat) {
-        Object.entries(RAtidesOfWar).forEach(([key, event]) => {
-          resultData[key] = event;
-        });
-      } else {
-        resultData[`${RAprefix} Tides Of War`] = Object.values(RAtidesOfWar)
-          .reduce((acc, event) => {
-            if (Object.keys(acc).length === 0) {
-              acc = {
-                pageName: event.pageName,
-                link: event.link,
-                name: `${RAprefix} Tides Of War`
+        if (!libraryFormat) {
+          Object.entries(RAtidesOfWar).forEach(([key, event]) => {
+            resultData[key] = event;
+          });
+        } else {
+          resultData[`${RAprefix} Tides Of War`] = Object.values(RAtidesOfWar)
+            .reduce((acc, event) => {
+              if (Object.keys(acc).length === 0) {
+                acc = {
+                  pageName: event.pageName,
+                  link: event.link,
+                  name: `${RAprefix} Tides Of War`
+                }
               }
-            }
-            if (event.date && (acc.date?.getTime() ?? 0) < event.date.getTime()) {
-              acc.date = event.date;
-              acc.date.setMonth(event.date.getMonth() + 1);
-            }
-            Object.entries(event.materials ?? {}).forEach(([id, amount]) => {
-              if (!acc.materials) acc.materials = {};
-              acc.materials[id] = (acc.materials[id] ?? 0) + amount;
-            });
-            return acc
-          }, {} as WebEvent);
+              if (event.date && (acc.date?.getTime() ?? 0) < event.date.getTime()) {
+                acc.date = event.date;
+                acc.date.setMonth(event.date.getMonth() + 1);
+              }
+              Object.entries(event.materials ?? {}).forEach(([id, amount]) => {
+                if (!acc.materials) acc.materials = {};
+                acc.materials[id] = (acc.materials[id] ?? 0) + amount;
+              });
+              return acc
+            }, {} as WebEvent);
+        }
+      } catch (err) {
+        //skip, dont elevate
       }
     }
     return resultData;
