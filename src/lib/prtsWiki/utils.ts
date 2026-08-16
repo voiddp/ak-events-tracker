@@ -60,11 +60,11 @@ export const getAniEventsList = (data: Record<string, string>): WebEvent[] => {
 
 export const parseChineseNumber = (input: string): number | null => {
     if (!input) return null;
-    const match = input.match(/^(∞|\d+)([万千百])?$/);
+    const match = input.match(/^(∞|\d+(?:\.\d+)?)([万千百])?$/);
 
     if (match) {
         if (match[1] === "∞") return Infinity;
-        const num = parseInt(match[1], 10);
+        const num = parseFloat(match[1]);
         const unit = match[2];
 
         if (!isNaN(num)) {

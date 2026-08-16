@@ -190,7 +190,11 @@ export const parseNumDivs = ($: cheerio.CheerioAPI, result: Record<string, numbe
     $('table').each((_, table) => {
         const $table = $(table);
         const $firstTr = $table.find('tr').first();
-        if ($firstTr.text().includes(argNames.totals)) {
+
+        const hasIgnoredClass = $table.hasClass('event-alchemy-table');
+        const hasTotalsHeader = $firstTr.text().includes(argNames.totals);
+
+        if (hasIgnoredClass || hasTotalsHeader) {
             tablesToIgnore.add(table);
         }
     });
@@ -296,6 +300,72 @@ export const parseShopInEvent = ($: cheerio.CheerioAPI, result: Record<string, n
             result[itemId] = (result[itemId] ?? 0) + amount * multiplier;
         }
     });
+    return {
+        materials: result,
+        infinite: infinite.length > 0 ? infinite : null
+    };
+};
+
+//MH colab table class
+export const parseAlchemyTable = (
+    $: cheerio.CheerioAPI,
+    result: Record<string, number>
+): { materials: Record<string, number>; infinite: string[] | null } => {
+    const infinite: string[] = [];
+
+    $('.event-alchemy-table').each((_, table) => {
+        const $rows = $(table).find('tr');
+
+        $rows.each((rowIndex, row) => {
+            const $itemTds = $(row).children('td');
+            // Skip rows that don't contain item divs
+            if ($itemTds.find('div').length === 0) return;
+
+            // The multiplier row immediately follows the item row
+            const $multiplierRow = $rows.eq(rowIndex + 1);
+            const $multiplierTds = $multiplierRow.children('td');
+
+            $itemTds.each((colIndex, td) => {
+                const $div = $(td).find('div');
+                if (!$div.length) return;
+
+                const multText = $multiplierTds.eq(colIndex).text().trim();
+
+                if (multText.includes('∞')) {
+                    const title = $div.find('a').attr('title');
+
+                    if (title) {
+                        const matchedItem = getItemByCnName(title);
+                        if (matchedItem && matchedItem.id !== '4001') {
+                            infinite.push(matchedItem.id);
+                        }
+                    }
+                } else {
+                    // Extract numeric multiplier (e.g., "×10" -> 10, default to 1)
+                    const match = multText.match(/[x×*]\s*(\d+)$/);
+                    const multiplier = match ? parseInt(match[1], 10) : 1;
+
+                    const title = $div.find('a').attr('title');
+
+                    if (title) {
+                        const matchedItem = getItemByCnName(title);
+
+                        const valueText = $div.find('span').text().trim();
+                        const parsedVal = parseChineseNumber(valueText) ?? 0;
+                        const value = parsedVal * multiplier;
+
+                        if (matchedItem) {
+                            const id = matchedItem.id;
+                            if (value > 0) {
+                                result[id] = (result[id] || 0) + value;
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    });
+
     return {
         materials: result,
         infinite: infinite.length > 0 ? infinite : null
@@ -550,16 +620,16 @@ export const parseRATidesOfWar = ($: cheerio.CheerioAPI, page: string, prefix: s
         const $h2 = $(element);
         const headline = $h2.find('.mw-headline');
         const headlineText = headline.text().trim();
-        
+
         // is a tide header (year/month pattern and tide name)
         const tideMatch = headlineText.match(/(\d{4})年(\d{1,2})月\s+(.+)/);
         if (tideMatch) {
             const [, year, month, tideName] = tideMatch;
             tideCount++;
-            
+
             const tideTitle = `${prefix} Tide of War#${tideCount} ${tideName}`;
             const tideDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-            
+
             currentTide = tideTitle;
             const tideKey = `${page}/${tideName}`;
             webEventsData[tideKey] = {
@@ -570,27 +640,27 @@ export const parseRATidesOfWar = ($: cheerio.CheerioAPI, page: string, prefix: s
                 name: currentTide,
                 webDisable: true,
             };
-            
+
             let nextElement = $h2.next();
             let foundRewards = false;
-            
+
             while (nextElement.length > 0 && !foundRewards) {
                 const tagName = nextElement.get(0)?.tagName?.toLowerCase();
-                
+
                 // another tide header
                 if (tagName === 'h2') {
                     break;
                 }
-                
+
                 // h3 header of rewards
                 if (tagName === 'h3') {
                     const h3Text = nextElement.find('.mw-headline').text().trim();
                     if (h3Text === argNames.raTideRewards) {
                         let tableElement = nextElement.next();
-                        
+
                         while (tableElement.length > 0) {
                             const tableTagName = tableElement.get(0)?.tagName?.toLowerCase();
-                            
+
                             //another header
                             if (tableTagName === 'h2' || tableTagName === 'h3') {
                                 break;
@@ -603,13 +673,13 @@ export const parseRATidesOfWar = ($: cheerio.CheerioAPI, page: string, prefix: s
                                 foundRewards = true;
                                 break;
                             }
-                            
+
                             tableElement = tableElement.next();
                         }
                         break;
                     }
                 }
-                
+
                 nextElement = nextElement.next();
             }
         }

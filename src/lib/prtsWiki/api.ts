@@ -27,7 +27,8 @@ import {
   parseListDivs,
   parseSSSPageByNum,
   parseRAShopTables,
-  parseRATidesOfWar
+  parseRATidesOfWar,
+  parseAlchemyTable
 } from './parsers';
 import { addItemsSet, getAniEventsList, isDateTextValid } from './utils';
 import { ANIHILATIONS_START_DAYS_SHIFT } from "@/lib/events/constants";
@@ -324,7 +325,11 @@ export const getDataFromPage = async (pageName: string, page_link: string, conte
     const title = findENTitle($, pageName);
     const farms = findFarms($);
     result = parseTextRewards($, result);
-    const { materials, infinite } = parseShopInEvent($, result);
+
+    const isMHColab = pageName.includes(pageNames.colabMH1) || pageName.includes(pageNames.colabMH2);
+    const parseFn = isMHColab ? parseAlchemyTable : parseShopInEvent;
+    const { materials, infinite } = parseFn($, result);
+
     result = materials;
     result = parseNumDivs($, result);
     result = parseListDivs($, result);

@@ -6,8 +6,10 @@ export const pageNames = {
     IS_navbox: '模板:Navbox_集成战略',
     reclamationAlgorithmList: '模板:生息演算导航',
     //tides of war
-    reclamationAlgorithmTides: '战争浪潮'
+    reclamationAlgorithmTides: '战争浪潮',
     //critical contentions
+    colabMH1: '落叶逐火',
+    colabMH2: '泡影苍霆'
 };
 
 export const templates = {
