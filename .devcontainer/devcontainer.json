@@ -3,6 +3,7 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "updateContentCommand": "sudo chmod 777 /tmp",
   "forwardPorts": [3000],
   // 1. Install deps
   // 2. Force submodules to init + fetch latest commits from origin
