@@ -11,8 +11,12 @@ export const findENTitle = ($: cheerio.CheerioAPI, pageName: string): string | n
     let h1Text: string | null = null;
 
     const unescaped = $.html().replace(/\\/g, '');
-    const match = unescaped.match(/class=['"]fnameheader[^>]*>([^<]+)</);
-    const title = match ? match[1].trim() : null;
+    const matchOne = unescaped.match(/class=['"]fnameheader[^>]*>([^<]+)</);
+    let title = matchOne ? matchOne[1].trim() : null;
+    if (!title) {
+        const matchDouble = unescaped.match(/fnameheader nodesktop.*nodesktop">([^<]+)</);
+        title = matchDouble ? matchDouble[1].trim() : null;
+    }
     if (title && isMostlyEnglish(title)) {
         result = capitalizeWords(title);
     } else {

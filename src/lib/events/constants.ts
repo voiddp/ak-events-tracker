@@ -7,7 +7,7 @@ export const GL_EVENT_DATES: Record<string,string> = {
     "Sign-in: 辞旧迎新，2026罗德岛新春": "remove",
     "Vector Breakthrough #2: Misery": "2026-07-30",
     "Crossing": "2026-08-13",
-    "卫戍协议：盟约 下半": "2026-08-20",
+    "Stronghold Protocol: Alliance 2nd Phase": "2026-08-20",
     "Rerun: When Elegies Are Ashes": "2026-08-27",
     "People, A People": "2026-09-16",
     "Critical Phase Transition": "2026-10-14",
