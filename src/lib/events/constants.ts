@@ -11,4 +11,5 @@ export const GL_EVENT_DATES: Record<string,string> = {
     "Thunder In The Azure Dream": "2026-11-16",
     "Rerun: Leaves Chasing Fire": "2026-11-30",
     "Battleplan Obliteration": "2026-12-10",
+    "Till The Lands Become An Orange": "2027-01-16",
 }
