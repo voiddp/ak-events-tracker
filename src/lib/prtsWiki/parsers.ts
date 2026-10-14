@@ -82,7 +82,7 @@ export const parseISHistoryTable = ($: cheerio.CheerioAPI, squadsSubpage: string
             }
         });
     });
-
+    console.log(`+IS history: `, JSON.stringify(result));
     return result;
 };
 
@@ -123,6 +123,7 @@ export const parseISMonthsTabber = (
                     materials: result,
                     name: `${ISprefix} Month ${idx + 1} - ${name}`,
                 }
+                console.log(`+event <${webEvent.name}>, at <${webEvent.date}>, with <${webEvent.materials.lengh}> mats`);
                 WebEventsData_IS[webEvent.pageName] = webEvent;
             }
 
@@ -579,7 +580,7 @@ export const parseISSquadsPage = ($: cheerio.CheerioAPI, keywords: string[]) => 
             materials,
         }
     }
-
+    console.log(`+IS squad: <${result.title}>, with <${result.materials.lengh}> mats`);
     return result;
 }
 
