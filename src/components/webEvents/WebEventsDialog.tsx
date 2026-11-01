@@ -66,7 +66,7 @@ const WebEventsDialog = React.memo((props: Props) => {
     onClose();
   }
 
-  const handleFetchEvents = async () => {
+/*   const handleFetchEvents = async () => {
     setWebEvents(rawWebEvents);
     try {
       const data = await getEventList(monthsAgo);
@@ -89,16 +89,13 @@ const WebEventsDialog = React.memo((props: Props) => {
     } catch (err) {
       console.error('Failed to load events:', err);
     }
-  };
+  }; */
 
-  const handleParseEvent = async (pageName: string, link: string) => {
+  /* const handleParseEvent = async (pageName: string, link: string) => {
     try {
       const result = await getDataFromPage(pageName, link);
       if (!result) return;
-      /* console.log(result); */
-
       const { title, items, farms, infinite } = result;
-      /* console.log(title, items); */
       setRawWebEvents((prev) => {
         const _next = { ...prev };
         const _webEvent = { ..._next[pageName] };
@@ -118,10 +115,9 @@ const WebEventsDialog = React.memo((props: Props) => {
     } catch (err) {
       console.error('Failed to load materials:', err);
     }
-  }
+  } */
 
   const handleSelectorChange = (event: NamedEvent) => {
-    /* console.log(event); */
     setSelectedEvent(event);
   };
 
@@ -145,31 +141,6 @@ const WebEventsDialog = React.memo((props: Props) => {
         <DialogTitle justifyContent="space-between">
           <Stack direction="row" gap={1} mr={1}>
             {!fullScreen ? "From " : ""}prts.wiki:
-            <TextField
-              label="months"
-              value={monthsAgo}
-              size="small"
-              sx={{ width: "4ch" }}
-              slotProps={{
-                htmlInput: {
-                  onClick: (e: React.MouseEvent<HTMLInputElement>) => e.currentTarget.select(),
-                  sx: { textAlign: "center" },
-                }
-              }}
-              onChange={(e) => {
-                setMonthsAGo((Number(e.target.value) || 1) > 12 ? 6 : (Number(e.target.value) || 1));
-                e.target.select();
-              }}
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              size={fullScreen ? "small" : "medium"}
-              onClick={handleFetchEvents}
-              disabled={loading["LIST"]}
-              sx={{ minWidth: "fit-content", minHeight: "fit-content" }}
-            >Fetch{!fullScreen ? " Events" : ""}
-            </Button>
           </Stack>
           <IconButton onClick={handleClose} sx={{ display: { sm: "none" }, gridArea: "close" }}>
             <Close />
@@ -233,7 +204,7 @@ const WebEventsDialog = React.memo((props: Props) => {
                                   handleAddEventDialogOpen(item);
                                 }} />
                             </Tooltip>}
-                          {!rawWebEvents[item.pageName]?.webDisable
+                          {/* !rawWebEvents[item.pageName]?.webDisable
                             && <Tooltip title="pull event data from page">
                               <CloudDownloadIcon
                                 fontSize="large"
@@ -248,7 +219,7 @@ const WebEventsDialog = React.memo((props: Props) => {
                                   handleParseEvent(item.pageName, item.link)
                                 }} />
                             </Tooltip>
-                          }
+                           */}
                         </Stack>
                       </Stack>
                     </AccordionSummary>
