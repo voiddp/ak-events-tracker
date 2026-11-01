@@ -32,9 +32,10 @@ export const getAniEventsList = (data: Record<string, string>): WebEvent[] => {
 
     // 2. Get the end date of the current event
     const dateText = data[`${argNames.curAniPrefix}${aniNumber}${argNames.curAniDate}`];
-    if (!isDateTextValid(dateText)) return events;
+    const cleanDateText = dateText.replace(/<!--[\s\S]*?-->/g, '').trim();
+    if (!isDateTextValid(cleanDateText)) return events;
 
-    let currentDate = new Date(dateText);
+    let currentDate = new Date(cleanDateText);
 
     // 3. Process events in reverse order (newest to oldest)
     const lastNumber = Number(data[`${argNames.curAniPrefix}${aniNumber}`]);
