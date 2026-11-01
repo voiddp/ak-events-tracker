@@ -5,7 +5,7 @@ export const ANIHILATIONS_START_DAYS_SHIFT: number = 21
 export const GL_EVENT_DATES: Record<string,string> = {     
     "People, A People": "remove",
     "Duel Channel: Ivy Vine": "remove",
-    "Critical Phase Transition": "2026-10-14",
+    "Critical Phase Transition": "remove",
     "Relaunch Anchor": "2026-10-28",
     "Rerun: The Masses' Travels": "2026-11-05",
     "Thunder In The Azure Dream": "2026-11-16",
