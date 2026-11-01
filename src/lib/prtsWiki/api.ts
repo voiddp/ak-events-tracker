@@ -126,7 +126,7 @@ export const fetchLastISEvents = async (
       const ISpage = ISPages[ISPages.length - i];
       const ISprefix = `IS${ISPages.length - i}:`;
 
-      const pattern = new RegExp(`\\[\\[${ISpage}\\/([^\\]\\|]+)(?:[\\]\\|])?`, 'g');
+      const pattern = new RegExp(`\\[\\[${ISpage}\\/([^\\]\\|]+)`, 'g');
       const matches: string[] = [];
       let match;
       while ((match = pattern.exec(NAV_wikiText)) !== null && matches.length < 2) {

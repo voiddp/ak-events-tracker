@@ -37,12 +37,10 @@ export const findENTitle = ($: cheerio.CheerioAPI, pageName: string): string | n
 export const parseISHistoryTable = ($: cheerio.CheerioAPI, squadsSubpage: string, deepSubpage: string): Record<string, Date> => {
     const result: Record<string, Date> = {};
 
-    // Find the theme update history table
-    const themeUpdateHeader = $(`span.mw-headline`).filter((_, el) =>
-        $(el).text().trim() === argNames.themeUpdateHistory
-    );
-    if (!themeUpdateHeader.length) return result;
-    const historyTable = themeUpdateHeader.parent().next('table');
+    // Find the table by its own header, independent of the page heading markup.
+    const historyTable = $('table.wikitable').filter((_, table) =>
+        $(table).find('th').first().text().includes(argNames.themeUpdateHistory)
+    ).first();
     if (!historyTable.length) return result;
 
     // Process each row in the table (skip header rows)
@@ -107,7 +105,7 @@ export const parseISMonthsTabber = (
             const datePattern = `${yearShort}/${month}`;
 
             // Find the tabber panel with matching data-title
-            const tabPanel = $(`article.tabber__panel[aria-labelledby*="${datePattern}"]`);
+            const tabPanel = $(`.tabber__panel[aria-labelledby*="${datePattern}"]`);
 
             if (tabPanel.length > 0) {
                 // Process the tab panel content
@@ -123,7 +121,7 @@ export const parseISMonthsTabber = (
                     materials: result,
                     name: `${ISprefix} Month ${idx + 1} - ${name}`,
                 }
-                console.log(`+event <${webEvent.name}>, at <${webEvent.date}>, with <${Object.keys(webEvent.materials).length}> mats`);
+                console.log(`+event from tab <${webEvent.name}>, at <${webEvent.date.toISOString()}>, with <${Object.keys(webEvent.materials).length}> mats`);
                 WebEventsData_IS[webEvent.pageName] = webEvent;
             }
 
@@ -535,52 +533,44 @@ const getNameVariants = (cnName: string): string[] => {
 export const parseISSquadsPage = ($: cheerio.CheerioAPI, keywords: string[]) => {
     const result: Record<string, { materials: Record<string, number>, title: string }> = {};
     let currentKeyword: string | null = null;
-    let currentChunk = $('<div></div>');
+    let currentChunk = '';
     let currentTitle: string | null = null;
 
-    // Find all h2 elements
-    $('h2').each((i, h2) => {
-        const $h2 = $(h2);
-        const h2Text = $h2.text();
-        if (!h2Text) return;
+    const saveCurrentChunk = () => {
+        if (!currentKeyword) return;
 
-        // Check if this h2 contains any of keyword names
-        const matchedKeyword = keywords.find(keyword => h2Text.includes(keyword));
-        if (matchedKeyword) {
-            // if chunk is started - end it and process
-            if (currentKeyword && currentChunk.contents().length > 0) {
-
-                const materials = parseNumDivs(cheerio.load(currentChunk.html() || ""), {});
-                result[currentKeyword] = {
-                    title: currentTitle || '',
-                    materials,
-                }
-            }
-
-            // Start new chunk
-            currentKeyword = matchedKeyword;
-            currentChunk = $('<div></div>');
-
-            // Get the title from the following <p><b> element
-            currentTitle = $h2.next('p').find('b').first().text().trim();
-            currentTitle = capitalizeWords(currentTitle);
-
-            // Start collecting elements for this chunk
-            const chunkElements = $h2.nextUntil('h2');
-            chunkElements.each((_, el) => {
-                currentChunk.append($(el));
-            });
-        }
-    });
-    // Process the last chunk if it exists
-    if (currentKeyword && currentChunk.contents().length > 0) {
-        const materials = parseNumDivs(cheerio.load(currentChunk.html() || ""), {});
         result[currentKeyword] = {
             title: currentTitle || '',
-            materials,
-        }
-    }
-    console.log(`+IS squad: <${result.title}>, with <${Object.keys(result.materials).length}> mats`);
+            materials: parseNumDivs(cheerio.load(currentChunk), {}),
+        };
+    };
+    console.log("trying to find squads:");
+    $('h2').each((_, h2) => {
+        const $h2 = $(h2);
+        const h2Text = $h2.text().trim();
+        if (!h2Text) return;
+
+        const matchedKeyword = keywords.find(keyword => h2Text.includes(keyword));
+        if (!matchedKeyword) return;
+
+        saveCurrentChunk();
+        currentKeyword = matchedKeyword;
+
+        const headingContainer = $h2.parent().hasClass('mw-heading') ? $h2.parent() : $h2;
+        currentTitle = capitalizeWords(headingContainer.next('p').find('b').first().text().trim());
+        currentChunk = '';
+
+        headingContainer.nextAll().each((_, element) => {
+            const $element = $(element);
+            if ($element.is('h2') || $element.find('h2').length > 0) return false;
+            currentChunk += $.html(element);
+        });
+    });
+
+    saveCurrentChunk();
+    console.log(`+IS squads: ${Object.entries(result).map(([name, squad]) =>
+        `<${name}> as <${squad.title}> with <${Object.keys(squad.materials).length}> mats`
+    ).join(', ')}`);
     return result;
 }
 
@@ -692,4 +682,3 @@ export const parseRATidesOfWar = ($: cheerio.CheerioAPI, page: string, prefix: s
 
     return webEventsData;
 };
-
