@@ -412,10 +412,12 @@ export const getEventList = async (monthsAgo: number, context: ApiContext) => {
     const aniCutOffDate = new Date(monthsAgoDate);
     aniCutOffDate.setDate(aniCutOffDate.getDate() - ANIHILATIONS_START_DAYS_SHIFT);
     const aniArgs = await fetchTemplateArguments(pageNames.operations, templates.anihilations, context);
+    console.log("anihilations cut off at: ", aniCutOffDate.toISOString());
     if (aniArgs) {
       getAniEventsList(aniArgs)
         .filter(event => event.date && event.date >= aniCutOffDate)
         .forEach(event => {
+          console.log(event.date?.toISOString(), ": ", event.name);
           webEvents[event.pageName] = event;
         });
     }

@@ -268,12 +268,12 @@ export const applyGLDatesShift = (events: [string, WebEvent][]): [string, WebEve
 
             if (name.startsWith("IS") || name.startsWith("Annihilation") || name.startsWith("SSS")) {
                 if (name.startsWith("Annihilation")) {
-                    console.log("+6m +",ANIHILATIONS_START_DAYS_SHIFT," shift - operation:", name);
                     const alignedAniDate = new Date(sixMonthDate);
                     alignedAniDate.setDate(alignedAniDate.getDate() + ANIHILATIONS_START_DAYS_SHIFT);
+                    console.log(formatToDDMM(alignedAniDate),": ","+6m +",ANIHILATIONS_START_DAYS_SHIFT," shift - operation:", name);
                     return [key, { ...wEvent, date: alignedAniDate }];
                 } else {
-                    console.log("+6m - operation:", name);
+                    console.log(formatToDDMM(sixMonthDate),": ","+6m - operation:", name);
                     return [key, { ...wEvent, date: sixMonthDate }];
                 }  
             }
@@ -299,7 +299,7 @@ export const applyGLDatesShift = (events: [string, WebEvent][]): [string, WebEve
                     ignoredSixMonthDate = null;
                 }
                 prevNewDate = new Date(newDate);
-                console.log(((newDate.getTime() - sixMonthDate.getTime()) / (1000 * 60 * 60 * 24)).toFixed(0), "days +6m shift - known date:", wEvent.name );
+                console.log(formatToDDMM(newDate),": ",((newDate.getTime() - sixMonthDate.getTime()) / (1000 * 60 * 60 * 24)).toFixed(0), "days +6m shift - known date:", wEvent.name );
                 return [key, { ...wEvent, date: newDate }];
             }
 
@@ -313,18 +313,24 @@ export const applyGLDatesShift = (events: [string, WebEvent][]): [string, WebEve
                 const timeDiff = firstSixMonth - sixMonth;
                 const adjustedDate = new Date(firstNew - timeDiff);
                 prevNewDate = new Date(adjustedDate);
-                console.log(((adjustedDate.getTime() - sixMonthDate.getTime()) / (1000 * 60 * 60 * 24)).toFixed(0), "days +6m shift - event before known:", wEvent.name);
+                console.log(formatToDDMM(adjustedDate),": ",((adjustedDate.getTime() - sixMonthDate.getTime()) / (1000 * 60 * 60 * 24)).toFixed(0), "days +6m shift - event before known:", wEvent.name);
                 return [key, { ...wEvent, date: adjustedDate }];
             } else if (sixMonth === firstSixMonth) {
                 prevNewDate = new Date(firstKnownEvent.newDate);
-                console.log("repeat date - event before known", wEvent.name);
+                console.log(formatToDDMM(firstKnownEvent.newDate),": ","repeat date - event before known", wEvent.name);
                 return [key, { ...wEvent, date: firstKnownEvent.newDate }];
             }
 
             // Normal shift for other unknown events (those before first known event)
-            console.log((runningShiftTime / (1000 * 60 * 60 * 24)).toFixed(0), "days +6m shift - normal inverval:", wEvent.name);
             const adjustedDate = new Date(sixMonth + runningShiftTime);
             prevNewDate = new Date(adjustedDate);
+            console.log(formatToDDMM(adjustedDate),": ",(runningShiftTime / (1000 * 60 * 60 * 24)).toFixed(0), "days +6m shift - normal inverval:", wEvent.name);
             return [key, { ...wEvent, date: adjustedDate }];
         });
+};
+
+const formatToDDMM = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}`;
 };

@@ -70,7 +70,7 @@ class AxiosServer {
       // 1. Add to queue and wait for turn
       //timing in logs [${new Date().toISOString()}]
       console.log(`rate_limit: ${_rateLimit_MS}`);
-      console.log(url);
+      console.log(decodeURI(url));
       // Set server job active flag if this is a server job
       if (isServerJob) {
         await setLock(SERVER_JOB_LOCK_KEY, 60_000); // 1mins lock
