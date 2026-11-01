@@ -87,10 +87,13 @@ export const escapeRegExp = (string: string) => {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-export const isMostlyEnglish = (text: string): boolean => {
-    const enLetters = text.match(/[A-Za-z]/g)?.length || 0;
+export const isMostlyNonChinese = (text: string): boolean => {
+    // Matches CJK Unified Ideographs (Chinese characters)
+    const chineseLetters = text.match(/[\u4e00-\u9fff]/g)?.length || 0;
     const totalLetters = text.replace(/\s+/g, '').length;
-    return totalLetters > 0 && enLetters / totalLetters >= 0.5;
+    
+    // Returns true if Chinese characters make up less than 50% of the text
+    return totalLetters > 0 && chineseLetters / totalLetters < 0.5;
 };
 
 export const applyDictionary = (title: string | null): string | false => {

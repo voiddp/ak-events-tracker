@@ -4,7 +4,7 @@ import itemsJson from '@/data/items.json';
 import { argNames, pageNames, containers, containersContent } from './constants';
 import { WebEvent, WebEventsData } from './types';
 import { getUrl } from './api';
-import { addItemsSet, applyDictionary, capitalizeWords, createEmptyWebEvent, escapeRegExp, getItemsAndContainers, isMostlyEnglish, parseChineseNumber, processContainers } from './utils';
+import { addItemsSet, applyDictionary, capitalizeWords, createEmptyWebEvent, escapeRegExp, getItemsAndContainers, isMostlyNonChinese, parseChineseNumber, processContainers } from './utils';
 
 export const findENTitle = ($: cheerio.CheerioAPI, pageName: string): string | null => {
     let result: string | null = null;
@@ -17,7 +17,7 @@ export const findENTitle = ($: cheerio.CheerioAPI, pageName: string): string | n
         const matchDouble = unescaped.match(/fnameheader nodesktop.*nodesktop">([^<]+)</);
         title = matchDouble ? matchDouble[1].trim() : null;
     }
-    if (title && isMostlyEnglish(title)) {
+    if (title && isMostlyNonChinese(title)) {
         result = capitalizeWords(title);
     } else {
         //<h1 id="firstHeading" class="firstHeading mw-first-heading">CN full title</h1>
