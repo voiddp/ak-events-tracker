@@ -1,17 +1,17 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { loadRepositoryTable } from "./tablesMapper.mjs";
 
-import enItemTable from "./ArknightsGameData_YoStar/en_US/gamedata/excel/item_table.json" with { type: "json" };
-import cnBuildingData from "./ArknightsGameData/zh_CN/gamedata/excel/building_data.json" with { type: "json" };
-import cnItemTable from "./ArknightsGameData/zh_CN/gamedata/excel/item_table.json" with { type: "json" };
+const enItemTable     = loadRepositoryTable("enItemTable");
+const cnBuildingData  = loadRepositoryTable("cnBuildingData");
+const cnItemTable     = loadRepositoryTable("cnItemTable");
 
 const unofficialItemNameTranslations = {
-  mod_update_token_1: "Supplementary Data Bar",
-  mod_update_token_2: "Supplementary Data Instrument",
-  30155: "Sintered Core Crystals",
-  31063: "Transmuted Salt Cluster",
-  31064: "Transmuted Salt Block",
+  31103: "Liquefied High-Energy Gas",
+  31104: "Liquefied Æther Absorber",
+  31113: "Electrode Unit",
+  31114: "Energy Focusing Unit",
 };
 
 const getEnglishItemName = (itemId) => {
@@ -142,7 +142,7 @@ const createItemsJson = async () => {
       iconId: "EXP_PLAYER",
       tier: 4,
       sortId: 70000,
-    }/* ,
+    }/* , 
     4006: {
       id: "4006",
       name: "Purchase Certificate",

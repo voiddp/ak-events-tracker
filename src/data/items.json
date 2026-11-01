@@ -1522,7 +1522,7 @@
   },
   "31103": {
     "id": "31103",
-    "name": "液化高能气体",
+    "name": "Liquefied High-Energy Gas",
     "cnName": "液化高能气体",
     "iconId": "MTL_SL_YHT",
     "tier": 3,
@@ -1530,7 +1530,7 @@
   },
   "31104": {
     "id": "31104",
-    "name": "液化醚吸聚体",
+    "name": "Liquefied Ether Adsorbent",
     "cnName": "液化醚吸聚体",
     "iconId": "MTL_SL_YHT4",
     "tier": 4,
@@ -1557,7 +1557,7 @@
   },
   "31113": {
     "id": "31113",
-    "name": "电极单元",
+    "name": "Electrode Unit",
     "cnName": "电极单元",
     "iconId": "MTL_SL_DJ",
     "tier": 3,
@@ -1565,7 +1565,7 @@
   },
   "31114": {
     "id": "31114",
-    "name": "聚能动力单元",
+    "name": "Energy Accumulation Motor Unit",
     "cnName": "聚能动力单元",
     "iconId": "MTL_SL_DJ4",
     "tier": 4,
