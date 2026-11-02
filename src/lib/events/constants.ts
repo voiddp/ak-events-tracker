@@ -1,6 +1,6 @@
 export const IS_START_MONTH_SHIFT: number = -1
 
-export const ANIHILATIONS_START_DAYS_SHIFT: number = 21
+export const ANIHILATIONS_START_DAYS_SHIFT: number = -24
 
 export const GL_EVENT_DATES: Record<string,string> = {     
     "People, A People": "remove",
